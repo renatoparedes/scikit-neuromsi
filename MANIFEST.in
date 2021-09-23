@@ -1,0 +1,8 @@
+include LICENSE
+include README.md
+recursive-include scikit-neuromsi *.csv
+
+exclude tox.ini
+exclude pyproject.toml
+recursive-exclude tests *
+recursive-exclude drafts *
