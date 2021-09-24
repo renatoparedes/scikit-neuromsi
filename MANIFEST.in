@@ -1,6 +1,7 @@
 include LICENSE
 include README.md
-recursive-include scikit-neuromsi *.csv
+recursive-include skneuromsi *.csv
+recursive-include skneuromsi *.py
 
 exclude tox.ini
 exclude pyproject.toml

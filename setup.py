@@ -60,7 +60,11 @@ setup(
     ],
     license="The MIT License",
     install_requires=REQUIREMENTS,
-    keywords=["multisensory integration", "computational neuroscience", "cognitive modelling"],
+    keywords=[
+        "multisensory integration",
+        "computational neuroscience",
+        "cognitive modelling",
+    ],
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Education",
