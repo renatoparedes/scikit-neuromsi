@@ -1,160 +1,305 @@
-import abc
+import inspect
+import itertools as it
 
 import attr
-import matplotlib.pyplot as plt
-import numpy as np
+from attr import validators as vldt
+
+# ===============================================================================
+# CONSTANTS
+# ===============================================================================
+
+_SKCNMSI_METADATA = "__skc_neuro_msi__"
+
+_HYPER_PARAMETER = type("_HYPER_PARAMETER", (object,), {})
+
+_INTERNAL_VALUE = type("_INTERNAL_VALUE", (object,), {})
 
 
-class MSIBrain(metaclass=abc.ABCMeta):
-    @abc.abstractmethod
-    def __len__(self):
-        """Number of modalities."""
-
-    @abc.abstractmethod
-    def __getitem__(self, modality):
-        """"""
-
-    @abc.abstractmethod
-    def response(self):
-        """"""
+# ===============================================================================
+# CLASES Y OTROS CONTENEDORES UTILES
+# ===============================================================================
 
 
-@attr.s
-class AlaisBurr2004(MSIBrain):
+@attr.s(frozen=True, slots=True)
+class Stimulus:
+    name = attr.ib(converter=str)
+    hyper_parameters = attr.ib(converter=set)
+    internal_values = attr.ib(converter=set)
+    run_inputs = attr.ib(converter=set)
+    function = attr.ib(validator=vldt.is_callable())
 
-    # Stimuli locations
-    locs = attr.ib(factory=dict)
-
-    # All possible locations - Experiment setup
-    pos_locs = attr.ib()
-
-    @pos_locs.default
-    def _pos_locs_default(self):
-        return np.arange(-20, 20, 0.01)
-
-    # Weights used to calculate the mean of the multimodal distribution
-    weights = attr.ib(factory=dict)
-
-    # Variability of stimulus estimates
-    e_sigmas = attr.ib(factory=dict)
-
-    # Result
-    _result = attr.ib(factory=dict)
-
-    def __attrs_post_init__(self):
-
-        # Stimuli setup
-        self.locs["auditory"] = 0
-        self.locs["visual"] = 0
-
-        loc_a = self.locs["auditory"]
-        loc_v = self.locs["visual"]
-
-        # Model setup
-        self.e_sigmas["auditory"] = 3
-        self.e_sigmas["visual"] = 4
-
-        sig_v = self.e_sigmas["auditory"]
-        sig_a = self.e_sigmas["visual"]
-
-        # From Alais and Burr 2004, the weights used to calculation
-        # the mean of the multimodal distribution are:
-
-        self.weights["auditory"] = sig_v ** 2 / (sig_a ** 2 + sig_v ** 2)
-
-        self.weights["visual"] = sig_a ** 2 / (sig_v ** 2 + sig_a ** 2)
-
-        w_a = self.weights["auditory"]
-        w_v = self.weights["visual"]
-
-        # From both Alais/Burr, 2004 and Ernst/Banks, 2002,
-        # the multisensory variability is:
-        self.e_sigmas["multisensory"] = np.sqrt(
-            (sig_v ** 2 * sig_a ** 2) / (sig_a ** 2 + sig_v ** 2)
+    @property
+    def parameters(self):
+        return set(
+            it.chain(
+                self.hyper_parameters,
+                self.internal_values,
+                self.run_inputs,
+            )
         )
 
-        # And the multisensory loc is:
-        self.locs["multisensory"] = w_v * loc_v + w_a * loc_a
 
-    def auditory_modality(self):
-        """
-        Computes auditory estimate
-        """
+@attr.s(frozen=True, slots=True)
+class Integration:
+    name = attr.ib(converter=str)
+    hyper_parameters = attr.ib(converter=set)
+    internal_values = attr.ib(converter=set)
+    stimuli_results = attr.ib(converter=set)
+    function = attr.ib(validator=vldt.is_callable())
 
-        sig_a = self.e_sigmas["auditory"]
-        loc_a = self.locs["auditory"]
-        locs = self.pos_locs
-
-        if "auditory" in self._result:
-            raise ValueError()
-
-        distr_a = (1 / np.sqrt(2 * np.pi * sig_a ** 2)) * np.exp(
-            -1 * (((locs - loc_a) ** 2) / (2 * sig_a ** 2))
+    @property
+    def parameters(self):
+        return set(
+            it.chain(
+                self.hyper_parameters,
+                self.internal_values,
+                self.stimuli_results,
+            )
         )
 
-        self._result["auditory"] = distr_a
 
-    def visual_modality(self):
-        """
-        Computes visual estimate
-        """
+@attr.s(frozen=True, slots=True)
+class Config:
+    stimuli = attr.ib()
+    integration = attr.ib()
+    run_inputs = attr.ib(init=False)
 
-        sig_v = self.e_sigmas["visual"]
-        loc_v = self.locs["visual"]
-        locs = self.pos_locs
+    @run_inputs.default
+    def _allinputs_default(self):
+        inputs = set()
+        for s in self.stimuli.values():
+            inputs.update(s.run_inputs)
+        return inputs
 
-        if "visual" in self._result:
-            raise ValueError()
+    def _validate_inputs(self, model, inputs):
+        expected = set(self.run_inputs)  # sacamos una copia
 
-        distr_v = (1 / np.sqrt(2 * np.pi * sig_v ** 2)) * np.exp(
-            -1 * (((locs - loc_v) ** 2) / (2 * sig_v ** 2))
+        # por las dudas se usa en dos lugares
+        run_name = f"{type(model).__name__}.run()"
+
+        for rinput in inputs:
+            if rinput not in expected:
+                raise TypeError(
+                    f"{run_name} got an unexpected keyword argument '{rinput}'"
+                )
+            expected.remove(rinput)
+
+        if expected:  # si algo sobro
+            required = ", ".join(f"'{e}'" for e in expected)
+            raise TypeError(
+                f"{run_name} missing required argument/s: {required}"
+            )
+
+    def get_model_values(self, model):
+        def flt(attribute, _):
+            return attribute.metadata.get(_SKCNMSI_METADATA) in (
+                _HYPER_PARAMETER,
+                _INTERNAL_VALUE,
+            )
+
+        return attr.asdict(model, filter=flt)
+
+    def run(self, model, inputs):
+        # validamos que no falte ni sobre ningun input
+        self._validate_inputs(model, inputs)
+
+        # extraemos todos los hiperparametros y valores internos
+        model_values = self.get_model_values(model)
+
+        # mezclamos todos los inputs con todos los demas parametros
+        # en un solo espacio de nombre
+        namespace = dict(**inputs, **model_values)
+
+        # resolvemos todos los estimulos
+        stimuli_results = {}
+        for stimulus in self.stimuli.values():
+            kwargs = {k: namespace[k] for k in stimulus.parameters}
+            stimuli_results[stimulus.name] = stimulus.function(**kwargs)
+
+        # ahora agregamos al namespace los valores resultantes de los estimulos
+        namespace.update(stimuli_results)
+
+        # y ejecutamos el integrador
+        kwargs = {k: namespace[k] for k in self.integration.parameters}
+        result = self.integration.function(**kwargs)
+
+        return result
+
+
+# =============================================================================
+# FUNCTIONS
+# =============================================================================
+
+
+def hparameter(**kwargs):
+
+    metadata = kwargs.pop("metadata", {})
+    metadata[_SKCNMSI_METADATA] = _HYPER_PARAMETER
+
+    return attr.ib(init=True, metadata=metadata, **kwargs)
+
+
+def internal(**kwargs):
+
+    metadata = kwargs.pop("metadata", {})
+    metadata[_SKCNMSI_METADATA] = _INTERNAL_VALUE
+
+    kwargs.setdefault("repr", False)
+
+    return attr.ib(init=False, metadata=metadata, **kwargs)
+
+
+# ===============================================================================
+# MODEL DEFINITION
+# ===============================================================================
+
+
+def get_class_fields(cls):
+
+    # vamos a copiar la clase para no destruir la anterior
+    cls = type(
+        cls.__name__ + "__copied",
+        tuple(cls.mro()[1:]),
+        vars(cls).copy(),
+    )
+
+    # creamos una clase tipo attrs para choriarle los fields
+    acls = attr.s(maybe_cls=cls)
+
+    hparams, internals = set(), set()
+    for field in attr.fields(acls):
+        param_type = field.metadata.get(_SKCNMSI_METADATA)
+
+        if param_type == _HYPER_PARAMETER:
+            hparams.add(field.name)
+
+        elif param_type == _INTERNAL_VALUE:
+            # at this point we can check if some internal don't have a defaul
+            # this is a problem
+            if field.default is attr.NOTHING:
+                raise TypeError(f"internal '{field.name}' must has a default")
+
+            internals.add(field.name)
+
+        else:
+            raise TypeError(
+                f"field '{field.name}' is neither hparameter() or internal()"
+            )
+
+    return hparams, internals
+
+
+def get_parameters(name, func, hyper_parameters, internal_values):
+    signature = inspect.signature(func)
+
+    # for paran_name, param in signature.parameters.items():
+    # primero determinamos el tipo, si es un hiper parametro del modelo
+    # un valor interno o simplemente un valor del tipo "run"
+    shparams, sinternals, sinputs = set(), set(), set()
+    for param_name, param_value in signature.parameters.items():
+        if param_value.default is not param_value.empty:
+            raise TypeError(
+                "No default value alowed in stimuli and integration. "
+                f"Function '{name} -> {param_name}={param_value.default}'"
+            )
+        if param_name in hyper_parameters:
+            shparams.add(param_name)
+        elif param_name in internal_values:
+            sinternals.add(param_name)
+        else:
+            sinputs.add(param_name)
+
+    return shparams, sinternals, sinputs
+
+
+def change_run_signature(run, run_inputs):
+    signature = inspect.signature(run)
+
+    self_param = signature.parameters["self"]
+    new_params = [self_param] + [
+        inspect.Parameter(name, inspect.Parameter.KEYWORD_ONLY)
+        for name in run_inputs
+    ]
+
+    new_signature = signature.replace(parameters=new_params)
+
+    run.__signature__ = new_signature
+
+    return run
+
+
+def neural_msi_model(cls):
+
+    # separamos los parametros internos y los hiper_parametros
+    hparams, internals = get_class_fields(cls)
+
+    # stimuli tiene que ser una lista de callables
+    # y vamos a carrgarlo dentro de un diccionario para futuras referencias
+    stimuli = {}
+    for stimulus in cls.stimuli:
+
+        name = stimulus.__name__
+        if not callable(stimulus):
+            raise TypeError(f"stimulus '{name}' is not callable")
+
+        # sacamos los parametros del estimulo en hparams e internals
+        # y lo que no sabemos que es, lo asumimos como parametro de entrada
+        shparams, sinternals, sinputs = get_parameters(
+            name, stimulus, hparams, internals
         )
 
-        self._result["visual"] = distr_v
-
-    def multisensory_modality(self):
-        """
-        Computes multisensory estimate
-        """
-        sig_m = self.e_sigmas["multisensory"]
-        loc_m = self.locs["multisensory"]
-        locs = self.pos_locs
-
-        if "multisensory" in self._result:
-            raise ValueError()
-
-        distr_m = (1 / np.sqrt(2 * np.pi * sig_m ** 2)) * np.exp(
-            -1 * (((locs - loc_m) ** 2) / (2 * sig_m ** 2))
+        stimuli[name] = Stimulus(
+            name=name,
+            hyper_parameters=shparams,
+            internal_values=sinternals,
+            run_inputs=sinputs,
+            function=stimulus,
         )
 
-        self._result["multisensory"] = distr_m
+    # integration tiene que ser un callable
+    if not callable(cls.integration):
+        raise TypeError("integration must be callable")
+    name = cls.integration.__name__
+    ihparams, iinternals, iinputs = get_parameters(
+        name, cls.integration, hparams, internals
+    )
 
-    def __len__(self):
-        return 2
+    # hay que tener en cuenta que el integrador no puede tener inputs de run
+    # todos sus inputs se corresponden a los valores de la salida de los
+    # estimulos, y tiene que coincidir con sus nombres
+    diff = iinputs.difference(stimuli)
+    #if diff:
+    #    raise TypeError(f"integration has unknow parameters {', '.join(diff)}")
 
-    def __getitem__(self, modality):
-        if modality == "auditory":
-            return self.auditory_modality
-        elif modality == "visual":
-            return self.visual_modality
-        elif modality == "multisensory":
-            return self.visual_modality
-        raise KeyError(modality)
+    integration = Integration(
+        name=name,
+        hyper_parameters=ihparams,
+        internal_values=iinternals,
+        stimuli_results=iinputs,
+        function=cls.integration,
+    )
 
-    def response(self):
-        return self._result["multisensory"]
+    # sacamos stimuli e integration del modelo
+    del cls.stimuli, cls.integration
 
-    def plot(self):
-        for res in self._result:
-            plt.plot(self.pos_locs, self._result[res])
-        plt.ylabel("Probability density", size=12)
-        plt.xlabel("Position (degrees of visual angle)", size=12)
-        plt.legend(self._result.keys())
+    # cargamos los nuevos stimulii en un objeto conf
+    conf = Config(stimuli=stimuli, integration=integration)
 
-    def run(self):
-        self.auditory_modality()
-        self.visual_modality()
-        self.multisensory_modality()
+    # inyectamos la configuracion en la clase
+    cls._sknmsi_conf = Config(stimuli=stimuli, integration=integration)
 
+    # el run del modelo lo unico que tiene que hacer es delegat todos los
+    # parametros al run de la configuración ademas de pasarse a si mismo
+    def run(self, **kwargs):
+        breakpoint()
+        return self._sknmsi_conf.run(model=self, inputs=kwargs)
 
-AlaisBurr2004()
+    # ahora hay que enmascarar la firma de run e inyectar run a la clase
+    cls.run = change_run_signature(run, conf.run_inputs)
+
+    # convertimos la clase en un clase attrs para que los hiperparametros
+    # y valores internos sepan funcionar
+    acls = attr.s(maybe_cls=cls)
+
+    # terminamos
+    return acls
