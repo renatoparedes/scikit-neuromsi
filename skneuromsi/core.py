@@ -257,7 +257,7 @@ def neural_msi_model(cls):
             run_inputs=sinputs,
             function=stimulus,
         )
-
+        breakpoint()
         # guardamos los run_inputs de todos los stimulos para validarlos
         # contra el integrador despues
         run_inputs.update(sinputs)
