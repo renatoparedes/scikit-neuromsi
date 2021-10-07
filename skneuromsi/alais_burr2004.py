@@ -1,4 +1,3 @@
-import ipdb
 import numpy as np
 
 import skneuromsi as sknm
@@ -27,14 +26,20 @@ def visual_stimulus(posible_locations, visual_sigma, visual_location):
 def multisensory_stimulus(
     multisensory_sigma,
     posible_locations,
-    visual_stimulus,
-    auditory_stimulus,
+    visual_location,
+    auditory_location,
+    visual_weight,
+    auditory_weight,
 ):
     """
     Computes multisensory estimate
     """
+
     sigma = multisensory_sigma
-    location = 2+2 #multisensory_location
+
+    location = (
+        visual_weight * visual_location + auditory_weight * auditory_location
+    )
     plocations = posible_locations
 
     return (1 / np.sqrt(2 * np.pi * sigma ** 2)) * np.exp(
@@ -53,16 +58,24 @@ class AlaisBurr2004:
     visual_sigma = sknm.hparameter(default=4.0)
 
     # internals
-    auditory_weight = sknm.internal(default=1)
-    visual_weight = sknm.internal(default=2)
-    multisensory_sigma = sknm.internal(default=3)
+    auditory_weight = sknm.internal()
 
+    @auditory_weight.default
+    def _auditory_weight_default(self):
+        return self.visual_sigma ** 2 / (
+            self.auditory_sigma ** 2 + self.visual_sigma ** 2
+        )
+
+    visual_weight = sknm.internal()
+
+    @visual_weight.default
+    def _visual_weights_default(self):
+        return self.auditory_sigma ** 2 / (
+            self.visual_sigma ** 2 + self.auditory_sigma ** 2
+        )
+
+    multisensory_sigma = sknm.internal(default=3.0)
 
     # estimulii!
     stimuli = [auditory_stimulus, visual_stimulus]
     integration = multisensory_stimulus
-
-
-model = AlaisBurr2004()
-model.run(visual_location=1, auditory_location=3)
-

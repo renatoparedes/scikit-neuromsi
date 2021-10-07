@@ -10,6 +10,7 @@ from attr import validators as vldt
 
 _SKCNMSI_METADATA = "__skc_neuro_msi__"
 
+
 _HYPER_PARAMETER = type("_HYPER_PARAMETER", (object,), {})
 
 _INTERNAL_VALUE = type("_INTERNAL_VALUE", (object,), {})
@@ -157,6 +158,7 @@ def internal(**kwargs):
 def get_class_fields(cls):
 
     # vamos a copiar la clase para no destruir la anterior
+    # black magic
     cls = type(
         cls.__name__ + "__copied",
         tuple(cls.mro()[1:]),
@@ -235,7 +237,7 @@ def neural_msi_model(cls):
 
     # stimuli tiene que ser una lista de callables
     # y vamos a carrgarlo dentro de un diccionario para futuras referencias
-    stimuli = {}
+    stimuli, run_inputs = {}, set()
     for stimulus in cls.stimuli:
 
         name = stimulus.__name__
@@ -256,6 +258,10 @@ def neural_msi_model(cls):
             function=stimulus,
         )
 
+        # guardamos los run_inputs de todos los stimulos para validarlos
+        # contra el integrador despues
+        run_inputs.update(sinputs)
+
     # integration tiene que ser un callable
     if not callable(cls.integration):
         raise TypeError("integration must be callable")
@@ -264,12 +270,12 @@ def neural_msi_model(cls):
         name, cls.integration, hparams, internals
     )
 
-    # hay que tener en cuenta que el integrador no puede tener inputs de run
-    # todos sus inputs se corresponden a los valores de la salida de los
-    # estimulos, y tiene que coincidir con sus nombres
-    diff = iinputs.difference(stimuli)
-    #if diff:
-    #    raise TypeError(f"integration has unknow parameters {', '.join(diff)}")
+    # hay que tener en cuenta que el integrador puede tener inputs de run
+    # y puede TAMBIEN recibir las salidas de los estimulos. Pero no puede
+    # tener run inputs propios.
+    diff = iinputs.difference(run_inputs.union(stimuli))
+    if diff:
+        raise TypeError(f"integration has unknow parameters {', '.join(diff)}")
 
     integration = Integration(
         name=name,
@@ -291,7 +297,6 @@ def neural_msi_model(cls):
     # el run del modelo lo unico que tiene que hacer es delegat todos los
     # parametros al run de la configuración ademas de pasarse a si mismo
     def run(self, **kwargs):
-        breakpoint()
         return self._sknmsi_conf.run(model=self, inputs=kwargs)
 
     # ahora hay que enmascarar la firma de run e inyectar run a la clase
