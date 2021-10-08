@@ -1,6 +1,11 @@
+import attr
 import pytest
 
 from skneuromsi import core
+
+# =============================================================================
+# FUNCTIONS
+# =============================================================================
 
 
 def test_hyperparameter():
@@ -77,9 +82,46 @@ def test_get_parameters():
     assert sinputs == {"theta_a", "theta_b"}
 
 
+# def test_stimulus_is_callable():
+#    assert not callable(...)
+
+# def test_integration_is_callable():
+
+# def test_integration_unknown_pars():
+
+# def test_remove_stimuli():
+
+# def test_remove_integration():
+
 # =============================================================================
 # CLASES Y OTROS CONTENEDORES UTILES
 # =============================================================================
+
+
+def test_stimulus_attrib():
+    def stim(theta_a, theta_b, h, p):  # implement with mock?
+        theta_a = 5
+        theta_b = 7
+        return theta_a * h + theta_b * p
+
+    shparams = {"h"}
+    sinternals = {"p"}
+    sinputs = {"theta_a", "theta_b"}
+    name = stim.__name__
+
+    new_stim = core.Stimulus(
+        name=name,
+        hyper_parameters=shparams,
+        internal_values=sinternals,
+        run_inputs=sinputs,
+        function=stim,
+    )
+
+    assert new_stim.name == stim.__name__
+    assert new_stim.hyper_parameters == {"h"}
+    assert new_stim.internal_values == {"p"}
+    assert new_stim.run_inputs == {"theta_a", "theta_b"}
+    assert new_stim.function == stim
 
 
 def test_stimulus_property():
@@ -101,17 +143,109 @@ def test_stimulus_property():
         function=stim,
     )
 
-    assert new_stim.hyper_parameters == {"h"}
-    assert new_stim.internal_values == {"p"}
-    assert new_stim.run_inputs == {"theta_a", "theta_b"}
+    assert new_stim.parameters == {"h", "p", "theta_a", "theta_b"}
 
 
-# def test_stimulus_is_callable():
-#    assert not callable(...)
+def test_stimulus_frozen():  # Maybe a shorter way to do this?
+    def stim(theta_a, theta_b, h, p):
+        theta_a = 5
+        theta_b = 7
+        return theta_a * h + theta_b * p
 
-# def test_stimulus_name():
-#    ...
+    shparams = {"h"}
+    sinternals = {"p"}
+    sinputs = {"theta_a", "theta_b"}
+    name = stim.__name__
 
-# def test_integration_property():
+    new_stim = core.Stimulus(
+        name=name,
+        hyper_parameters=shparams,
+        internal_values=sinternals,
+        run_inputs=sinputs,
+        function=stim,
+    )
 
-# def test_integration_is_callable():
+    try:
+        new_stim.name = "stim"
+    except attr.exceptions.FrozenInstanceError:
+        pass
+    else:
+        raise TypeError("class Stimulus is not frozen")
+
+
+def test_integration_attrib():
+    def integration(theta_a, theta_b, h, p):  # implement with mock?
+        theta_a = 5
+        theta_b = 7
+        return theta_a * h + theta_b * p
+
+    ihparams = {"h"}
+    iinternals = {"p"}
+    iinputs = {"theta_a", "theta_b"}
+    name = integration.__name__
+
+    new_integration = core.Integration(
+        name=name,
+        hyper_parameters=ihparams,
+        internal_values=iinternals,
+        stimuli_results=iinputs,
+        function=integration,
+    )
+
+    assert new_integration.name == integration.__name__
+    assert new_integration.hyper_parameters == {"h"}
+    assert new_integration.internal_values == {"p"}
+    assert new_integration.stimuli_results == {"theta_a", "theta_b"}
+    assert new_integration.function == integration
+
+
+def test_integration_property():
+    def integration(theta_a, theta_b, h, p):  # implement with mock?
+        theta_a = 5
+        theta_b = 7
+        return theta_a * h + theta_b * p
+
+    ihparams = {"h"}
+    iinternals = {"p"}
+    iinputs = {"theta_a", "theta_b"}
+    name = integration.__name__
+
+    new_integration = core.Integration(
+        name=name,
+        hyper_parameters=ihparams,
+        internal_values=iinternals,
+        stimuli_results=iinputs,
+        function=integration,
+    )
+
+    assert new_integration.parameters == {"h", "p", "theta_a", "theta_b"}
+
+
+def test_integration_frozen():
+    def integration(theta_a, theta_b, h, p):  # implement with mock?
+        theta_a = 5
+        theta_b = 7
+        return theta_a * h + theta_b * p
+
+    ihparams = {"h"}
+    iinternals = {"p"}
+    iinputs = {"theta_a", "theta_b"}
+    name = integration.__name__
+
+    new_integration = core.Integration(
+        name=name,
+        hyper_parameters=ihparams,
+        internal_values=iinternals,
+        stimuli_results=iinputs,
+        function=integration,
+    )
+
+    try:
+        new_integration.name = "integration"
+    except attr.exceptions.FrozenInstanceError:
+        pass
+    else:
+        raise TypeError("class Integration is not frozen")
+
+
+# test_config():
