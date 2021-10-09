@@ -82,12 +82,56 @@ def test_get_parameters():
     assert sinputs == {"theta_a", "theta_b"}
 
 
-# def test_stimulus_is_callable():
-#    assert not callable(...)
+def test_stimulus_is_callable():
 
-# def test_integration_is_callable():
+    try:
 
-# def test_integration_unknown_pars():
+        @core.neural_msi_model
+        class Foo:
+            stimulus_a = 1  # mock?
+            stimulus_b = 2
+            stimuli = [stimulus_a, stimulus_b]
+
+    except (TypeError, AttributeError):  # maybe fix to overpass AttibuteError
+        pass
+
+    else:
+        raise TypeError("allows not callable stimuli")
+
+
+def test_integration_is_callable():
+
+    try:
+
+        @core.neural_msi_model
+        class Foo:
+            integration = 3  # mock?
+
+    except (TypeError, AttributeError):  # maybe fix to overpass AttibuteError
+        pass
+
+    else:
+        raise TypeError("allows not callable integration")
+
+
+# def test_integration_unknown_pars():  # TODO add stimuli
+#    def integration(theta_a, theta_b, h, p):  # implement with mock?
+#        theta_a = 5
+#        theta_b = 7
+#        return theta_a * h + theta_b * p
+
+#    try:
+
+#        @core.neural_msi_model
+#        class Foo:
+#            integration = integration
+
+#    except (TypeError):
+#        pass
+
+#    else:
+#        raise TypeError("integration allows unknown parameters")
+
 
 # def test_remove_stimuli():
 
