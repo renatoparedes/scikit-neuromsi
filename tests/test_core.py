@@ -118,28 +118,72 @@ def test_integration_is_callable():
             integration = c
 
 
-# def test_integration_unknown_pars():  # TODO add stimuli
-#    def integration(theta_a, theta_b, h, p):  # implement with mock?
-#        theta_a = 5
-#        theta_b = 7
-#        return theta_a * h + theta_b * p
+def test_integration_unknown_pars():
+    class Thing:
+        pass
 
-#    try:
+    a, b = Thing(), Thing()
+    a.__name__ = "a"
+    b.__name__ = "b"
 
-#        @core.neural_msi_model
-#        class Foo:
-#            integration = integration
+    def ms_integration(theta_a, theta_b, h, p):
+        theta_a = 5
+        theta_b = 7
+        return theta_a * h + theta_b * p
 
-#    except (TypeError):
-#        pass
+    with pytest.raises(TypeError):
 
-#    else:
-#        raise TypeError("integration allows unknown parameters")
+        @core.neural_msi_model
+        class Foo:
+            stimulus_a = a
+            stimulus_b = b
+            stimuli = [stimulus_a, stimulus_b]
+            integration = ms_integration
 
 
-# def test_remove_stimuli():
+def test_remove_stimuli():
+    def stim(theta_a, theta_b):
+        theta_a = 5
+        theta_b = 7
+        return theta_a + theta_b
 
-# def test_remove_integration():
+    def ms_integration(theta_a, theta_b):
+        h = 2
+        p = 1
+        return theta_a * h + theta_b * p
+
+    @core.neural_msi_model
+    class Foo:
+        stimulus_a = stim
+        stimulus_b = stim
+        stimuli = [stimulus_a, stimulus_b]
+        integration = ms_integration
+
+    with pytest.raises(AttributeError):
+        Foo.stimuli
+
+
+def test_remove_integration():
+    def stim(theta_a, theta_b):
+        theta_a = 5
+        theta_b = 7
+        return theta_a + theta_b
+
+    def ms_integration(theta_a, theta_b):
+        h = 2
+        p = 1
+        return theta_a * h + theta_b * p
+
+    @core.neural_msi_model
+    class Foo:
+        stimulus_a = stim
+        stimulus_b = stim
+        stimuli = [stimulus_a, stimulus_b]
+        integration = ms_integration
+
+    with pytest.raises(AttributeError):
+        Foo.integration
+
 
 # =============================================================================
 # CLASES Y OTROS CONTENEDORES UTILES
@@ -288,4 +332,97 @@ def test_integration_frozen():
         new_integration.name = "integration"
 
 
-# test_config():
+def test_config_attrib():
+    def stim(theta_a, theta_b, h, p):
+        theta_a = 5
+        theta_b = 7
+        return theta_a * h + theta_b * p
+
+    shparams = {"h"}
+    sinternals = {"p"}
+    sinputs = {"theta_a", "theta_b"}
+    name = stim.__name__
+
+    new_stim = core.Stimulus(
+        name=name,
+        hyper_parameters=shparams,
+        internal_values=sinternals,
+        run_inputs=sinputs,
+        function=stim,
+    )
+
+    def integration(theta_a, theta_b, h, p):
+        theta_a = 5
+        theta_b = 7
+        return theta_a * h + theta_b * p
+
+    ihparams = {"h"}
+    iinternals = {"p"}
+    iinputs = {"theta_a", "theta_b"}
+    name = integration.__name__
+
+    new_integration = core.Integration(
+        name=name,
+        hyper_parameters=ihparams,
+        internal_values=iinternals,
+        stimuli_results=iinputs,
+        function=integration,
+    )
+
+    stims = {"stim": new_stim}
+    conf = core.Config(stimuli=stims, integration=new_integration)
+
+    assert conf.stimuli == stims
+    assert conf.integration == new_integration
+    assert conf.run_inputs == sinputs
+
+
+def test_config_frozen():
+    def stim(theta_a, theta_b, h, p):
+        theta_a = 5
+        theta_b = 7
+        return theta_a * h + theta_b * p
+
+    shparams = {"h"}
+    sinternals = {"p"}
+    sinputs = {"theta_a", "theta_b"}
+    name = stim.__name__
+
+    new_stim = core.Stimulus(
+        name=name,
+        hyper_parameters=shparams,
+        internal_values=sinternals,
+        run_inputs=sinputs,
+        function=stim,
+    )
+
+    def integration(theta_a, theta_b, h, p):
+        theta_a = 5
+        theta_b = 7
+        return theta_a * h + theta_b * p
+
+    ihparams = {"h"}
+    iinternals = {"p"}
+    iinputs = {"theta_a", "theta_b"}
+    name = integration.__name__
+
+    new_integration = core.Integration(
+        name=name,
+        hyper_parameters=ihparams,
+        internal_values=iinternals,
+        stimuli_results=iinputs,
+        function=integration,
+    )
+
+    stims = {"stim": new_stim}
+    conf = core.Config(stimuli=stims, integration=new_integration)
+
+    with pytest.raises(attr.exceptions.FrozenInstanceError):
+        conf.run_inputs = {"a", "b", "c"}
+
+
+# def test_config_validate_inputs():
+
+# def test_config_get_model_values():
+
+# def test_config_run():
