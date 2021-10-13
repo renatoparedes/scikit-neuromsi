@@ -257,7 +257,7 @@ def neural_msi_model(cls):
             run_inputs=sinputs,
             function=stimulus,
         )
-        breakpoint()
+
         # guardamos los run_inputs de todos los stimulos para validarlos
         # contra el integrador despues
         run_inputs.update(sinputs)
@@ -275,7 +275,9 @@ def neural_msi_model(cls):
     # tener run inputs propios.
     diff = iinputs.difference(run_inputs.union(stimuli))
     if diff:
-        raise TypeError(f"integration has unknow parameters {', '.join(diff)}")
+        raise TypeError(
+            f"integration has unknown parameters {', '.join(diff)}"
+        )
 
     integration = Integration(
         name=name,

@@ -67,7 +67,7 @@ def test_get_parameters():
     hparams = {"h"}
     internals = {"p"}
 
-    def stim(theta_a, theta_b, h, p):  # implement with mock?
+    def stim(theta_a, theta_b, h, p):  # implement property based test?
         theta_a = 5
         theta_b = 7
         return theta_a * h + theta_b * p
@@ -83,35 +83,39 @@ def test_get_parameters():
 
 
 def test_stimulus_is_callable():
+    class Thing:
+        pass
 
-    try:
+    a, b = Thing(), Thing()
+    a.__name__ = "a"
+    b.__name__ = "b"
+
+    with pytest.raises(TypeError):
 
         @core.neural_msi_model
         class Foo:
-            stimulus_a = 1  # mock?
-            stimulus_b = 2
+            stimulus_a = a
+            stimulus_b = b
             stimuli = [stimulus_a, stimulus_b]
-
-    except (TypeError, AttributeError):  # maybe fix to overpass AttibuteError
-        pass
-
-    else:
-        raise TypeError("allows not callable stimuli")
 
 
 def test_integration_is_callable():
+    class Thing:
+        pass
 
-    try:
+    a, b, c = Thing(), Thing(), Thing()
+    a.__name__ = "a"
+    b.__name__ = "b"
+    c.__name__ = "c"
+
+    with pytest.raises(TypeError):
 
         @core.neural_msi_model
         class Foo:
-            integration = 3  # mock?
-
-    except (TypeError, AttributeError):  # maybe fix to overpass AttibuteError
-        pass
-
-    else:
-        raise TypeError("allows not callable integration")
+            stimulus_a = a
+            stimulus_b = b
+            stimuli = [stimulus_a, stimulus_b]
+            integration = c
 
 
 # def test_integration_unknown_pars():  # TODO add stimuli
@@ -209,12 +213,8 @@ def test_stimulus_frozen():  # Maybe a shorter way to do this?
         function=stim,
     )
 
-    try:
+    with pytest.raises(attr.exceptions.FrozenInstanceError):
         new_stim.name = "stim"
-    except attr.exceptions.FrozenInstanceError:
-        pass
-    else:
-        raise TypeError("class Stimulus is not frozen")
 
 
 def test_integration_attrib():
@@ -284,12 +284,8 @@ def test_integration_frozen():
         function=integration,
     )
 
-    try:
+    with pytest.raises(attr.exceptions.FrozenInstanceError):
         new_integration.name = "integration"
-    except attr.exceptions.FrozenInstanceError:
-        pass
-    else:
-        raise TypeError("class Integration is not frozen")
 
 
 # test_config():
