@@ -106,6 +106,7 @@ class Config:
 
         # extraemos todos los hiperparametros y valores internos
         model_values = self.get_model_values(model)
+        breakpoint()
 
         # mezclamos todos los inputs con todos los demas parametros
         # en un solo espacio de nombre

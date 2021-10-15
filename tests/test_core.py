@@ -62,7 +62,7 @@ def test_get_class_field_call_two_times():
     assert internals == {"p"}
 
 
-def test_get_parameters():
+def test_get_parameters():  # TODO create more tests for get_parameters
 
     hparams = {"h"}
     internals = {"p"}
@@ -191,10 +191,8 @@ def test_remove_integration():
 
 
 def test_stimulus_attrib():
-    def stim(theta_a, theta_b, h, p):  # implement with mock?
-        theta_a = 5
-        theta_b = 7
-        return theta_a * h + theta_b * p
+    def stim():
+        return "something"
 
     shparams = {"h"}
     sinternals = {"p"}
@@ -217,10 +215,8 @@ def test_stimulus_attrib():
 
 
 def test_stimulus_property():
-    def stim(theta_a, theta_b, h, p):  # implement with mock?
-        theta_a = 5
-        theta_b = 7
-        return theta_a * h + theta_b * p
+    def stim():
+        return "something"
 
     shparams = {"h"}
     sinternals = {"p"}
@@ -238,11 +234,9 @@ def test_stimulus_property():
     assert new_stim.parameters == {"h", "p", "theta_a", "theta_b"}
 
 
-def test_stimulus_frozen():  # Maybe a shorter way to do this?
-    def stim(theta_a, theta_b, h, p):
-        theta_a = 5
-        theta_b = 7
-        return theta_a * h + theta_b * p
+def test_stimulus_frozen():
+    def stim():
+        return "something"
 
     shparams = {"h"}
     sinternals = {"p"}
@@ -262,10 +256,8 @@ def test_stimulus_frozen():  # Maybe a shorter way to do this?
 
 
 def test_integration_attrib():
-    def integration(theta_a, theta_b, h, p):  # implement with mock?
-        theta_a = 5
-        theta_b = 7
-        return theta_a * h + theta_b * p
+    def integration():
+        return "something"
 
     ihparams = {"h"}
     iinternals = {"p"}
@@ -288,10 +280,8 @@ def test_integration_attrib():
 
 
 def test_integration_property():
-    def integration(theta_a, theta_b, h, p):  # implement with mock?
-        theta_a = 5
-        theta_b = 7
-        return theta_a * h + theta_b * p
+    def integration():
+        return "something"
 
     ihparams = {"h"}
     iinternals = {"p"}
@@ -310,10 +300,8 @@ def test_integration_property():
 
 
 def test_integration_frozen():
-    def integration(theta_a, theta_b, h, p):  # implement with mock?
-        theta_a = 5
-        theta_b = 7
-        return theta_a * h + theta_b * p
+    def integration():
+        return "something"
 
     ihparams = {"h"}
     iinternals = {"p"}
@@ -333,10 +321,8 @@ def test_integration_frozen():
 
 
 def test_config_attrib():
-    def stim(theta_a, theta_b, h, p):
-        theta_a = 5
-        theta_b = 7
-        return theta_a * h + theta_b * p
+    def stim():
+        return "something"
 
     shparams = {"h"}
     sinternals = {"p"}
@@ -351,10 +337,8 @@ def test_config_attrib():
         function=stim,
     )
 
-    def integration(theta_a, theta_b, h, p):
-        theta_a = 5
-        theta_b = 7
-        return theta_a * h + theta_b * p
+    def integration():
+        return "something"
 
     ihparams = {"h"}
     iinternals = {"p"}
@@ -378,10 +362,8 @@ def test_config_attrib():
 
 
 def test_config_frozen():
-    def stim(theta_a, theta_b, h, p):
-        theta_a = 5
-        theta_b = 7
-        return theta_a * h + theta_b * p
+    def stim():
+        return "something"
 
     shparams = {"h"}
     sinternals = {"p"}
@@ -396,10 +378,8 @@ def test_config_frozen():
         function=stim,
     )
 
-    def integration(theta_a, theta_b, h, p):
-        theta_a = 5
-        theta_b = 7
-        return theta_a * h + theta_b * p
+    def integration():
+        return "something"
 
     ihparams = {"h"}
     iinternals = {"p"}
@@ -421,8 +401,146 @@ def test_config_frozen():
         conf.run_inputs = {"a", "b", "c"}
 
 
-# def test_config_validate_inputs():
+def test_config_validate_inputs_unexpected_arg():
+    def stim():
+        return "something"
 
-# def test_config_get_model_values():
+    shparams = {"h"}
+    sinternals = {"p"}
+    sinputs = {"theta_a", "theta_b"}
+    name = stim.__name__
+
+    new_stim = core.Stimulus(
+        name=name,
+        hyper_parameters=shparams,
+        internal_values=sinternals,
+        run_inputs=sinputs,
+        function=stim,
+    )
+
+    def integration():
+        return "something"
+
+    ihparams = {"h"}
+    iinternals = {"p"}
+    iinputs = {"theta_a", "theta_b"}
+    name = integration.__name__
+
+    new_integration = core.Integration(
+        name=name,
+        hyper_parameters=ihparams,
+        internal_values=iinternals,
+        stimuli_results=iinputs,
+        function=integration,
+    )
+
+    stims = {"stim": new_stim}
+
+    class Thing:
+        pass
+
+    a = Thing()
+    a.__name__ = "a"
+
+    conf = core.Config(stimuli=stims, integration=new_integration)
+
+    with pytest.raises(TypeError):
+        conf._validate_inputs(
+            model=a, inputs={"theta_a", "theta_b", "theta_c"}
+        )
+
+
+def test_config_validate_inputs_missing_arg():
+    def stim():
+        return "something"
+
+    shparams = {"h"}
+    sinternals = {"p"}
+    sinputs = {"theta_a", "theta_b"}
+    name = stim.__name__
+
+    new_stim = core.Stimulus(
+        name=name,
+        hyper_parameters=shparams,
+        internal_values=sinternals,
+        run_inputs=sinputs,
+        function=stim,
+    )
+
+    def integration():
+        return "something"
+
+    ihparams = {"h"}
+    iinternals = {"p"}
+    iinputs = {"theta_a", "theta_b"}
+    name = integration.__name__
+
+    new_integration = core.Integration(
+        name=name,
+        hyper_parameters=ihparams,
+        internal_values=iinternals,
+        stimuli_results=iinputs,
+        function=integration,
+    )
+
+    stims = {"stim": new_stim}
+
+    class Thing:
+        pass
+
+    a = Thing()
+    a.__name__ = "a"
+
+    conf = core.Config(stimuli=stims, integration=new_integration)
+
+    with pytest.raises(TypeError):
+        conf._validate_inputs(model=a, inputs={"theta_a"})
+
+
+def test_config_get_model_values():
+    def stim():
+        return "something"
+
+    shparams = {"h"}
+    sinternals = {"p"}
+    sinputs = {"theta_a", "theta_b"}
+    name = stim.__name__
+
+    new_stim = core.Stimulus(
+        name=name,
+        hyper_parameters=shparams,
+        internal_values=sinternals,
+        run_inputs=sinputs,
+        function=stim,
+    )
+
+    def integration():
+        return "something"
+
+    ihparams = {"h"}
+    iinternals = {"p"}
+    iinputs = {"theta_a", "theta_b"}
+    name = integration.__name__
+
+    new_integration = core.Integration(
+        name=name,
+        hyper_parameters=ihparams,
+        internal_values=iinternals,
+        stimuli_results=iinputs,
+        function=integration,
+    )
+
+    stims = {"stim": new_stim}
+
+    @attr.s
+    class Foo:
+        hparam = core.hparameter(default=4.0)
+        internal = core.internal(default=3.0)
+
+    conf = core.Config(stimuli=stims, integration=new_integration)
+    model = Foo()
+
+    assert conf.get_model_values(model) == {"hparam": 4.0, "internal": 3.0}
+
 
 # def test_config_run():
