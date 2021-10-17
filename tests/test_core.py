@@ -1,7 +1,23 @@
 import attr
+
 import pytest
 
 from skneuromsi import core
+
+
+# ===============================================================================
+# COMMONN
+# ===============================================================================
+
+
+@attr.s
+class Thing:
+    name = attr.ib()
+
+    @property
+    def __name__(self):
+        return self.name
+
 
 # =============================================================================
 # FUNCTIONS
@@ -83,12 +99,8 @@ def test_get_parameters():  # TODO create more tests for get_parameters
 
 
 def test_stimulus_is_callable():
-    class Thing:
-        pass
 
-    a, b = Thing(), Thing()
-    a.__name__ = "a"
-    b.__name__ = "b"
+    a, b = Thing("a"), Thing("b")
 
     with pytest.raises(TypeError):
 
@@ -100,13 +112,8 @@ def test_stimulus_is_callable():
 
 
 def test_integration_is_callable():
-    class Thing:
-        pass
 
-    a, b, c = Thing(), Thing(), Thing()
-    a.__name__ = "a"
-    b.__name__ = "b"
-    c.__name__ = "c"
+    a, b, c = Thing("a"), Thing("b"), Thing("c")
 
     with pytest.raises(TypeError):
 
@@ -119,12 +126,8 @@ def test_integration_is_callable():
 
 
 def test_integration_unknown_pars():
-    class Thing:
-        pass
 
-    a, b = Thing(), Thing()
-    a.__name__ = "a"
-    b.__name__ = "b"
+    a, b = Thing("a"), Thing("b")
 
     def ms_integration(theta_a, theta_b, h, p):
         theta_a = 5
@@ -543,4 +546,24 @@ def test_config_get_model_values():
     assert conf.get_model_values(model) == {"hparam": 4.0, "internal": 3.0}
 
 
-# def test_config_run():
+def test_run():
+    def stimulus_a(a, h):
+        return a + 1 * h
+
+    def integ(stimulus_a):
+        return stimulus_a + 1
+
+    @core.neural_msi_model
+    class Example:
+
+        # hiper parameters
+        h = core.hparameter()
+
+        # estimulii
+
+        stimuli = [stimulus_a]
+        integration = integ
+
+    model = Example(h=5)
+
+    assert model.run(a=25) == (25 + 1 * 5) + 1
