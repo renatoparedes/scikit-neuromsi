@@ -78,6 +78,14 @@ def test_get_class_field_call_two_times():
     assert internals == {"p"}
 
 
+def test_get_class_fields_no_hiper_no_internal():
+    class Foo:
+        j = attr.ib()  # Works only with attr?
+
+    with pytest.raises(TypeError):
+        core.get_class_fields(Foo)
+
+
 def test_get_parameters():  # TODO create more tests for get_parameters
 
     hparams = {"h"}
@@ -98,6 +106,22 @@ def test_get_parameters():  # TODO create more tests for get_parameters
     assert sinputs == {"theta_a", "theta_b"}
 
 
+def test_get_parameters_no_default():
+
+    hparams = {"h"}
+    internals = {"p"}
+
+    def stim(h, p, theta_a=5, theta_b=7):
+        return theta_a * h + theta_b * p
+
+    name = stim.__name__
+
+    with pytest.raises(TypeError):
+        shparams, sinternals, sinputs = core.get_parameters(
+            name, stim, hparams, internals
+        )
+
+
 def test_stimulus_is_callable():
 
     a, b = Thing("a"), Thing("b")
@@ -112,34 +136,36 @@ def test_stimulus_is_callable():
 
 
 def test_integration_is_callable():
+    def stim():
+        return "something"
 
-    a, b, c = Thing("a"), Thing("b"), Thing("c")
+    c = Thing("c")
 
     with pytest.raises(TypeError):
 
         @core.neural_msi_model
         class Foo:
-            stimulus_a = a
-            stimulus_b = b
+            stimulus_a = stim
+            stimulus_b = stim
             stimuli = [stimulus_a, stimulus_b]
             integration = c
 
 
 def test_integration_unknown_pars():
+    def stim():
+        return "something"
 
-    a, b = Thing("a"), Thing("b")
-
-    def ms_integration(theta_a, theta_b, h, p):
+    def ms_integration(theta_a, theta_b, h, p, j):
         theta_a = 5
         theta_b = 7
-        return theta_a * h + theta_b * p
+        return theta_a * h + theta_b * p + j
 
     with pytest.raises(TypeError):
 
         @core.neural_msi_model
         class Foo:
-            stimulus_a = a
-            stimulus_b = b
+            stimulus_a = stim
+            stimulus_b = stim
             stimuli = [stimulus_a, stimulus_b]
             integration = ms_integration
 
