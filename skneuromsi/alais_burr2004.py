@@ -24,12 +24,12 @@ def visual_stimulus(posible_locations, visual_sigma, visual_location):
 
 
 def multisensory_stimulus(
-    multisensory_sigma,
     posible_locations,
     visual_location,
     auditory_location,
     visual_weight,
     auditory_weight,
+    multisensory_sigma,
 ):
     """
     Computes multisensory estimate
@@ -74,7 +74,14 @@ class AlaisBurr2004:
             self.visual_sigma ** 2 + self.auditory_sigma ** 2
         )
 
-    multisensory_sigma = sknm.internal(default=3.0)
+    multisensory_sigma = sknm.internal()
+
+    @multisensory_sigma.default
+    def _multisensory_sigma_default(self):
+        return np.sqrt(
+            (self.visual_sigma ** 2 * self.auditory_sigma ** 2)
+            / (self.auditory_sigma ** 2 + self.visual_sigma ** 2)
+        )
 
     # estimulii!
     stimuli = [auditory_stimulus, visual_stimulus]
