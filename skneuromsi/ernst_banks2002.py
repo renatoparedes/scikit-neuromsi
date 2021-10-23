@@ -5,31 +5,31 @@ import numpy as np
 from . import core
 
 
-def haptic_estimator(haptic_sigma, posible_locations, haptic_location):
+def haptic_estimator(haptic_sigma, posible_heights, haptic_height):
     sigma = haptic_sigma
-    location = haptic_location
-    plocations = posible_locations
+    height = haptic_height
+    pheights = posible_heights
 
     return (1 / np.sqrt(2 * np.pi * sigma ** 2)) * np.exp(
-        -1 * (((plocations - location) ** 2) / (2 * sigma ** 2))
+        -1 * (((pheights - height) ** 2) / (2 * sigma ** 2))
     )
 
 
-def visual_estimator(posible_locations, visual_sigma, visual_location):
-    plocations = posible_locations
-    location = visual_location
+def visual_estimator(posible_heights, visual_sigma, visual_height):
+    pheights = posible_heights
+    height = visual_height
     sigma = visual_sigma
 
     return (1 / np.sqrt(2 * np.pi * sigma ** 2)) * np.exp(
-        -1 * (((plocations - location) ** 2) / (2 * sigma ** 2))
+        -1 * (((pheights - height) ** 2) / (2 * sigma ** 2))
     )
 
 
 def multisensory_estimator(
     multisensory_sigma,
-    posible_locations,
-    visual_location,
-    haptic_location,
+    posible_heights,
+    visual_height,
+    haptic_height,
     visual_weight,
     haptic_weight,
 ):
@@ -39,13 +39,11 @@ def multisensory_estimator(
 
     sigma = multisensory_sigma
 
-    location = (
-        visual_weight * visual_location + haptic_weight * haptic_location
-    )
-    plocations = posible_locations
+    height = visual_weight * visual_height + haptic_weight * haptic_height
+    pheights = posible_heights
 
     return (1 / np.sqrt(2 * np.pi * sigma ** 2)) * np.exp(
-        -1 * (((plocations - location) ** 2) / (2 * sigma ** 2))
+        -1 * (((pheights - height) ** 2) / (2 * sigma ** 2))
     )
 
 
@@ -53,10 +51,8 @@ def multisensory_estimator(
 class ErnstBanks2002:
 
     # hiper parameters
-    posible_locations = core.hparameter(
-        factory=lambda: np.arange(-20, 20, 0.01) # TODO fix locations
-    )
-    haptic_sigma = core.hparameter(default=4)
+    posible_heights = core.hparameter(factory=lambda: np.arange(49, 61, 0.01))
+    haptic_sigma = core.hparameter(default=1)
     visual_sigma = core.hparameter(default=1)
 
     # internals

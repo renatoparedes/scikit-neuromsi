@@ -3,7 +3,7 @@ import numpy as np
 from . import core
 
 
-def auditory_stimulus(auditory_sigma, posible_locations, auditory_location):
+def auditory_estimator(auditory_sigma, posible_locations, auditory_location):
     sigma = auditory_sigma
     location = auditory_location
     plocations = posible_locations
@@ -13,7 +13,7 @@ def auditory_stimulus(auditory_sigma, posible_locations, auditory_location):
     )
 
 
-def visual_stimulus(posible_locations, visual_sigma, visual_location):
+def visual_estimator(posible_locations, visual_sigma, visual_location):
     plocations = posible_locations
     location = visual_location
     sigma = visual_sigma
@@ -23,7 +23,7 @@ def visual_stimulus(posible_locations, visual_sigma, visual_location):
     )
 
 
-def multisensory_stimulus(
+def multisensory_estimator(
     posible_locations,
     visual_location,
     auditory_location,
@@ -55,7 +55,7 @@ class AlaisBurr2004:
         factory=lambda: np.arange(-20, 20, 0.01)
     )
     auditory_sigma = core.hparameter(default=3.0)
-    visual_sigma = core.hparameter(default=4.0)
+    visual_sigma = core.hparameter(default=3.0)
 
     # internals
     auditory_weight = core.internal()
@@ -84,5 +84,5 @@ class AlaisBurr2004:
         )
 
     # estimulii!
-    stimuli = [auditory_stimulus, visual_stimulus]
-    integration = multisensory_stimulus
+    stimuli = [auditory_estimator, visual_estimator]
+    integration = multisensory_estimator
