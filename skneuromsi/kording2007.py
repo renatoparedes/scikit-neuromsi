@@ -119,25 +119,25 @@ class Kording2007:
     # TODO look up for default values
     # 1 =  auditory, 2 = visual
 
-    auditory_sigma = core.hparameter()
+    auditory_sigma = core.hparameter(default=3)
     auditory_var = core.hparameter()
 
     @auditory_var.default
     def _auditory_var_default(self):
-        return self.auditory_var ** 2
+        return self.auditory_sigma ** 2
 
-    visual_sigma = core.hparameter()
+    visual_sigma = core.hparameter(default=3)
     visual_var = core.hparameter()
 
     @visual_var.default
     def _visual_var_default(self):
-        return self.visual_var ** 2
+        return self.visual_sigma ** 2
 
     N = core.hparameter(default=2)  # TODO double check.
 
     # Inputs
-    auditory_location = core.hparameter()
-    visual_location = core.hparameter()
+    auditory_location = core.hparameter(default=0)
+    visual_location = core.hparameter(default=0)
 
     auditory_input = core.hparameter()
 
@@ -155,28 +155,6 @@ class Kording2007:
             self.N
         )
 
-    dis_common = core.hparameter()
-
-    @dis_common.default
-    def _dis_common_default(self):
-        return (
-            (self.auditory_input - self.visual_input) ** 2 * self.prior_var
-            + (self.auditory_input - self.prior_mu) ** 2 * self.visual_var
-            + (self.visual_input - self.prior_mu) ** 2 * self.auditory_var
-        )
-
-    dis_auditory = core.hparameter()
-
-    @dis_auditory.default
-    def _dis_auditory_default(self):
-        return (self.auditory_input - self.prior_mu) ** 2
-
-    dis_visual = core.hparameter()
-
-    @dis_visual.default
-    def _dis_visual_default(self):
-        return (self.visual_input - self.prior_mu) ** 2
-
     single_stim = core.hparameter()
 
     @single_stim.default
@@ -186,7 +164,7 @@ class Kording2007:
     # internals
 
     p_common = core.internal(default=0.5)
-    prior_sigma = core.internal()
+    prior_sigma = core.internal(default=0.5)
     prior_var = core.internal()
 
     strategy = core.internal(default="Averaging")
@@ -195,7 +173,7 @@ class Kording2007:
     def _prior_var_default(self):
         return self.prior_sigma ** 2
 
-    prior_mu = core.internal()
+    prior_mu = core.internal(default=0)
 
     multisensory_com_var = core.internal()
 
@@ -238,3 +216,28 @@ class Kording2007:
     @visual_var_hat.default
     def _visual_var_hat_default(self):
         return 1 / (1 / self.visual_var + 1 / self.prior_var)
+
+    dis_common = core.hparameter()
+
+    @dis_common.default
+    def _dis_common_default(self):
+        return (
+            (self.auditory_input - self.visual_input) ** 2 * self.prior_var
+            + (self.auditory_input - self.prior_mu) ** 2 * self.visual_var
+            + (self.visual_input - self.prior_mu) ** 2 * self.auditory_var
+        )
+
+    dis_auditory = core.hparameter()
+
+    @dis_auditory.default
+    def _dis_auditory_default(self):
+        return (self.auditory_input - self.prior_mu) ** 2
+
+    dis_visual = core.hparameter()
+
+    @dis_visual.default
+    def _dis_visual_default(self):
+        return (self.visual_input - self.prior_mu) ** 2
+
+    stimuli = [auditory_estimator, visual_estimator]
+    integration = multisensory_estimator

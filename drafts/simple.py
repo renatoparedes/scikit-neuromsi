@@ -1,6 +1,5 @@
 import ipdb
-from skneuromsi.alais_burr2004 import AlaisBurr2004, visual_stimulus
+from skneuromsi.kording2007 import Kording2007
 
-model = AlaisBurr2004()
-
-model.run(visual_location=-20, auditory_location=0)
+model = Kording2007()
+model.run()
