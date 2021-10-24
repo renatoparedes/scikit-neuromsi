@@ -32,6 +32,8 @@ def multisensory_estimator(
     haptic_height,
     visual_weight,
     haptic_weight,
+    haptic_estimator,
+    visual_estimator,
 ):
     """
     Computes multisensory estimate
@@ -42,9 +44,15 @@ def multisensory_estimator(
     height = visual_weight * visual_height + haptic_weight * haptic_height
     pheights = posible_heights
 
-    return (1 / np.sqrt(2 * np.pi * sigma ** 2)) * np.exp(
+    multisensory_res = (1 / np.sqrt(2 * np.pi * sigma ** 2)) * np.exp(
         -1 * (((pheights - height) ** 2) / (2 * sigma ** 2))
     )
+
+    return {
+        "haptic": haptic_estimator,
+        "visual": visual_estimator,
+        "multisensory": multisensory_res,
+    }
 
 
 @core.neural_msi_model

@@ -11,7 +11,7 @@ from skneuromsi.ernst_banks2002 import ErnstBanks2002
 def test_ErnstBanks2002_run_average_height(visual, haptic, expected):
     model = ErnstBanks2002()
     out = model.run(visual_height=visual, haptic_height=haptic)
-    idx = out["multisensory_estimator"].argmax()
+    idx = out["multisensory"].argmax()
     m_loc = model.posible_heights[idx]
 
     np.testing.assert_almost_equal(m_loc, expected)

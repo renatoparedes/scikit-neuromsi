@@ -124,10 +124,7 @@ class Config:
         kwargs = {k: namespace[k] for k in self.integration.parameters}
         result = self.integration.function(**kwargs)
 
-        res = stimuli_results.copy()
-        res[self.integration.name] = result
-
-        return res
+        return result
 
 
 # =============================================================================

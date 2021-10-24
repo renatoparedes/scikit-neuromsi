@@ -30,6 +30,8 @@ def multisensory_estimator(
     visual_weight,
     auditory_weight,
     multisensory_sigma,
+    auditory_estimator,
+    visual_estimator,
 ):
     """
     Computes multisensory estimate
@@ -42,9 +44,15 @@ def multisensory_estimator(
     )
     plocations = posible_locations
 
-    return (1 / np.sqrt(2 * np.pi * sigma ** 2)) * np.exp(
+    multisensory_res = (1 / np.sqrt(2 * np.pi * sigma ** 2)) * np.exp(
         -1 * (((plocations - location) ** 2) / (2 * sigma ** 2))
     )
+
+    return {
+        "auditory": auditory_estimator,
+        "visual": visual_estimator,
+        "multisensory": multisensory_res,
+    }
 
 
 @core.neural_msi_model

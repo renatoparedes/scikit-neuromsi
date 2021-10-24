@@ -11,7 +11,7 @@ from skneuromsi.alais_burr2004 import AlaisBurr2004
 def test_AlaisBurr2004_run_zero(visual, auditory, expected):
     model = AlaisBurr2004()
     out = model.run(visual_location=visual, auditory_location=auditory)
-    idx = out["multisensory_estimator"].argmax()
+    idx = out["multisensory"].argmax()
     m_loc = model.posible_locations[idx]
 
     np.testing.assert_almost_equal(m_loc, expected)

@@ -592,4 +592,4 @@ def test_run():
 
     model = Example(h=5)
 
-    assert model.run(a=25)["integ"] == (25 + 1 * 5) + 1
+    assert model.run(a=25) == (25 + 1 * 5) + 1
