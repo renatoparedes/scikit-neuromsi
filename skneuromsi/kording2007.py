@@ -2,6 +2,8 @@
 # https://github.com/multisensoryperceptionlab/BCIT
 # https://github.com/multisensoryperceptionlab/BCIT/blob/master/BCIM%20ToolBox/bciModel.m
 
+# As implemented in the BCIM Toolbox
+
 import numpy as np
 
 from . import core
@@ -105,13 +107,13 @@ def multisensory_estimator(
             visual_hat = (pC > 0.5) * multisensory_hat + (
                 pC <= 0.5
             ) * visual_hat_ind
-        # Model Matching
+        # Model Averaging
         elif strategy == "Averaging":
             auditory_hat = (pC) * multisensory_hat + (
                 1 - pC
             ) * auditory_hat_ind
             visual_hat = (pC) * multisensory_hat + (1 - pC) * visual_hat_ind
-        # Model Averaging
+        # Model Matching
         elif strategy == "Matching":
             match = 1 - np.random.rand(N)
             auditory_hat = (pC > match) * multisensory_hat + (
@@ -143,7 +145,7 @@ class Kording2007:
         factory=lambda: np.linspace(-42, 42, 50, retstep=True)
     )
 
-    N = core.hparameter(default=10000)
+    N = core.hparameter(default=100000)
 
     auditory_sigma = core.hparameter(default=2)
     auditory_var = core.hparameter()
