@@ -8,53 +8,77 @@ from . import core
 
 
 def auditory_estimator(
-    auditory_input, auditory_var, auditory_var_hat, prior_var, N, prior_mu
+    auditory_location, auditory_var, auditory_var_hat, prior_var, N, prior_mu
 ):
-    return (
+    auditory_input = auditory_location + np.sqrt(
+        auditory_var
+    ) * np.random.randn(N)
+
+    auditory_hat_ind = (
         (auditory_input / auditory_var) + (np.ones(N) * prior_mu) / prior_var
     ) * auditory_var_hat
 
+    return {
+        "auditory_input": auditory_input,
+        "auditory_hat_ind": auditory_hat_ind,
+    }
+
 
 def visual_estimator(
-    visual_input, visual_var, visual_var_hat, prior_var, N, prior_mu
+    visual_location, visual_var, visual_var_hat, prior_var, N, prior_mu
 ):
-    return (
+
+    visual_input = visual_location + np.sqrt(visual_var) * np.random.randn(N)
+
+    visual_hat_ind = (
         (visual_input / visual_var) + (np.ones(N) * prior_mu) / prior_var
     ) * visual_var_hat
+
+    return {"visual_input": visual_input, "visual_hat_ind": visual_hat_ind}
 
 
 def multisensory_estimator(
     auditory_estimator,
     visual_estimator,
-    auditory_input,
     auditory_var,
-    visual_input,
     visual_var,
     prior_var,
     prior_mu,
     multisensory_var_hat,
     N,
-    dis_common,
-    dis_visual,
-    dis_auditory,
-    multisensory_com_var,
+    multisensory_var,
     auditory_ind_var,
     visual_ind_var,
     p_common,
-    single_stim,
     strategy,
+    posible_locations,
 ):
+    # Inputs
+    auditory_input = auditory_estimator["auditory_input"]
+    visual_input = visual_estimator["visual_input"]
+    single_stim = np.sum(np.isnan([auditory_input, visual_input]))
 
     # Perceived location of causes
-    multisensory_estimator_common = (
+    auditory_hat_ind = auditory_estimator["auditory_hat_ind"]
+    visual_hat_ind = visual_estimator["visual_hat_ind"]
+    multisensory_hat = (
         (auditory_input / auditory_var)
         + (visual_input / visual_var)
         + (np.ones(N) * prior_mu) / prior_var
     ) * multisensory_var_hat
 
+    # Perceived distances
+    dis_common = (
+        (auditory_input - visual_input) ** 2 * prior_var
+        + (auditory_input - prior_mu) ** 2 * visual_var
+        + (visual_input - prior_mu) ** 2 * auditory_var
+    )
+    dis_auditory = (auditory_input - prior_mu) ** 2
+    dis_visual = (visual_input - prior_mu) ** 2
+
     # Likelihood calculations
-    likelihood_common = np.exp(-dis_common / (2 * multisensory_com_var)) / (
-        2 * np.pi * np.sqrt(multisensory_com_var)
+    likelihood_common = np.exp(-dis_common / (2 * multisensory_var)) / (
+        2 * np.pi * np.sqrt(multisensory_var)
     )
     likelihood_auditory = np.exp(
         -dis_auditory / (2 * auditory_ind_var)
@@ -69,102 +93,75 @@ def multisensory_estimator(
 
     # Independent Causes
     if single_stim:
-        s1_hat = auditory_estimator
-        s2_hat = visual_estimator
+        auditory_hat = auditory_hat_ind
+        visual_hat = visual_hat_ind
     else:
         # Decision Strategies
         # Model Selection
         if strategy == "Selection":
-            s1_hat = (pC > 0.5) * multisensory_estimator_common + (
+            auditory_hat = (pC > 0.5) * multisensory_hat + (
                 pC <= 0.5
-            ) * auditory_estimator
-            s2_hat = (pC > 0.5) * multisensory_estimator_common + (
+            ) * auditory_hat_ind
+            visual_hat = (pC > 0.5) * multisensory_hat + (
                 pC <= 0.5
-            ) * visual_estimator
+            ) * visual_hat_ind
         # Model Matching
-        elif strategy == "Matching":
-            s1_hat = (pC) * multisensory_estimator_common + (
-                1 - pC
-            ) * auditory_estimator
-            s2_hat = (pC) * multisensory_estimator_common + (
-                1 - pC
-            ) * visual_estimator
-        # Model Averaging
         elif strategy == "Averaging":
+            auditory_hat = (pC) * multisensory_hat + (
+                1 - pC
+            ) * auditory_hat_ind
+            visual_hat = (pC) * multisensory_hat + (1 - pC) * visual_hat_ind
+        # Model Averaging
+        elif strategy == "Matching":
             match = 1 - np.random.rand(N)
-            s1_hat = (pC > match) * multisensory_estimator_common + (
+            auditory_hat = (pC > match) * multisensory_hat + (
                 pC <= match
-            ) * auditory_estimator
-            s2_hat = (pC > match) * multisensory_estimator_common + (
+            ) * auditory_hat_ind
+            visual_hat = (pC > match) * multisensory_hat + (
                 pC <= match
-            ) * visual_estimator
+            ) * visual_hat_ind
 
     # Prediction of location estimates
-    # h1 = np.hist(s1_hat, space)
-    # h2 = np.hist(s2_hat, space)
+    step = posible_locations[1]
+    edges = posible_locations[0] - step / 2
+    edges = np.append(edges, edges[-1] + step)
 
-    # pred1 = bsxfun(@rdivide,h1,np.sum(h1))
-    # pred2 = bsxfun(@rdivide,h2,np.sum(h2))
+    auditory_estimates = np.histogram(auditory_hat, edges)[0]
+    visual_estimates = np.histogram(visual_hat, edges)[0]
 
-    pred1 = s1_hat
-    pred2 = s2_hat
+    pred_auditory = auditory_estimates / np.sum(auditory_estimates, axis=0)
+    pred_visual = visual_estimates / np.sum(visual_estimates, axis=0)
 
-    return pred1, pred2
+    return {"auditory": pred_auditory, "visual": pred_visual}
 
 
 @core.neural_msi_model
 class Kording2007:
 
     # hiperparameters
-    # TODO look up for default values
-    # 1 =  auditory, 2 = visual
+    posible_locations = core.hparameter(
+        factory=lambda: np.linspace(-42, 42, 50, retstep=True)
+    )
 
-    auditory_sigma = core.hparameter(default=3)
+    N = core.hparameter(default=10000)
+
+    auditory_sigma = core.hparameter(default=2)
     auditory_var = core.hparameter()
 
     @auditory_var.default
     def _auditory_var_default(self):
         return self.auditory_sigma ** 2
 
-    visual_sigma = core.hparameter(default=3)
+    visual_sigma = core.hparameter(default=10)
     visual_var = core.hparameter()
 
     @visual_var.default
     def _visual_var_default(self):
         return self.visual_sigma ** 2
 
-    N = core.hparameter(default=2)  # TODO double check.
-
-    # Inputs
-    auditory_location = core.hparameter(default=0)
-    visual_location = core.hparameter(default=0)
-
-    auditory_input = core.hparameter()
-
-    @auditory_input.default
-    def _auditory_input_default(self):
-        return self.auditory_location + self.auditory_sigma * np.random.randn(
-            self.N
-        )
-
-    visual_input = core.hparameter()
-
-    @visual_input.default
-    def _visual_input_default(self):
-        return self.visual_location + self.visual_sigma * np.random.randn(
-            self.N
-        )
-
-    single_stim = core.hparameter()
-
-    @single_stim.default
-    def _single_stim_default(self):
-        return np.sum(np.isnan([self.auditory_location, self.visual_location]))
-
     # internals
-
     p_common = core.internal(default=0.5)
-    prior_sigma = core.internal(default=0.5)
+    prior_sigma = core.internal(default=20)
     prior_var = core.internal()
 
     strategy = core.internal(default="Averaging")
@@ -175,10 +172,10 @@ class Kording2007:
 
     prior_mu = core.internal(default=0)
 
-    multisensory_com_var = core.internal()
+    multisensory_var = core.internal()
 
-    @multisensory_com_var.default
-    def _multisensory_com_var_default(self):
+    @multisensory_var.default
+    def _multisensory_var_default(self):
         return (
             self.auditory_var * self.visual_var
             + self.auditory_var * self.prior_var
@@ -217,27 +214,6 @@ class Kording2007:
     def _visual_var_hat_default(self):
         return 1 / (1 / self.visual_var + 1 / self.prior_var)
 
-    dis_common = core.hparameter()
-
-    @dis_common.default
-    def _dis_common_default(self):
-        return (
-            (self.auditory_input - self.visual_input) ** 2 * self.prior_var
-            + (self.auditory_input - self.prior_mu) ** 2 * self.visual_var
-            + (self.visual_input - self.prior_mu) ** 2 * self.auditory_var
-        )
-
-    dis_auditory = core.hparameter()
-
-    @dis_auditory.default
-    def _dis_auditory_default(self):
-        return (self.auditory_input - self.prior_mu) ** 2
-
-    dis_visual = core.hparameter()
-
-    @dis_visual.default
-    def _dis_visual_default(self):
-        return (self.visual_input - self.prior_mu) ** 2
-
+    # estimators
     stimuli = [auditory_estimator, visual_estimator]
     integration = multisensory_estimator
