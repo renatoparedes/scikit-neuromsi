@@ -1,4 +1,4 @@
-name: Scikit-Neuromsi
+name: scikit-neuromsi
 
 on:
   - push
