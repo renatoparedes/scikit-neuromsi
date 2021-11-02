@@ -3,28 +3,70 @@ import numpy as np
 from . import core
 
 
-def auditory_estimator(auditory_sigma, posible_locations, auditory_location):
+def auditory_estimator(auditory_sigma, possible_locations, auditory_location):
+    """Computes the auditory estimate.
+
+    Parameters
+    ----------
+    auditory_sigma: float
+        Standard deviation of the auditory estimate.
+    possible_locations: ndarray
+        Numpy array containing all the possible locations where the stimulus
+        could be delivered.
+    auditory_location: float
+        Location in which the auditory stimulus is delivered.
+
+    Returns
+    ----------
+    auditory_estimate: ndarray
+        Numpy array containing the estimated location in which the auditory
+        stimulus was delivered.
+    """
+
     sigma = auditory_sigma
     location = auditory_location
-    plocations = posible_locations
+    plocations = possible_locations
 
-    return (1 / np.sqrt(2 * np.pi * sigma ** 2)) * np.exp(
+    auditory_estimate = (1 / np.sqrt(2 * np.pi * sigma ** 2)) * np.exp(
         -1 * (((plocations - location) ** 2) / (2 * sigma ** 2))
     )
 
+    return auditory_estimate
 
-def visual_estimator(posible_locations, visual_sigma, visual_location):
-    plocations = posible_locations
+
+def visual_estimator(possible_locations, visual_sigma, visual_location):
+    """Computes the visual estimate.
+
+    Parameters
+    ----------
+    visual_sigma: float
+        Standard deviation of the visual estimate.
+    possible_locations: ndarray
+        Numpy array containing all the possible locations where the stimulus
+        could be delivered.
+    visual_location: float
+        Location in which the visual stimulus is delivered.
+
+    Returns
+    ----------
+    visual_estimate: ndarray
+        Numpy array containing the estimated location in which the visual
+        stimulus was delivered.
+    """
+
+    plocations = possible_locations
     location = visual_location
     sigma = visual_sigma
 
-    return (1 / np.sqrt(2 * np.pi * sigma ** 2)) * np.exp(
+    visual_estimate = (1 / np.sqrt(2 * np.pi * sigma ** 2)) * np.exp(
         -1 * (((plocations - location) ** 2) / (2 * sigma ** 2))
     )
 
+    return visual_estimate
+
 
 def multisensory_estimator(
-    posible_locations,
+    possible_locations,
     visual_location,
     auditory_location,
     visual_weight,
@@ -34,7 +76,47 @@ def multisensory_estimator(
     visual_estimator,
 ):
     """
-    Computes multisensory estimate
+    Computes the multisensory estimate.
+
+    Parameters
+    ----------
+    possible_locations: ndarray
+        Numpy array containing all the possible locations where the stimulus
+        could be delivered.
+    visual_location: float
+        Location in which the visual stimulus is delivered.
+    auditory_location: float
+        Location in which the auditory stimulus is delivered.
+    visual_weight: float
+        Relative weight of the visual modality.
+    auditory_weight: float
+        Relative weight of the auditory modality.
+    multisensory_sigma: float
+        Standard deviation of the multisensory estimate.
+    auditory_estimator: ndarray
+        Results of the auditory estimator. Numpy array containing
+        the estimated location in which the auditory stimulus
+        was delivered.
+    visual_estimator: ndarray
+        Results of the visual estimator. Numpy array containing
+        the estimated location in which the visual stimulus
+        was delivered.
+
+    Returns
+    ----------
+    res: dict
+        Results of the multisensory integration model.
+        Includes these fields:
+        - "auditory": Auditory estimate
+        - "visual": Visual estimate
+        - "multisensory": Multisensory estimate
+
+    References
+    ----------
+    .. [1] D. Alais and D. Burr, “The Ventriloquist Effect Results from
+        Near-Optimal Bimodal Integration,” Current Biology, vol. 14, no. 3,
+        pp. 257–262, Feb. 2004, doi: 10.1016/j.cub.2004.01.029.
+
     """
 
     sigma = multisensory_sigma
@@ -42,24 +124,50 @@ def multisensory_estimator(
     location = (
         visual_weight * visual_location + auditory_weight * auditory_location
     )
-    plocations = posible_locations
+    plocations = possible_locations
 
     multisensory_res = (1 / np.sqrt(2 * np.pi * sigma ** 2)) * np.exp(
         -1 * (((plocations - location) ** 2) / (2 * sigma ** 2))
     )
 
-    return {
+    res = {
         "auditory": auditory_estimator,
         "visual": visual_estimator,
         "multisensory": multisensory_res,
     }
 
+    return res
+
 
 @core.neural_msi_model
 class AlaisBurr2004:
+    """Class that implements the Near-optimal Bimodal Integration
+    employed by Alais and Burr to reproduce the Ventriloquist Effect _[1].
+
+    Attributes
+    ----------
+    possible_locations: skneuromsi.hparameter
+        All the possible locations where the stimulus
+        could be delivered.
+    auditory_sigma: skneuromsi.hparameter
+        Standard deviation of the auditory estimate.
+    visual_sigma: skneuromsi.hparameter
+        Standard deviation of the visual estimate.
+    auditory_weight: skneuromsi.internal
+        Relative weight of the auditory modality.
+    visual_weight: skneuromsi.internal
+        Relative weight of the visual modality.
+    multisensory_sigma: skneuromsi.internal
+        Standard deviation of the multisensory estimate.
+    stimuli: list of callable
+        List containing the functions employed for the
+        computation of unisensory estimates.
+    integration: callable
+        Function to compute the multisensory estimate
+    """
 
     # hiper parameters
-    posible_locations = core.hparameter(
+    possible_locations = core.hparameter(
         factory=lambda: np.arange(-20, 20, 0.01)
     )
     auditory_sigma = core.hparameter(default=3.0)
