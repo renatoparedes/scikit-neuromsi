@@ -8,17 +8,17 @@ def auditory_estimator(auditory_sigma, possible_locations, auditory_location):
 
     Parameters
     ----------
-    auditory_sigma: float
+    auditory_sigma: ``float``
         Standard deviation of the auditory estimate.
-    possible_locations: ndarray
+    possible_locations: ``ndarray``
         Numpy array containing all the possible locations where the stimulus
         could be delivered.
-    auditory_location: float
+    auditory_location: ``float``
         Location in which the auditory stimulus is delivered.
 
     Returns
     ----------
-    auditory_estimate: ndarray
+    auditory_estimate: ``ndarray``
         Numpy array containing the estimated location in which the auditory
         stimulus was delivered.
     """
@@ -39,17 +39,17 @@ def visual_estimator(possible_locations, visual_sigma, visual_location):
 
     Parameters
     ----------
-    visual_sigma: float
+    visual_sigma: ``float``
         Standard deviation of the visual estimate.
-    possible_locations: ndarray
+    possible_locations: ``ndarray``
         Numpy array containing all the possible locations where the stimulus
         could be delivered.
-    visual_location: float
+    visual_location: ``float``
         Location in which the visual stimulus is delivered.
 
     Returns
     ----------
-    visual_estimate: ndarray
+    visual_estimate: ``ndarray``
         Numpy array containing the estimated location in which the visual
         stimulus was delivered.
     """
@@ -80,36 +80,37 @@ def multisensory_estimator(
 
     Parameters
     ----------
-    possible_locations: ndarray
+    possible_locations: ``ndarray``
         Numpy array containing all the possible locations where the stimulus
         could be delivered.
-    visual_location: float
+    visual_location: ``float``
         Location in which the visual stimulus is delivered.
-    auditory_location: float
+    auditory_location: ``float``
         Location in which the auditory stimulus is delivered.
-    visual_weight: float
+    visual_weight: ``float``
         Relative weight of the visual modality.
-    auditory_weight: float
+    auditory_weight: ``float``
         Relative weight of the auditory modality.
-    multisensory_sigma: float
+    multisensory_sigma: ``float``
         Standard deviation of the multisensory estimate.
-    auditory_estimator: ndarray
+    auditory_estimator: ``ndarray``
         Results of the auditory estimator. Numpy array containing
         the estimated location in which the auditory stimulus
         was delivered.
-    visual_estimator: ndarray
+    visual_estimator: ``ndarray``
         Results of the visual estimator. Numpy array containing
         the estimated location in which the visual stimulus
         was delivered.
 
     Returns
     ----------
-    res: dict
+    res: ``dict``
         Results of the multisensory integration model.
         Includes these fields:
-        - "auditory": Auditory estimate
-        - "visual": Visual estimate
-        - "multisensory": Multisensory estimate
+
+        * *"auditory"*: Auditory estimate
+        * *"visual"*: Visual estimate
+        * *"multisensory"*: Multisensory estimate
 
     """
 
@@ -140,24 +141,24 @@ class AlaisBurr2004:
 
     Attributes
     ----------
-    possible_locations: skneuromsi.hparameter
+    possible_locations: ``skneuromsi.hparameter``
         All the possible locations where the stimulus
         could be delivered.
-    auditory_sigma: skneuromsi.hparameter
+    auditory_sigma: ``skneuromsi.hparameter``
         Standard deviation of the auditory estimate.
-    visual_sigma: skneuromsi.hparameter
+    visual_sigma: ``skneuromsi.hparameter``
         Standard deviation of the visual estimate.
-    auditory_weight: skneuromsi.internal
+    auditory_weight: ``skneuromsi.internal``
         Relative weight of the auditory modality.
-    visual_weight: skneuromsi.internal
+    visual_weight: ``skneuromsi.internal``
         Relative weight of the visual modality.
-    multisensory_sigma: skneuromsi.internal
+    multisensory_sigma: ``skneuromsi.internal``
         Standard deviation of the multisensory estimate.
-    stimuli: list of callable
+    stimuli: ``list`` of ``callable``
         List containing the functions employed for the
         computation of unisensory estimates.
-    integration: callable
-        Function to compute the multisensory estimate
+    integration: ``callable``
+        Function to compute the multisensory estimate.
 
     References
     ----------
@@ -199,6 +200,6 @@ class AlaisBurr2004:
             / (self.auditory_sigma ** 2 + self.visual_sigma ** 2)
         )
 
-    # estimulii!
+    # estimators
     stimuli = [auditory_estimator, visual_estimator]
     integration = multisensory_estimator
