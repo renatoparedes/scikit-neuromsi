@@ -164,6 +164,12 @@ class AlaisBurr2004:
         computation of unisensory estimates.
     integration: callable
         Function to compute the multisensory estimate
+
+    References
+    ----------
+    .. [1] D. Alais and D. Burr, “The Ventriloquist Effect Results from
+        Near-Optimal Bimodal Integration,” Current Biology, vol. 14, no. 3,
+        pp. 257–262, Feb. 2004, doi: 10.1016/j.cub.2004.01.029.
     """
 
     # hiper parameters
