@@ -111,12 +111,6 @@ def multisensory_estimator(
         - "visual": Visual estimate
         - "multisensory": Multisensory estimate
 
-    References
-    ----------
-    .. [1] D. Alais and D. Burr, “The Ventriloquist Effect Results from
-        Near-Optimal Bimodal Integration,” Current Biology, vol. 14, no. 3,
-        pp. 257–262, Feb. 2004, doi: 10.1016/j.cub.2004.01.029.
-
     """
 
     sigma = multisensory_sigma
@@ -142,7 +136,7 @@ def multisensory_estimator(
 @core.neural_msi_model
 class AlaisBurr2004:
     """Class that implements the Near-optimal Bimodal Integration
-    employed by Alais and Burr to reproduce the Ventriloquist Effect _[1].
+    employed by Alais and Burr to reproduce the Ventriloquist Effect [1]_.
 
     Attributes
     ----------
