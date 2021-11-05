@@ -15,8 +15,8 @@ def test_Kording2007_run(visual, auditory, visual_expected, auditory_expected):
     a_idx = out["auditory"].argmax()
     v_idx = out["visual"].argmax()
 
-    a_loc = model.posible_locations[0][a_idx]
-    v_loc = model.posible_locations[0][v_idx]
+    a_loc = model.possible_locations[0][a_idx]
+    v_loc = model.possible_locations[0][v_idx]
 
     np.testing.assert_almost_equal(a_loc, auditory_expected, 2)
     np.testing.assert_almost_equal(v_loc, visual_expected, 2)

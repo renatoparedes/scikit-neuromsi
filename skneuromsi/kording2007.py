@@ -1,17 +1,41 @@
-# https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0000943
-# https://github.com/multisensoryperceptionlab/BCIT
-# https://github.com/multisensoryperceptionlab/BCIT/blob/master/BCIM%20ToolBox/bciModel.m
-
-# As implemented in the BCIM Toolbox
-
 import numpy as np
 
 from . import core
 
 
 def auditory_estimator(
-    auditory_location, auditory_var, auditory_var_hat, prior_var, N, prior_mu
+    auditory_location, auditory_var, auditory_var_hat, prior_var, prior_mu, N
 ):
+    """Computes the auditory estimate.
+
+    Parameters
+    ----------
+    auditory_location: ``float``
+        Location in which the auditory stimulus is delivered.
+    auditory_var: ``float``
+        Variance of the auditory signal.
+    auditory_var_hat: ``float``
+        Estimated variance of the auditory signal.
+    prior_var: ``float``
+        Variance of the prior distribuion of the stimulus location.
+    prior_mu: ``float``
+        Mean of the prior distribuion of the stimulus location.
+    N: ``float``
+        Number of Monte Carlo samples to take in computing the model estimates.
+
+
+    Returns
+    ----------
+    auditory_estimate: ``dict``
+        Results of the auditory unimodal estimator.
+        Includes these fields:
+
+        * *"auditory_input"*: Numpy array containing the received
+            auditory stimuli
+        * *"auditory_hat_ind"*: Numpy array containing the estimated
+            auditory location for an independent cause.
+    """
+
     auditory_input = auditory_location + np.sqrt(
         auditory_var
     ) * np.random.randn(N)
@@ -20,15 +44,46 @@ def auditory_estimator(
         (auditory_input / auditory_var) + (np.ones(N) * prior_mu) / prior_var
     ) * auditory_var_hat
 
-    return {
+    auditory_estimate = {
         "auditory_input": auditory_input,
         "auditory_hat_ind": auditory_hat_ind,
     }
 
+    return auditory_estimate
+
 
 def visual_estimator(
-    visual_location, visual_var, visual_var_hat, prior_var, N, prior_mu
+    visual_location, visual_var, visual_var_hat, prior_var, prior_mu, N
 ):
+    """Computes the visual estimate.
+
+    Parameters
+    ----------
+    visual_location: ``float``
+        Location in which the visual stimulus is delivered.
+    visual_var: ``float``
+        Variance of the visual signal.
+    visual_var_hat: ``float``
+        Estimated variance of the visual signal.
+    prior_var: ``float``
+        Variance of the prior distribuion of the stimulus location.
+    prior_mu: ``float``
+        Mean of the prior distribuion of the stimulus location.
+    N: ``float``
+        Number of Monte Carlo samples to take in computing the model estimates.
+
+
+    Returns
+    ----------
+    visual_estimate: ``dict``
+        Results of the visual unimodal estimator.
+        Includes these fields:
+
+        * *"visual_input"*: Numpy array containing the received
+            visual stimuli
+        * *"visual_hat_ind"*: Numpy array containing the estimated visual
+            location for an independent cause.
+    """
 
     visual_input = visual_location + np.sqrt(visual_var) * np.random.randn(N)
 
@@ -36,7 +91,12 @@ def visual_estimator(
         (visual_input / visual_var) + (np.ones(N) * prior_mu) / prior_var
     ) * visual_var_hat
 
-    return {"visual_input": visual_input, "visual_hat_ind": visual_hat_ind}
+    visual_estimate = {
+        "visual_input": visual_input,
+        "visual_hat_ind": visual_hat_ind,
+    }
+
+    return visual_estimate
 
 
 def multisensory_estimator(
@@ -46,15 +106,75 @@ def multisensory_estimator(
     visual_var,
     prior_var,
     prior_mu,
+    multisensory_var,
     multisensory_var_hat,
     N,
-    multisensory_var,
     auditory_ind_var,
     visual_ind_var,
     p_common,
     strategy,
-    posible_locations,
+    possible_locations,
 ):
+
+    """
+    Computes the multisensory estimate.
+
+    Parameters
+    ----------
+    auditory_estimator: ``dict``
+        Results of the auditory unimodal estimator.
+        Includes these fields:
+
+        * *"auditory_input"*: Numpy array containing the received
+            auditory stimuli
+        * *"auditory_hat_ind"*: Numpy array containing the estimated
+            auditory location for an independent cause.
+    visual_estimator: ``dict``
+        Results of the visual unimodal estimator.
+        Includes these fields:
+
+        * *"visual_input"*: Numpy array containing the received
+            visual stimuli
+        * *"visual_hat_ind"*: Numpy array containing the estimated visual
+            location for an independent cause.
+    auditory_var: ``float``
+        Variance of the auditory signal.
+    visual_var: ``float``
+        Variance of the visual signal.
+    prior_var: ``float``
+        Variance of the prior distribuion of the stimulus location.
+    prior_mu: ``float``
+        Mean of the prior distribuion of the stimulus location.
+    multisensory_var: ``float``
+        Variance of the audio-visual signal.
+    multisensory_var_hat: ``float``
+        Estimated variance of the audio-visual signal.
+    N: ``float``
+        Number of Monte Carlo samples to take in computing the model estimates.
+    auditory_ind_var: ``float``
+        Variance of the auditory signal for an independent cause.
+    visual_ind_var: ``float``
+        Variance of the visual signal for an independent cause.
+    p_common: ``float``
+        Probability of signals coming from a single cause, i.e. P(C=1).
+    strategy: ``str``
+        Decision strategy for producing estimates of stimulus location.
+        Accepts "selection", "averaging" and "mapping".
+    possible_locations: ``ndarray``
+        Numpy array containing all the possible locations where the stimuli
+        could be delivered.
+
+    Returns
+    ----------
+    res: ``dict``
+        Results of the multisensory integration BCI model.
+        Includes these fields:
+
+        * *"auditory"*: Auditory location estimate.
+        * *"visual"*: Visual location estimate.
+
+    """
+
     # Inputs
     auditory_input = auditory_estimator["auditory_input"]
     visual_input = visual_estimator["visual_input"]
@@ -100,7 +220,7 @@ def multisensory_estimator(
     else:
         # Decision Strategies
         # Model Selection
-        if strategy == "Selection":
+        if strategy == "selection":
             auditory_hat = (pC > 0.5) * multisensory_hat + (
                 pC <= 0.5
             ) * auditory_hat_ind
@@ -108,13 +228,13 @@ def multisensory_estimator(
                 pC <= 0.5
             ) * visual_hat_ind
         # Model Averaging
-        elif strategy == "Averaging":
+        elif strategy == "averaging":
             auditory_hat = (pC) * multisensory_hat + (
                 1 - pC
             ) * auditory_hat_ind
             visual_hat = (pC) * multisensory_hat + (1 - pC) * visual_hat_ind
         # Model Matching
-        elif strategy == "Matching":
+        elif strategy == "matching":
             match = 1 - np.random.rand(N)
             auditory_hat = (pC > match) * multisensory_hat + (
                 pC <= match
@@ -124,8 +244,8 @@ def multisensory_estimator(
             ) * visual_hat_ind
 
     # Prediction of location estimates
-    step = posible_locations[1]
-    edges = posible_locations[0] - step / 2
+    step = possible_locations[1]
+    edges = possible_locations[0] - step / 2
     edges = np.append(edges, edges[-1] + step)
 
     auditory_estimates = np.histogram(auditory_hat, edges)[0]
@@ -134,14 +254,72 @@ def multisensory_estimator(
     pred_auditory = auditory_estimates / np.sum(auditory_estimates, axis=0)
     pred_visual = visual_estimates / np.sum(visual_estimates, axis=0)
 
-    return {"auditory": pred_auditory, "visual": pred_visual}
+    res = {"auditory": pred_auditory, "visual": pred_visual}
+
+    return res
 
 
 @core.neural_msi_model
 class Kording2007:
+    """Class that implements the Bayesian Causal Inference model for
+    Multisensory Perception employed by Kording et al. to reproduce
+    the Ventriloquist Effect [3]_. The class follows the implementation
+    provided in the Bayesian Causal Inferente Toolbox (BCIT) [4]_.
+
+    Attributes
+    ----------
+    possible_locations: ``skneuromsi.hparameter``
+        All the possible locations where the stimulus
+        could be delivered.
+    auditory_sigma: ``skneuromsi.hparameter``
+        Standard deviation of the auditory estimate.
+    auditory_var: ``skneuromsi.hparameter``
+        Variance of the auditory estimate.
+    visual_sigma: ``skneuromsi.hparameter``
+        Standard deviation of the visual estimate.
+    visual_var: ``skneuromsi.hparameter``
+        Variance of the visual estimate.
+    p_common: ``skneuromsi.internal``
+        Probability of signals coming from a single cause, i.e. P(C=1).
+    prior_sigma: ``skneuromsi.internal``
+        Standard deviation of the prior distribuion of the stimulus location.
+    prior_var: ``skneuromsi.internal``
+        Variance of the prior distribuion of the stimulus location.
+    strategy: ``skneuromsi.internal``
+        Decision strategy for producing estimates of stimulus location.
+        Accepts "selection", "averaging" and "mapping".
+    prior_mu: ``skneuromsi.internal``
+        Mean of the prior distribuion of the stimulus location.
+    multisensory_var: ``skneuromsi.internal``
+        Variance of the audio-visual signal.
+    auditory_ind_var: ``skneuromsi.internal``
+        Variance of the auditory signal for an independent cause.
+    visual_ind_var: ``skneuromsi.internal``
+        Variance of the visual signal for an independent cause.
+    multisensory_var_hat: ``skneuromsi.internal``
+        Estimated variance of the audio-visual signal.
+    auditory_var_hat: ``skneuromsi.internal``
+        Estimated variance of the auditory signal.
+    visual_var_hat: ``skneuromsi.internal``
+        Estimated variance of the visual signal.
+    stimuli: ``list`` of ``callable``
+        List containing the functions employed for the
+        computation of unisensory estimates.
+    integration: ``callable``
+        Function to compute the multisensory estimate.
+
+    References
+    ----------
+    .. [3] K. P. Körding, U. Beierholm, W. J. Ma, S. Quartz, J. B. Tenenbaum,
+        and L. Shams, “Causal Inference in Multisensory Perception,” PLoS One,
+        vol. 2, no. 9, p. e943, Sep. 2007, doi: 10.1371/journal.pone.0000943.
+    .. [4] M. Samad, K. Sita, A. Wang and L. Shams. Bayesian Causal Inference
+        Toolbox (BCIT) for MATLAB.
+        https://shamslab.psych.ucla.edu/bci-matlab-toolbox/
+    """
 
     # hiperparameters
-    posible_locations = core.hparameter(
+    possible_locations = core.hparameter(
         factory=lambda: np.linspace(-42, 42, 50, retstep=True)
     )
 
@@ -166,7 +344,7 @@ class Kording2007:
     prior_sigma = core.internal(default=20)
     prior_var = core.internal()
 
-    strategy = core.internal(default="Averaging")
+    strategy = core.internal(default="averaging")
 
     @prior_var.default
     def _prior_var_default(self):
