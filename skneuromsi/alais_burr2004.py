@@ -164,7 +164,7 @@ class AlaisBurr2004:
     ----------
     .. [1] D. Alais and D. Burr, “The Ventriloquist Effect Results from
         Near-Optimal Bimodal Integration,” Current Biology, vol. 14, no. 3,
-        pp. 257–262, Feb. 2004, doi: 10.1016/j.cub.2004.01.029.
+        pp. 257-262, Feb. 2004, doi: 10.1016/j.cub.2004.01.029.
     """
 
     # hiper parameters

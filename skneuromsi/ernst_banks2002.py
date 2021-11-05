@@ -160,7 +160,7 @@ class ErnstBanks2002:
     .. [2] M. O. Ernst and M. S. Banks, “Humans integrate
         visual and haptic information in a statistically
         optimal fashion,” Nature, vol. 415, no. 6870,
-        pp. 429–433, Jan. 2002, doi: 10.1038/415429a.
+        pp. 429-433, Jan. 2002, doi: 10.1038/415429a.
     """
 
     # hiper parameters
