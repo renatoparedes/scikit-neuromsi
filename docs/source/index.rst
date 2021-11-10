@@ -40,7 +40,9 @@ https://github.com/renatoparedes/scikit-neuromsi
    :maxdepth: 1
    :caption: Contents:
    
+   tutorial.ipynb
    skneuromsi.rst
+   license.rst
 
 
 

@@ -23,6 +23,22 @@ _INTERNAL_VALUE = type("_INTERNAL_VALUE", (object,), {})
 
 @attr.s(frozen=True, slots=True)
 class Stimulus:
+    """Class for computing unisensory estimators.
+
+    Attributes
+    ----------
+    name: ``attr.ib``
+        Name of the estimator.
+    hyper_parameters: ``attr.ib``
+        Set of hyperparameters coming from a neural_msi_model.
+    internal_values: ``attr.ib``
+        Set of internal values coming from a neural_msi_model.
+    run_inputs: ``attr.ib``
+        Set of inputs coming from a neural_msi_model run.
+    function: ``attr.ib``
+        Callable that defines the computation of the unisensory estimate.
+    """
+
     name = attr.ib(converter=str)
     hyper_parameters = attr.ib(converter=set)
     internal_values = attr.ib(converter=set)
@@ -42,6 +58,22 @@ class Stimulus:
 
 @attr.s(frozen=True, slots=True)
 class Integration:
+    """Class for computing the multisensory estimator.
+
+    Attributes
+    ----------
+    name: ``attr.ib``
+        Name of the estimator.
+    hyper_parameters: ``attr.ib``
+        Set of hyperparameters coming from a neural_msi_model.
+    internal_values: ``attr.ib``
+        Set of internal values coming from a neural_msi_model.
+    stimuli_results: ``attr.ib``
+        Set of inputs coming from unisensory estimators.
+    function: ``attr.ib``
+        Callable that defines the computation of the multisensory estimate.
+    """
+
     name = attr.ib(converter=str)
     hyper_parameters = attr.ib(converter=set)
     internal_values = attr.ib(converter=set)
@@ -61,6 +93,28 @@ class Integration:
 
 @attr.s(frozen=True, slots=True)
 class Config:
+    """Class for configuring a neural_msi_model.
+
+    Attributes
+    ----------
+    stimuli: ``attr.ib``
+        List of skneuromsi.Stimulus that define the unisensory
+        estimators of the neural_msi_model.
+    integration: ``attr.ib``
+        A skneuromsi.Integration that defines the multisensory
+        estimator of the neural_msi_model.
+    run_inputs: ``attr.ib``
+        Set of inputs coming from a neural_msi_model run.
+
+    Methods
+    -------
+    get_model_values(model)
+        Gets the hyperparameters and internals of the neural_msi_model.
+    run(model, inputs)
+        Executes the multisensory integration.
+
+    """
+
     stimuli = attr.ib()
     integration = attr.ib()
     run_inputs = attr.ib(init=False)
