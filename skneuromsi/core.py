@@ -187,6 +187,18 @@ class Config:
 
 
 def hparameter(**kwargs):
+    """Creates an hyperparameter attribute.
+
+    Parameters
+    ----------
+    **kwargs: ``dict``, optional
+        Extra arguments for the hyperparameter setup.
+
+    Returns
+    ----------
+    ``attr.ib``
+        Hyperparameter attribute.
+    """
 
     metadata = kwargs.pop("metadata", {})
     metadata[_SKCNMSI_METADATA] = _HYPER_PARAMETER
@@ -195,6 +207,18 @@ def hparameter(**kwargs):
 
 
 def internal(**kwargs):
+    """Creates an internal attribute.
+
+    Parameters
+    ----------
+    **kwargs: ``dict``, optional
+        Extra arguments for the internal setup.
+
+    Returns
+    ----------
+    ``attr.ib``
+        Internal attribute.
+    """
 
     metadata = kwargs.pop("metadata", {})
     metadata[_SKCNMSI_METADATA] = _INTERNAL_VALUE
@@ -210,8 +234,23 @@ def internal(**kwargs):
 
 
 def get_class_fields(cls):
+    """Gets the fields of a class.
 
-    # vamos a copiar la clase para no destruir la anterior
+    Parameters
+    ----------
+    cls: ``class``
+        Class object relevant for the model, usually built on top of
+        an estimator.
+
+    Returns
+    ----------
+    hparams: ``set``
+        Set containing the class attributes labeled as hyperparameters.
+    internals: ``set``
+        Set containing the class attributes labeled as internals.
+    """
+
+    # copy the class to avoid destroying the original
     # black magic
     cls = type(
         cls.__name__ + "__copied",
@@ -219,7 +258,7 @@ def get_class_fields(cls):
         vars(cls).copy(),
     )
 
-    # creamos una clase tipo attrs para choriarle los fields
+    # create an attrs class to get fields from
     acls = attr.s(maybe_cls=cls)
 
     hparams, internals = set(), set()
@@ -230,7 +269,7 @@ def get_class_fields(cls):
             hparams.add(field.name)
 
         elif param_type == _INTERNAL_VALUE:
-            # at this point we can check if some internal don't have a defaul
+            # we check if any internal doesn't have a default
             # this is a problem
             if field.default is attr.NOTHING:
                 raise TypeError(f"internal '{field.name}' must has a default")
@@ -246,11 +285,35 @@ def get_class_fields(cls):
 
 
 def get_parameters(name, func, hyper_parameters, internal_values):
+    """Classifies the parameters of a function in hyperameters,
+    internals or run inputs.
+
+    Parameters
+    ----------
+    name: ``str``
+        Name of the function.
+    func: ``callable``
+        Function to extract parameters from, usually an estimator.
+    hyper_parameters: ``set``
+        Set containing attributes labeled as hyperparameters.
+    internal_values: ``set``
+        Set containing the attributes labeled as internals.
+
+    Returns
+    ----------
+    shparams: ``set``
+        Set containing the function parameters classified as hyperparameters.
+    sinternals: ``set``
+        Set containing the function parameters classified as internals.
+    sinputs: ``set``
+        Set containing the function parameters classified as run inputs.
+    """
+
     signature = inspect.signature(func)
 
     # for paran_name, param in signature.parameters.items():
-    # primero determinamos el tipo, si es un hiper parametro del modelo
-    # un valor interno o simplemente un valor del tipo "run"
+    # first determine whether it is an hyperparameter, an internal
+    # or a run input.
     shparams, sinternals, sinputs = set(), set(), set()
     for param_name, param_value in signature.parameters.items():
         if param_value.default is not param_value.empty:
@@ -269,6 +332,22 @@ def get_parameters(name, func, hyper_parameters, internal_values):
 
 
 def change_run_signature(run, run_inputs):
+    """Modifies the signature of the run method of a neural_msi_model.
+
+    Parameters
+    ----------
+    run: ``callable``
+        Function that delegates all the parameters to the run method of
+        a skneuromsi.Config class.
+    run_inputs: ``set``
+        Set containing the class attributes labeled as run inputs.
+
+    Returns
+    ----------
+    run: ``callable``
+        Run method with a new signature including the run_input parameters.
+    """
+
     signature = inspect.signature(run)
 
     self_param = signature.parameters["self"]
@@ -285,12 +364,23 @@ def change_run_signature(run, run_inputs):
 
 
 def neural_msi_model(cls):
+    """Defines a class as a neural_msi_model.
 
-    # separamos los parametros internos y los hiper_parametros
+    Parameters
+    ----------
+    cls: ``class``
+        Class object of the model.
+
+    Returns
+    ----------
+    acls: ``attr.s``
+        Class with a neural_msi_model setup.
+    """
+
+    # classify the class attributes as hyperparameters or internals
     hparams, internals = get_class_fields(cls)
 
-    # stimuli tiene que ser una lista de callables
-    # y vamos a carrgarlo dentro de un diccionario para futuras referencias
+    # put the estimators functions inside a dictionary
     stimuli, run_inputs = {}, set()
     for stimulus in cls.stimuli:
 
@@ -298,8 +388,7 @@ def neural_msi_model(cls):
         if not callable(stimulus):
             raise TypeError(f"stimulus '{name}' is not callable")
 
-        # sacamos los parametros del estimulo en hparams e internals
-        # y lo que no sabemos que es, lo asumimos como parametro de entrada
+        # classify the parameters of the estimators
         shparams, sinternals, sinputs = get_parameters(
             name, stimulus, hparams, internals
         )
@@ -312,11 +401,11 @@ def neural_msi_model(cls):
             function=stimulus,
         )
 
-        # guardamos los run_inputs de todos los stimulos para validarlos
-        # contra el integrador despues
+        # save the run_inputs of the unisensory estimators to be validated
+        # against the multisensory estimator afterwards.
         run_inputs.update(sinputs)
 
-    # integration tiene que ser un callable
+    # the multisensory estimator must be a callable
     if not callable(cls.integration):
         raise TypeError("integration must be callable")
     name = cls.integration.__name__
@@ -324,9 +413,8 @@ def neural_msi_model(cls):
         name, cls.integration, hparams, internals
     )
 
-    # hay que tener en cuenta que el integrador puede tener inputs de run
-    # y puede TAMBIEN recibir las salidas de los estimulos. Pero no puede
-    # tener run inputs propios.
+    # the multisensory esitmator may have run inputs and receive the
+    # unisensory estimators results but cannot have run inputs of its own
     diff = iinputs.difference(run_inputs.union(stimuli))
     if diff:
         raise TypeError(
@@ -341,43 +429,26 @@ def neural_msi_model(cls):
         function=cls.integration,
     )
 
-    # sacamos stimuli e integration del modelo
+    # remove the stimuli e integration attributes from the model
     del cls.stimuli, cls.integration
 
-    # cargamos los nuevos stimulii en un objeto conf
+    # load the new stimuli in an config object
     conf = Config(stimuli=stimuli, integration=integration)
 
-    # inyectamos la configuracion en la clase
+    # include the config object inside the class
     cls._sknmsi_conf = Config(stimuli=stimuli, integration=integration)
 
-    # el run del modelo lo unico que tiene que hacer es delegat todos los
-    # parametros al run de la configuración ademas de pasarse a si mismo
+    # define a run method that delegates all the parameters to the
+    # run method of the config object.
     def run(self, **kwargs):
         return self._sknmsi_conf.run(model=self, inputs=kwargs)
 
-    # ahora hay que enmascarar la firma de run e inyectar run a la clase
+    # masks the signature of the run method and include it inside
+    # the class
     cls.run = change_run_signature(run, conf.run_inputs)
 
-    # convertimos la clase en un clase attrs para que los hiperparametros
-    # y valores internos sepan funcionar
+    # convert the class to an attrs class so that the hyperparameters
+    # and internals work.
     acls = attr.s(maybe_cls=cls)
 
-    # terminamos
     return acls
-
-
-# Suggested changes:
-# Instead of "stimuli", use the term "sensory estimate"
-# Include a measure for the amount of multisensory integration
-# (CRE equation)
-# Include methods to evaluate multisensory Integration properties:
-# Spatio-temporal rule:
-# holds that stimuli presented in spatio-temporal proximity have
-# a higher probability of being integrated.
-# Inverse-effectiveness rule:
-# predicts that the amount of integration increases when
-# the intensity level of the unimodal components is lowered.
-# Reliability rule:
-# the sensory modality with the higher reliability
-# (e.g., lower signal-to-noise ratio)
-# is weighted more heavily when integrating unisensory signals.
