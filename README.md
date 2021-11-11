@@ -12,3 +12,6 @@
 
 Research on the the neural process by which unisensory signals are combined to form a significantly different multisensory response has grown exponentially in the recent years. Nevertheless, there is as yet no unified theoretical approach to multisensory integration. We believe that building a framework for multisensory integration modelling would greatly contribute to originate a unifying theory that narrows the gap between neural and behavioural multisensory responses. 
 
+## Contact
+Renato Paredes (paredesrenato92@gmail.com)
+

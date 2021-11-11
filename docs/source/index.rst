@@ -41,8 +41,8 @@ https://github.com/renatoparedes/scikit-neuromsi
    :caption: Contents:
    
    tutorial.ipynb
-   skneuromsi.rst
    license.rst
+   api.rst
 
 
 
