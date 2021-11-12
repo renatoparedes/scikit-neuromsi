@@ -15,3 +15,35 @@ Research on the the neural process by which unisensory signals are combined to f
 ## Contact
 Renato Paredes (paredesrenato92@gmail.com)
 
+## Features
+
+**Scikit-neuromsi** currently has three classes which implement neurocomputational 
+models of multisensory integration.
+
+The available modules are:
+
+- **alais_burr2004**: implements the near-optimal bimodal integration
+    employed by Alais and Burr (2004) to reproduce the Ventriloquist Effect.
+
+- **ernst_banks2002**: implements the visual-haptic maximum-likelihood
+    integrator employed by Ernst and Banks (2002) to reproduce the visual-haptic task.
+
+- **kording2007**: implements the Bayesian Causal Inference model for
+    Multisensory Perception employed by Kording et al. (2007) to reproduce
+    the Ventriloquist Effect.
+
+In addition, there is a **core** module with features to facilitate the implementation of new models of multisensory integration.
+
+## Requirements
+
+You need Python 3.9+ to run scikit-neuromsi.
+
+## Installation
+
+Run the following command:
+
+        $ pip install scikit-neuoromsi 
+
+or clone this repo and then inside the local directory execute:
+
+        $ pip install -e .
