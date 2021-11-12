@@ -42,7 +42,7 @@ You need Python 3.9+ to run scikit-neuromsi.
 
 Run the following command:
 
-        $ pip install scikit-neuoromsi 
+        $ pip install scikit-neuromsi 
 
 or clone this repo and then inside the local directory execute:
 
