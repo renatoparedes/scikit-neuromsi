@@ -1,8 +1,32 @@
-# https://www.nature.com/articles/415429a
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# This file is part of the
+#   Scikit-neuromsi Project (https://github.com/renatoparedes/scikit-neuromsi).
+# Copyright (c) 2021, Renato Paredes; Cabral, Juan
+# License: BSD 3-Clause
+# Full Text:
+#     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
+
+# =============================================================================
+# DOCS
+# =============================================================================
+
+"""
+Implementation of multisensory integration neurocomputational models in Python.
+"""
+
+# =============================================================================
+# IMPORTS
+# =============================================================================
 
 import numpy as np
 
 from . import core
+
+# =============================================================================
+# FUNCTIONS
+# =============================================================================
 
 
 def haptic_estimator(haptic_sigma, possible_heights, haptic_height):
@@ -127,6 +151,11 @@ def multisensory_estimator(
         "visual": visual_estimator,
         "multisensory": multisensory_res,
     }
+
+
+# ===============================================================================
+# CLASSES
+# ===============================================================================
 
 
 @core.neural_msi_model

@@ -1,6 +1,32 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# This file is part of the
+#   Scikit-neuromsi Project (https://github.com/renatoparedes/scikit-neuromsi).
+# Copyright (c) 2021, Renato Paredes; Cabral, Juan
+# License: BSD 3-Clause
+# Full Text:
+#     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
+
+# =============================================================================
+# DOCS
+# =============================================================================
+
+"""
+Implementation of multisensory integration neurocomputational models in Python.
+"""
+
+# =============================================================================
+# IMPORTS
+# =============================================================================
+
 import numpy as np
 
 from . import core
+
+# =============================================================================
+# FUNCTIONS
+# =============================================================================
 
 
 def auditory_estimator(
@@ -259,6 +285,11 @@ def multisensory_estimator(
     return res
 
 
+# ===============================================================================
+# CLASSES
+# ===============================================================================
+
+
 @core.neural_msi_model
 class Kording2007:
     """Class that implements the Bayesian Causal Inference model for
@@ -323,7 +354,7 @@ class Kording2007:
         factory=lambda: np.linspace(-42, 42, 50, retstep=True)
     )
 
-    N = core.hparameter(default=100000)
+    N = core.hparameter(default=10000)
 
     auditory_sigma = core.hparameter(default=2)
     auditory_var = core.hparameter()

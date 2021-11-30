@@ -1,8 +1,26 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# This file is part of the
+#   Scikit-neuromsi Project (https://github.com/renatoparedes/scikit-neuromsi).
+# Copyright (c) 2021, Renato Paredes; Cabral, Juan
+# License: BSD 3-Clause
+# Full Text:
+#     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
+
+# =============================================================================
+# IMPORTS
+# =============================================================================
+
 import numpy as np
 
 import pytest
 
 from skneuromsi.ernst_banks2002 import ErnstBanks2002
+
+# =============================================================================
+# Ernst and Banks 2002
+# =============================================================================
 
 
 @pytest.mark.parametrize(
@@ -24,6 +42,14 @@ def test_ErnstBanks2002_run_average_height(visual, haptic, expected):
 def test_ErnstBanks2002_MLE_integration(
     haptic_sigma, visual_sigma, visual_weight, haptic_weight
 ):
+    """
+    Data From:
+        M. O. Ernst and M. S. Banks, “Humans integrate
+        visual and haptic information in a statistically
+        optimal fashion,” Nature, vol. 415, no. 6870,
+        pp. 429-433, Jan. 2002, doi: 10.1038/415429a.
+    """
+
     model = ErnstBanks2002(
         haptic_sigma=haptic_sigma, visual_sigma=visual_sigma
     )

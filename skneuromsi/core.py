@@ -1,3 +1,25 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# This file is part of the
+#   Scikit-neuromsi Project (https://github.com/renatoparedes/scikit-neuromsi).
+# Copyright (c) 2021, Renato Paredes; Cabral, Juan
+# License: BSD 3-Clause
+# Full Text:
+#     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
+
+# =============================================================================
+# DOCS
+# =============================================================================
+
+"""
+Implementation of multisensory integration neurocomputational models in Python.
+"""
+
+# =============================================================================
+# IMPORTS
+# =============================================================================
+
 import inspect
 import itertools as it
 
@@ -17,7 +39,7 @@ _INTERNAL_VALUE = type("_INTERNAL_VALUE", (object,), {})
 
 
 # ===============================================================================
-# CLASES Y OTROS CONTENEDORES UTILES
+# CLASSES AND USEFUL CONTAINERS
 # ===============================================================================
 
 

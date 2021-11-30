@@ -1,6 +1,32 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# This file is part of the
+#   Scikit-neuromsi Project (https://github.com/renatoparedes/scikit-neuromsi).
+# Copyright (c) 2021, Renato Paredes; Cabral, Juan
+# License: BSD 3-Clause
+# Full Text:
+#     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
+
+# =============================================================================
+# DOCS
+# =============================================================================
+
+"""
+Implementation of multisensory integration neurocomputational models in Python.
+"""
+
+# =============================================================================
+# IMPORTS
+# =============================================================================
+
 import numpy as np
 
 from . import core
+
+# =============================================================================
+# FUNCTIONS
+# =============================================================================
 
 
 def auditory_estimator(auditory_sigma, possible_locations, auditory_location):
@@ -132,6 +158,11 @@ def multisensory_estimator(
     }
 
     return res
+
+
+# ===============================================================================
+# CLASSES
+# ===============================================================================
 
 
 @core.neural_msi_model

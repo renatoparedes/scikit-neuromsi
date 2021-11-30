@@ -2,16 +2,17 @@
 # -*- coding: utf-8 -*-
 
 # This file is part of the
-#   Scikit-Neuromsi Project (https://github.com/renatoparedes/scikit-neuromsi).
-# Copyright (c) 2021, Renato Paredes
-# License: ...
-#   Full Text: ....
+#   Scikit-neuromsi Project (https://github.com/renatoparedes/scikit-neuromsi).
+# Copyright (c) 2021, Renato Paredes; Cabral, Juan
+# License: BSD 3-Clause
+# Full Text:
+#     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
 
 # =====================================================================
 # DOCS
 # =====================================================================
 
-"""This file is for distribute and install Scikit-Neuromsi"""
+"""This file is for distributing and installing Scikit-neuromsi"""
 
 # ======================================================================
 # IMPORTS
@@ -20,7 +21,7 @@
 import os
 import pathlib
 
-from setuptools import setup  # noqa
+from setuptools import setup
 
 # =============================================================================
 # CONSTANTS
@@ -29,7 +30,7 @@ from setuptools import setup  # noqa
 PATH = pathlib.Path(os.path.abspath(os.path.dirname(__file__)))
 
 
-REQUIREMENTS = ["numpy", "pandas", "attrs", "matplotlib"]
+REQUIREMENTS = ["numpy", "attrs", "matplotlib"]
 
 with open(PATH / "skneuromsi" / "__init__.py") as fp:
     for line in fp.readlines():
@@ -58,18 +59,20 @@ setup(
     packages=[
         "skneuromsi",
     ],
-    license="The MIT License",
+    license="BSD 3-Clause License",
     install_requires=REQUIREMENTS,
     keywords=[
         "multisensory integration",
         "computational neuroscience",
         "cognitive modelling",
+        "behaviour simulation",
+        "perception",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Education",
         "Intended Audience :: Science/Research",
-        "License :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: BSD 3-Clause License",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3.9",

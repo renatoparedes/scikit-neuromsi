@@ -1,8 +1,26 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# This file is part of the
+#   Scikit-neuromsi Project (https://github.com/renatoparedes/scikit-neuromsi).
+# Copyright (c) 2021, Renato Paredes; Cabral, Juan
+# License: BSD 3-Clause
+# Full Text:
+#     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
+
+# =============================================================================
+# IMPORTS
+# =============================================================================
+
 import numpy as np
 
 import pytest
 
 from skneuromsi.alais_burr2004 import AlaisBurr2004
+
+# =============================================================================
+# Alais and Burr 2004
+# =============================================================================
 
 
 @pytest.mark.parametrize(
@@ -24,6 +42,14 @@ def test_AlaisBurr2004_run_zero(visual, auditory, expected):
 def test_AlaisBurr2004_MLE_integration(
     auditory_sigma, visual_sigma, visual_weight, auditory_weight
 ):
+    """
+    Data From:
+        M. O. Ernst and M. S. Banks, “Humans integrate
+        visual and haptic information in a statistically
+        optimal fashion,” Nature, vol. 415, no. 6870,
+        pp. 429-433, Jan. 2002, doi: 10.1038/415429a.
+    """
+
     model = AlaisBurr2004(
         auditory_sigma=auditory_sigma, visual_sigma=visual_sigma
     )

@@ -1,12 +1,25 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# This file is part of the
+#   Scikit-neuromsi Project (https://github.com/renatoparedes/scikit-neuromsi).
+# Copyright (c) 2021, Renato Paredes; Cabral, Juan
+# License: BSD 3-Clause
+# Full Text:
+#     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
+
+# =============================================================================
+# IMPORTS
+# =============================================================================
+
 import attr
 
 import pytest
 
 from skneuromsi import core
 
-
 # ===============================================================================
-# COMMONN
+# COMMON
 # ===============================================================================
 
 
@@ -20,7 +33,7 @@ class Thing:
 
 
 # =============================================================================
-# FUNCTIONS
+# TESTS
 # =============================================================================
 
 
@@ -43,7 +56,7 @@ def test_internal_init_True():
 
 
 # =============================================================================
-# neural_msi_model
+# TESTS: neural_msi_model
 # =============================================================================
 
 
@@ -215,7 +228,7 @@ def test_remove_integration():
 
 
 # =============================================================================
-# CLASES Y OTROS CONTENEDORES UTILES
+# TESTS: CLASSES
 # =============================================================================
 
 
