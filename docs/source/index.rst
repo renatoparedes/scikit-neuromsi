@@ -13,6 +13,8 @@ Welcome to scikit-neuromsi's documentation!
    :target: https://github.com/renatoparedes/scikit-neuromsi/actions/workflows/skneuromsi_ci.yml
 .. |Documentation Status| image:: https://readthedocs.org/projects/scikit-neuromsi/badge/?version=latest
    :target: https://scikit-neuromsi.readthedocs.io/en/latest/?badge=latest
+.. |PyPI| image:: https://img.shields.io/pypi/v/scikit-neuromsi
+   :target: https://pypi.org/project/scikit-neuromsi/
 .. |Coverage| image:: https://coveralls.io/repos/github/renatoparedes/scikit-neuromsi/badge.svg?branch=main
    :target: https://coveralls.io/github/renatoparedes/scikit-neuromsi?branch=main   
 .. |https://github.com/leliel12/diseno_sci_sfw| image:: https://img.shields.io/badge/DiSoftCompCi-FAMAF-ffda00
