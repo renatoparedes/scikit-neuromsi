@@ -1,4 +1,4 @@
-# scikit-neuromsi
+# Scikit-neuromsi
 
 [![scikit-neuromsi](https://github.com/renatoparedes/scikit-neuromsi/actions/workflows/skneuromsi_ci.yml/badge.svg)](https://github.com/renatoparedes/scikit-neuromsi/actions/workflows/skneuromsi_ci.yml)
 [![Documentation Status](https://readthedocs.org/projects/scikit-neuromsi/badge/?version=latest)](https://scikit-neuromsi.readthedocs.io/en/latest/?badge=latest)

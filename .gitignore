@@ -15,6 +15,7 @@ result_images/
 build/
 develop-eggs/
 dist/
+drafts/
 downloads/
 eggs/
 .eggs/
