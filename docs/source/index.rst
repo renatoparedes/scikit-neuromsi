@@ -6,6 +6,12 @@
 Welcome to scikit-neuromsi's documentation!
 ===========================================
 
+.. only:: html
+
+    .. image:: _static/logo.png
+        :align: center
+        :scale: 100 %
+
 |image1| |Documentation Status| |Coverage|
 |https://github.com/leliel12/diseno_sci_sfw| |License|
 
