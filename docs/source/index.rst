@@ -12,15 +12,17 @@ Welcome to scikit-neuromsi's documentation!
         :align: center
         :scale: 100 %
 
-|image1| |Documentation Status| |Coverage|
+|Actions| |Documentation Status| |Coverage| |Black|
 |https://github.com/leliel12/diseno_sci_sfw| |License|
 
-.. |image1| image:: https://github.com/renatoparedes/scikit-neuromsi/actions/workflows/skneuromsi_ci.yml/badge.svg
+.. |Actions| image:: https://github.com/renatoparedes/scikit-neuromsi/actions/workflows/skneuromsi_ci.yml/badge.svg
    :target: https://github.com/renatoparedes/scikit-neuromsi/actions/workflows/skneuromsi_ci.yml
 .. |Documentation Status| image:: https://readthedocs.org/projects/scikit-neuromsi/badge/?version=latest
    :target: https://scikit-neuromsi.readthedocs.io/en/latest/?badge=latest
 .. |PyPI| image:: https://img.shields.io/pypi/v/scikit-neuromsi
    :target: https://pypi.org/project/scikit-neuromsi/
+.. |Black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
+   :target: https://github.com/psf/black
 .. |Coverage| image:: https://coveralls.io/repos/github/renatoparedes/scikit-neuromsi/badge.svg?branch=main
    :target: https://coveralls.io/github/renatoparedes/scikit-neuromsi?branch=main   
 .. |https://github.com/leliel12/diseno_sci_sfw| image:: https://img.shields.io/badge/DiSoftCompCi-FAMAF-ffda00
