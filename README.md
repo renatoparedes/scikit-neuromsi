@@ -1,5 +1,5 @@
 # Scikit-neuromsi
-![logo](https://raw.githubusercontent.com/milicolazo/scikit-neuromsi/main/res/logo.png)
+![logo](https://raw.githubusercontent.com/renatoparedes/scikit-neuromsi/main/res/logo.png)
 
 [![scikit-neuromsi](https://github.com/renatoparedes/scikit-neuromsi/actions/workflows/skneuromsi_ci.yml/badge.svg)](https://github.com/renatoparedes/scikit-neuromsi/actions/workflows/skneuromsi_ci.yml)
 [![Documentation Status](https://readthedocs.org/projects/scikit-neuromsi/badge/?version=latest)](https://scikit-neuromsi.readthedocs.io/en/latest/?badge=latest)
