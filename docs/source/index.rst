@@ -8,7 +8,7 @@ Welcome to scikit-neuromsi's documentation!
 
 .. only:: html
 
-    .. image:: _static/logo.png
+    .. image:: _static/logo_banner.png
         :align: center
         :scale: 100 %
 
