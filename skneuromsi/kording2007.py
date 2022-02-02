@@ -361,14 +361,14 @@ class Kording2007:
 
     @auditory_var.default
     def _auditory_var_default(self):
-        return self.auditory_sigma ** 2
+        return np.square(self.auditory_sigma)
 
     visual_sigma = core.hparameter(default=10)
     visual_var = core.hparameter()
 
     @visual_var.default
     def _visual_var_default(self):
-        return self.visual_sigma ** 2
+        return np.square(self.visual_sigma)
 
     # internals
     p_common = core.internal(default=0.5)
@@ -379,7 +379,7 @@ class Kording2007:
 
     @prior_var.default
     def _prior_var_default(self):
-        return self.prior_sigma ** 2
+        return np.square(self.prior_sigma)
 
     prior_mu = core.internal(default=0)
 

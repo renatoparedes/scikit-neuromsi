@@ -55,8 +55,8 @@ def haptic_estimator(haptic_sigma, possible_heights, haptic_height):
 
     haptic_estimate = (
         1
-        / np.sqrt(2 * np.pi * sigma ** 2)
-        * np.exp(-1 * (((pheights - height) ** 2) / (2 * sigma ** 2)))
+        / np.sqrt(2 * np.pi * np.square(sigma))
+        * np.exp(-1 * (((pheights - height) ** 2) / (2 * np.square(sigma))))
     )
 
     return haptic_estimate
@@ -86,8 +86,8 @@ def visual_estimator(possible_heights, visual_sigma, visual_height):
     height = visual_height
     sigma = visual_sigma
 
-    visual_estimate = (1 / np.sqrt(2 * np.pi * sigma ** 2)) * np.exp(
-        -1 * (((pheights - height) ** 2) / (2 * sigma ** 2))
+    visual_estimate = (1 / np.sqrt(2 * np.pi * np.square(sigma))) * np.exp(
+        -1 * (((pheights - height) ** 2) / (2 * np.square(sigma)))
     )
 
     return visual_estimate
@@ -144,8 +144,8 @@ def multisensory_estimator(
     height = visual_weight * visual_height + haptic_weight * haptic_height
     pheights = possible_heights
 
-    multisensory_res = (1 / np.sqrt(2 * np.pi * sigma ** 2)) * np.exp(
-        -1 * (((pheights - height) ** 2) / (2 * sigma ** 2))
+    multisensory_res = (1 / np.sqrt(2 * np.pi * np.square(sigma))) * np.exp(
+        -1 * (((pheights - height) ** 2) / (2 * np.square(sigma)))
     )
 
     return {
@@ -204,16 +204,16 @@ class ErnstBanks2002:
 
     @haptic_weight.default
     def _haptic_weight_default(self):
-        return self.visual_sigma ** 2 / (
-            self.haptic_sigma ** 2 + self.visual_sigma ** 2
+        return np.square(self.visual_sigma) / (
+            np.square(self.haptic_sigma) + np.square(self.visual_sigma)
         )
 
     visual_weight = core.internal()
 
     @visual_weight.default
     def _visual_weights_default(self):
-        return self.haptic_sigma ** 2 / (
-            self.visual_sigma ** 2 + self.haptic_sigma ** 2
+        return np.square(self.haptic_sigma) / (
+            np.square(self.visual_sigma) + np.square(self.haptic_sigma)
         )
 
     multisensory_sigma = core.internal()
@@ -221,8 +221,8 @@ class ErnstBanks2002:
     @multisensory_sigma.default
     def _multisensory_sigma_default(self):
         return np.sqrt(
-            (self.visual_sigma ** 2 * self.haptic_sigma ** 2)
-            / (self.haptic_sigma ** 2 + self.visual_sigma ** 2)
+            (np.square(self.visual_sigma) * np.square(self.haptic_sigma))
+            / (np.square(self.haptic_sigma) + np.square(self.visual_sigma))
         )
 
     # estimators
