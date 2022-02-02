@@ -30,7 +30,7 @@ from . import core
 
 
 def auditory_estimator(
-    auditory_location, auditory_var, auditory_var_hat, prior_var, prior_mu, N
+    auditory_location, auditory_var, auditory_var_hat, prior_var, prior_mu, n
 ):
     """Computes the auditory estimate.
 
@@ -64,10 +64,10 @@ def auditory_estimator(
 
     auditory_input = auditory_location + np.sqrt(
         auditory_var
-    ) * np.random.randn(N)
+    ) * np.random.randn(n)
 
     auditory_hat_ind = (
-        (auditory_input / auditory_var) + (np.ones(N) * prior_mu) / prior_var
+        (auditory_input / auditory_var) + (np.ones(n) * prior_mu) / prior_var
     ) * auditory_var_hat
 
     auditory_estimate = {
@@ -79,7 +79,7 @@ def auditory_estimator(
 
 
 def visual_estimator(
-    visual_location, visual_var, visual_var_hat, prior_var, prior_mu, N
+    visual_location, visual_var, visual_var_hat, prior_var, prior_mu, n
 ):
     """Computes the visual estimate.
 
@@ -95,7 +95,7 @@ def visual_estimator(
         Variance of the prior distribuion of the stimulus location.
     prior_mu: ``float``
         Mean of the prior distribuion of the stimulus location.
-    N: ``float``
+    n: ``float``
         Number of Monte Carlo samples to take in computing the model estimates.
 
 
@@ -111,10 +111,10 @@ def visual_estimator(
             location for an independent cause.
     """
 
-    visual_input = visual_location + np.sqrt(visual_var) * np.random.randn(N)
+    visual_input = visual_location + np.sqrt(visual_var) * np.random.randn(n)
 
     visual_hat_ind = (
-        (visual_input / visual_var) + (np.ones(N) * prior_mu) / prior_var
+        (visual_input / visual_var) + (np.ones(n) * prior_mu) / prior_var
     ) * visual_var_hat
 
     visual_estimate = {
@@ -134,7 +134,7 @@ def multisensory_estimator(
     prior_mu,
     multisensory_var,
     multisensory_var_hat,
-    N,
+    n,
     auditory_ind_var,
     visual_ind_var,
     p_common,
@@ -175,7 +175,7 @@ def multisensory_estimator(
         Variance of the audio-visual signal.
     multisensory_var_hat: ``float``
         Estimated variance of the audio-visual signal.
-    N: ``float``
+    n: ``float``
         Number of Monte Carlo samples to take in computing the model estimates.
     auditory_ind_var: ``float``
         Variance of the auditory signal for an independent cause.
@@ -212,7 +212,7 @@ def multisensory_estimator(
     multisensory_hat = (
         (auditory_input / auditory_var)
         + (visual_input / visual_var)
-        + (np.ones(N) * prior_mu) / prior_var
+        + (np.ones(n) * prior_mu) / prior_var
     ) * multisensory_var_hat
 
     # Perceived distances
@@ -237,7 +237,7 @@ def multisensory_estimator(
     likelihood_indep = likelihood_auditory * likelihood_visual
     post_common = likelihood_common * p_common
     post_indep = likelihood_indep * (1 - p_common)
-    pC = post_common / (post_common + post_indep)
+    pc = post_common / (post_common + post_indep)
 
     # Independent Causes
     if single_stim:
@@ -247,26 +247,26 @@ def multisensory_estimator(
         # Decision Strategies
         # Model Selection
         if strategy == "selection":
-            auditory_hat = (pC > 0.5) * multisensory_hat + (
-                pC <= 0.5
+            auditory_hat = (pc > 0.5) * multisensory_hat + (
+                pc <= 0.5
             ) * auditory_hat_ind
-            visual_hat = (pC > 0.5) * multisensory_hat + (
-                pC <= 0.5
+            visual_hat = (pc > 0.5) * multisensory_hat + (
+                pc <= 0.5
             ) * visual_hat_ind
         # Model Averaging
         elif strategy == "averaging":
-            auditory_hat = (pC) * multisensory_hat + (
-                1 - pC
+            auditory_hat = (pc) * multisensory_hat + (
+                1 - pc
             ) * auditory_hat_ind
-            visual_hat = (pC) * multisensory_hat + (1 - pC) * visual_hat_ind
+            visual_hat = (pc) * multisensory_hat + (1 - pc) * visual_hat_ind
         # Model Matching
         elif strategy == "matching":
-            match = 1 - np.random.rand(N)
-            auditory_hat = (pC > match) * multisensory_hat + (
-                pC <= match
+            match = 1 - np.random.rand(n)
+            auditory_hat = (pc > match) * multisensory_hat + (
+                pc <= match
             ) * auditory_hat_ind
-            visual_hat = (pC > match) * multisensory_hat + (
-                pC <= match
+            visual_hat = (pc > match) * multisensory_hat + (
+                pc <= match
             ) * visual_hat_ind
 
     # Prediction of location estimates
@@ -354,7 +354,7 @@ class Kording2007:
         factory=lambda: np.linspace(-42, 42, 50, retstep=True)
     )
 
-    N = core.hparameter(default=10000)
+    n = core.hparameter(default=10000)
 
     auditory_sigma = core.hparameter(default=2)
     auditory_var = core.hparameter()

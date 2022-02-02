@@ -27,7 +27,7 @@ from skneuromsi.kording2007 import Kording2007
     "auditory, visual, auditory_expected, visual_expected",
     [(-10, 10, -9.43, -4.29)],
 )
-def test_Kording2007_run(visual, auditory, visual_expected, auditory_expected):
+def test_kording2007_run(visual, auditory, visual_expected, auditory_expected):
     """
     Data From:
         M. Samad, K. Sita, A. Wang and L. Shams. Bayesian Causal Inference
@@ -35,7 +35,7 @@ def test_Kording2007_run(visual, auditory, visual_expected, auditory_expected):
         https://shamslab.psych.ucla.edu/bci-matlab-toolbox/
     """
 
-    model = Kording2007(N=1000000)
+    model = Kording2007(n=1000000)
     out = model.run(visual_location=visual, auditory_location=auditory)
     a_idx = out["auditory"].argmax()
     v_idx = out["visual"].argmax()

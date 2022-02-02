@@ -53,8 +53,10 @@ def haptic_estimator(haptic_sigma, possible_heights, haptic_height):
     height = haptic_height
     pheights = possible_heights
 
-    haptic_estimate = (1 / np.sqrt(2 * np.pi * sigma ** 2)) * np.exp(
-        -1 * (((pheights - height) ** 2) / (2 * sigma ** 2))
+    haptic_estimate = (
+        1
+        / np.sqrt(2 * np.pi * sigma ** 2)
+        * np.exp(-1 * (((pheights - height) ** 2) / (2 * sigma ** 2)))
     )
 
     return haptic_estimate

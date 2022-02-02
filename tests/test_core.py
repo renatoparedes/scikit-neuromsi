@@ -50,7 +50,7 @@ def test_internal():
     assert not internal.init
 
 
-def test_internal_init_True():
+def test_internal_init_true():
     with pytest.raises(TypeError):
         core.internal(init=True)
 
