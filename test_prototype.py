@@ -1,10 +1,10 @@
 import pytest
 
-from prototype import SKNMSIBase
+from prototype import SKNMSIMethodABC
 
 
 def test_method():
-    class Metodo(SKNMSIBase):
+    class Metodo(SKNMSIMethodABC):
 
         _sknms_abstract = False
         _sknms_run_method_config = [
