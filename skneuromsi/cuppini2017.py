@@ -238,3 +238,53 @@ class Cuppini2017:
             )
 
         return auditory_y, visual_y, multi_y
+
+
+def unisensory_barycenter_readout(
+    neurons, auditory_position, visual_position, auditory_y, visual_y
+):
+
+    mid = neurons / 2
+
+    if auditory_position < mid:
+        abscissa_x = np.concatenate(
+            (
+                np.arange(auditory_position + mid),
+                np.arange(auditory_position - mid, 0),
+            )
+        )
+
+    if auditory_position > mid:
+        abscissa_x = np.concatenate(
+            (
+                np.arange(neurons, auditory_position + mid),
+                np.arange(auditory_position - mid, neurons),
+            )
+        )
+
+    if auditory_position == mid:
+        abscissa_x = np.arange(neurons)
+
+    if visual_position < mid:
+        abscissa_y = np.concatenate(
+            (
+                np.arange(visual_position + mid),
+                np.arange(visual_position - mid, 0),
+            )
+        )
+
+    if visual_position > mid:
+        abscissa_y = np.concatenate(
+            (
+                np.arange(neurons, visual_position + mid),
+                np.arange(visual_position - mid, neurons),
+            )
+        )
+
+    if visual_position == mid:
+        abscissa_y = np.arange(neurons)
+
+    auditory_percept = np.sum(auditory_y * abscissa_x) / np.sum(auditory_y)
+    visual_percept = np.sum(visual_y * abscissa_y) / np.sum(visual_y)
+
+    return auditory_percept, visual_percept

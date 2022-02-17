@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 
 from skneuromsi.cuppini2017 import Cuppini2017
+from skneuromsi.cuppini2017 import unisensory_barycenter_readout
 
 # =============================================================================
 # CUPPINI 2017
@@ -24,7 +25,24 @@ def test_cuppini2017_run_zero(visual, auditory, multi):
     np.testing.assert_almost_equal(m_loc, multi)
 
 
-# TODO Improve including barycentre readout to get auditory and visual percept
+@pytest.mark.parametrize(
+    "auditory, visual, auditory_read, visual_read", [(90, 90, 90, 90)]
+)
+def test_cuppini2017_unisensory_position_readout(
+    auditory, visual, auditory_read, visual_read
+):
+    model = Cuppini2017()
+    a, v, _ = model.run(
+        100, auditory_position=auditory, visual_position=visual
+    )
+
+    a_loc, v_loc = unisensory_barycenter_readout(180, auditory, visual, a, v)
+
+    np.testing.assert_almost_equal(a_loc, auditory_read, 1)
+    np.testing.assert_almost_equal(v_loc, visual_read, 1)
+
+
+# TODO Get numbers from paper/matlab
 
 
 @pytest.mark.parametrize(
