@@ -39,12 +39,19 @@ class ParameterAliasTemplate:
             self.template = string.Template(self.template)
 
     @property
+    @functools.lru_cache(maxsize=None)
     def template_variables(self) -> frozenset:
         """Variables del template."""
         tpl = self.template
-        return frozenset(
-            match["braced"] for match in tpl.pattern.finditer(tpl.template)
-        )
+        variables = set()
+        for match in tpl.pattern.finditer(tpl.template):
+            if match.lastgroup:
+                variables.append(match[match.lastgroup])
+            elif match["named"] is not None:
+                variables.append(match["named"])
+            else:
+                variables.append(match["braced"])
+        return frozenset(variables)
 
     def render(self, context) -> str:
         """Crea un nuevo alias basado en el contexto provisto."""
@@ -61,7 +68,7 @@ class SKNMSIRunConfig:
         self.parameter_alias_templates = tuple(self.parameter_alias_templates)
 
     @classmethod
-    def from_method_class(cls, method):
+    def from_method_class(cls, method_class):
         """Crea una nueva instancia de configuracion basandose en una
         subclase de SKNMSIMethodABC.
 
@@ -71,7 +78,7 @@ class SKNMSIRunConfig:
         """
 
         parameter_alias_templates = {}
-        for patpl in method._sknms_run_method_config:
+        for patpl in method_class._sknms_run_method_config:
 
             if isinstance(patpl, Mapping):
                 patpl = ParameterAliasTemplate(**patpl)
