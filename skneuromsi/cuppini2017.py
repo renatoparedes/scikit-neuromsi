@@ -102,10 +102,10 @@ class Cuppini2017:
 
                 distance = self.distance(neuron_i, neuron_j)
                 e_gauss = excitation_loc * np.exp(
-                    -(distance**2) / (2 * excitation_scale**2)
+                    -(distance ** 2) / (2 * excitation_scale ** 2)
                 )
                 i_gauss = inhibition_loc * np.exp(
-                    -(distance**2) / (2 * inhibition_scale**2)
+                    -(distance ** 2) / (2 * inhibition_scale ** 2)
                 )
 
                 the_lateral_synapses[neuron_i, neuron_j] = e_gauss - i_gauss
@@ -117,7 +117,7 @@ class Cuppini2017:
         for neuron_j in range(self.neurons):
             distance = self.distance(neuron_j, loc)
             the_stimuli[neuron_j] = intensity * np.exp(
-                -(distance**2) / (2 * scale**2)
+                -(distance ** 2) / (2 * scale ** 2)
             )
 
         return the_stimuli
@@ -130,7 +130,7 @@ class Cuppini2017:
             for k in range(self.neurons):
                 d = self.distance(j, k)
                 the_synapses[j, k] = weight * np.exp(
-                    -(d**2) / (2 * sigma**2)
+                    -(d ** 2) / (2 * sigma ** 2)
                 )
         return the_synapses
 
@@ -169,8 +169,8 @@ class Cuppini2017:
         )
         auditory_to_visual_synapses = self.synapses(weight=1.4, sigma=5)
         visual_to_auditory_synapses = self.synapses(weight=1.4, sigma=5)
-        multi_to_auditory_synapses = self.synapses(weight=18, sigma=0.5)
-        multi_to_visual_synapses = self.synapses(weight=18, sigma=0.5)
+        auditory_to_multi_synapses = self.synapses(weight=18, sigma=0.5)
+        visual_to_multi_synapses = self.synapses(weight=18, sigma=0.5)
 
         # Generate Stimuli
         auditory_stimuli = self.stimuli_input(
@@ -196,12 +196,20 @@ class Cuppini2017:
 
         for time in hist_times:
 
+            # Compute cross-modal input
+            auditory_cm_input = np.sum(
+                auditory_to_visual_synapses * auditory_y, axis=1
+            )
+            visual_cm_input = np.sum(
+                visual_to_auditory_synapses * visual_y, axis=1
+            )
+            
             # Compute external input
             auditory_input = auditory_stimuli + auditory_cm_input
             visual_input = visual_simuli + visual_cm_input
             multi_input = np.sum(
-                multi_to_auditory_synapses * auditory_y, axis=1
-            ) + np.sum(multi_to_visual_synapses * visual_y, axis=1)
+                auditory_to_multi_synapses * auditory_y, axis=1
+            ) + np.sum(visual_to_multi_synapses * visual_y, axis=1)
 
             if noise:
                 auditory_noise = -(auditory_intensity * 0.4) + (

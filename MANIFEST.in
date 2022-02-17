@@ -6,6 +6,5 @@ recursive-include skneuromsi *.py
 exclude tox.ini
 exclude pyproject.toml
 recursive-exclude tests *
-recursive-exclude drafts *
 recursive-exclude docs * 
-recursive-exclude res *
+recursive-exclude drafts * 
