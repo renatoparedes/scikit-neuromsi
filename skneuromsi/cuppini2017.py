@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 import brainpy as bp
+
 import numpy as np
 
 
@@ -18,18 +19,18 @@ class Cuppini2017Integrator:
     def sigmoid(self, u):
         return 1 / (1 + np.exp(-self.s * (u - self.theta)))
 
-    def __call__(self, Y_a, Y_v, Y_m, t, U_a, U_v, U_m):
+    def __call__(self, y_a, y_v, y_m, t, u_a, u_v, u_m):
 
         # Auditory
-        dY_a = (-Y_a + self.sigmoid(U_a)) * (1 / self.tau[0])
+        dy_a = (-y_a + self.sigmoid(u_a)) * (1 / self.tau[0])
 
         # Visual
-        dY_v = (-Y_v + self.sigmoid(U_v)) * (1 / self.tau[1])
+        dy_v = (-y_v + self.sigmoid(u_v)) * (1 / self.tau[1])
 
         # Multisensory
-        dY_m = (-Y_m + self.sigmoid(U_m)) * (1 / self.tau[2])
+        dy_m = (-y_m + self.sigmoid(u_m)) * (1 / self.tau[2])
 
-        return dY_a, dY_v, dY_m
+        return dy_a, dy_v, dy_m
 
 
 class Cuppini2017:
@@ -102,10 +103,10 @@ class Cuppini2017:
 
                 distance = self.distance(neuron_i, neuron_j)
                 e_gauss = excitation_loc * np.exp(
-                    -(distance ** 2) / (2 * excitation_scale ** 2)
+                    -(np.square(distance)) / (2 * np.square(excitation_scale))
                 )
                 i_gauss = inhibition_loc * np.exp(
-                    -(distance ** 2) / (2 * inhibition_scale ** 2)
+                    -(np.square(distance)) / (2 * np.square(inhibition_scale))
                 )
 
                 the_lateral_synapses[neuron_i, neuron_j] = e_gauss - i_gauss
@@ -117,7 +118,7 @@ class Cuppini2017:
         for neuron_j in range(self.neurons):
             distance = self.distance(neuron_j, loc)
             the_stimuli[neuron_j] = intensity * np.exp(
-                -(distance ** 2) / (2 * scale ** 2)
+                -(np.square(distance)) / (2 * np.square(scale))
             )
 
         return the_stimuli
@@ -130,7 +131,7 @@ class Cuppini2017:
             for k in range(self.neurons):
                 d = self.distance(j, k)
                 the_synapses[j, k] = weight * np.exp(
-                    -(d ** 2) / (2 * sigma ** 2)
+                    -(np.square(d)) / (2 * np.square(sigma))
                 )
         return the_synapses
 
@@ -186,14 +187,6 @@ class Cuppini2017:
             np.zeros(self.neurons),
         )
 
-        # Compute cross-modal input
-        auditory_cm_input = np.sum(
-            auditory_to_visual_synapses * auditory_y, axis=1
-        )
-        visual_cm_input = np.sum(
-            visual_to_auditory_synapses * visual_y, axis=1
-        )
-
         for time in hist_times:
 
             # Compute cross-modal input
@@ -203,7 +196,7 @@ class Cuppini2017:
             visual_cm_input = np.sum(
                 visual_to_auditory_synapses * visual_y, axis=1
             )
-            
+
             # Compute external input
             auditory_input = auditory_stimuli + auditory_cm_input
             visual_input = visual_simuli + visual_cm_input
@@ -231,17 +224,17 @@ class Cuppini2017:
             visual_u = lv + visual_input
 
             # Compute multisensory total input
-            U_m = lm + multi_input
+            u_m = lm + multi_input
 
             # Compute neurons activity
             auditory_y, visual_y, multi_y = self._integrator(
-                Y_a=auditory_y,
-                Y_v=visual_y,
-                Y_m=multi_y,
+                y_a=auditory_y,
+                y_v=visual_y,
+                y_m=multi_y,
                 t=time,
-                U_a=auditory_u,
-                U_v=visual_u,
-                U_m=U_m,
+                u_a=auditory_u,
+                u_v=visual_u,
+                u_m=u_m,
             )
 
         return auditory_y, visual_y, multi_y

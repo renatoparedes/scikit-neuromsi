@@ -30,7 +30,7 @@ from setuptools import setup
 PATH = pathlib.Path(os.path.abspath(os.path.dirname(__file__)))
 
 
-REQUIREMENTS = ["numpy", "attrs", "matplotlib"]
+REQUIREMENTS = ["numpy", "brain-py", "jaxlib"]
 
 with open(PATH / "skneuromsi" / "__init__.py") as fp:
     for line in fp.readlines():

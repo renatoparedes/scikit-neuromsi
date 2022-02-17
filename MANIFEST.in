@@ -8,3 +8,4 @@ exclude pyproject.toml
 recursive-exclude tests *
 recursive-exclude docs * 
 recursive-exclude drafts * 
+recursive-exclude legacy * 
