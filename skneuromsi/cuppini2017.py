@@ -191,10 +191,10 @@ class Cuppini2017:
 
             # Compute cross-modal input
             auditory_cm_input = np.sum(
-                auditory_to_visual_synapses * auditory_y, axis=1
+                visual_to_auditory_synapses * visual_y, axis=1
             )
             visual_cm_input = np.sum(
-                visual_to_auditory_synapses * visual_y, axis=1
+                auditory_to_visual_synapses * auditory_y, axis=1
             )
 
             # Compute external input
