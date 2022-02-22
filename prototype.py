@@ -13,7 +13,7 @@ from bidict import frozenbidict
 # =============================================================================
 
 
-@dataclass
+@dataclass()
 class ParameterAliasTemplate:
     """Representa la regla de como construir alias para algun parámetro.
 
@@ -38,6 +38,9 @@ class ParameterAliasTemplate:
         if not isinstance(self.template, string.Template):
             self.template = string.Template(self.template)
 
+    def __hash__(self):
+        return hash((self.target, self.template))
+
     @property
     @functools.lru_cache(maxsize=None)
     def template_variables(self) -> frozenset:
@@ -46,11 +49,11 @@ class ParameterAliasTemplate:
         variables = set()
         for match in tpl.pattern.finditer(tpl.template):
             if match.lastgroup:
-                variables.append(match[match.lastgroup])
+                variables.add(match[match.lastgroup])
             elif match["named"] is not None:
-                variables.append(match["named"])
+                variables.add(match["named"])
             else:
-                variables.append(match["braced"])
+                variables.add(match["braced"])
         return frozenset(variables)
 
     def render(self, context) -> str:
