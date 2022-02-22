@@ -29,8 +29,7 @@ from setuptools import setup
 
 PATH = pathlib.Path(os.path.abspath(os.path.dirname(__file__)))
 
-
-REQUIREMENTS = ["numpy", "brain-py", "jaxlib"]
+REQUIREMENTS = ["numpy", "brain-py", "jaxlib", "bidict"]
 
 with open(PATH / "skneuromsi" / "__init__.py") as fp:
     for line in fp.readlines():
