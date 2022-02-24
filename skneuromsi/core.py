@@ -1,11 +1,32 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# This file is part of the
+#   Scikit-NeuroMSI Project (https://github.com/renatoparedes/scikit-neuromsi).
+# Copyright (c) 2021-2022, Renato Paredes; Cabral, Juan
+# License: BSD 3-Clause
+# Full Text:
+#     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
+
+# =============================================================================
+# IMPORTS
+# =============================================================================
+
 import functools
 import inspect
 import string
-from collections.abc import Iterable, Mapping, Collection
-from dataclasses import Field, dataclass
-from attr import frozen
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
+
 
 from bidict import frozenbidict
+
+
+# =============================================================================
+# DOCS
+# =============================================================================
+
+""""""
 
 
 # =============================================================================
@@ -310,7 +331,7 @@ class SKNMSIMethodABC:
             raise TypeError("'run' method must be redefined")
         if cls._sknms_run_method_config is None:
             raise TypeError(
-                f"Class attribute '_sknms_run_method_config' must be redefined"
+                "Class attribute '_sknms_run_method_config' must be redefined"
             )
 
         # config creation

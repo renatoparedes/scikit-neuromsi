@@ -24,6 +24,8 @@ from skneuromsi.cuppini2017 import Cuppini2017, unisensory_barycenter_readout
 
 
 @pytest.mark.parametrize("visual, auditory, multi", [(90, 90, 90)])
+@pytest.mark.slow
+@pytest.mark.model
 def test_cuppini2017_run_zero(visual, auditory, multi):
     model = Cuppini2017()
     _, _, m = model.run(
@@ -37,6 +39,8 @@ def test_cuppini2017_run_zero(visual, auditory, multi):
 @pytest.mark.parametrize(
     "auditory, visual, auditory_read, visual_read", [(90, 90, 90, 90)]
 )
+@pytest.mark.slow
+@pytest.mark.model
 def test_cuppini2017_unisensory_position_readout(
     auditory, visual, auditory_read, visual_read
 ):
@@ -58,6 +62,8 @@ def test_cuppini2017_unisensory_position_readout(
     "visual_intensity, auditory_intensity, causes",
     [(0, 25, 0), (0, 34, 1), (25, 25, 1)],
 )
+@pytest.mark.slow
+@pytest.mark.model
 def test_cuppini2017_unisensory_multisensory_integration(
     visual_intensity, auditory_intensity, causes
 ):

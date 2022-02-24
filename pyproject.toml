@@ -1,3 +1,12 @@
 [tool.black]
 line-length = 79
 target-version = ['py39']
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "model: marks tests as part some neuro msi model computation (deselect with '-m \"not model\"')",
+]
+testpaths = [
+    "tests",
+]

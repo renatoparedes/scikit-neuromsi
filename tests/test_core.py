@@ -1,10 +1,22 @@
-import pytest
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-from prototype import SKNMSIMethodABC
+# This file is part of the
+#   Scikit-NeuroMSI Project (https://github.com/renatoparedes/scikit-neuromsi).
+# Copyright (c) 2021-2022, Renato Paredes; Cabral, Juan
+# License: BSD 3-Clause
+# Full Text:
+#     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
+
+# =============================================================================
+# IMPORTS
+# =============================================================================
+
+from skneuromsi import core
 
 
 def test_method():
-    class Metodo(SKNMSIMethodABC):
+    class Metodo(core.SKNMSIMethodABC):
 
         _sknms_abstract = False
         _sknms_run_method_config = [
@@ -19,8 +31,5 @@ def test_method():
             print(visual_position, auditory_position)
 
     method = Metodo(1, mode0="aud", mode1="vis")
-    import ipdb
-
-    ipdb.set_trace()
     method.run("hola", vis_position="mundo")
     # import ipdb; ipdb.set_trace()
