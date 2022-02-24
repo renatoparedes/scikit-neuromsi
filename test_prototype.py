@@ -19,8 +19,8 @@ def test_method():
             print(visual_position, auditory_position)
 
     method = Metodo(1, mode0="aud", mode1="vis")
-    import ipdb; ipdb.set_trace()
+    import ipdb
+
+    ipdb.set_trace()
     method.run("hola", vis_position="mundo")
     # import ipdb; ipdb.set_trace()
-
-
