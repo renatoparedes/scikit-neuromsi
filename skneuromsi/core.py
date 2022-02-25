@@ -26,7 +26,10 @@ from bidict import frozenbidict
 # DOCS
 # =============================================================================
 
-""""""
+"""Implementation of a metaclass to create renameable parameters in functions \
+and methods.
+
+"""
 
 
 # =============================================================================
@@ -62,6 +65,16 @@ class ParameterAliasTemplate:
     def __hash__(self):
         return hash((self.target, self.template))
 
+    def __eq__(self, other):
+        return (
+            isinstance(other, type(self))
+            and self.target == other.target
+            and self.template.template == other.template.template
+        )
+
+    def __ne__(self, other):
+        return not self == other
+
     @property
     @functools.lru_cache(maxsize=None)
     def template_variables(self) -> frozenset:
@@ -69,12 +82,8 @@ class ParameterAliasTemplate:
         tpl = self.template
         variables = set()
         for match in tpl.pattern.finditer(tpl.template):
-            if match.lastgroup:
-                variables.add(match[match.lastgroup])
-            elif match["named"] is not None:
-                variables.add(match["named"])
-            else:
-                variables.add(match["braced"])
+            variables.add(match[match.lastgroup])
+
         return frozenset(variables)
 
     def render(self, context) -> str:
@@ -90,6 +99,14 @@ class SKNMSIRunConfig:
 
     def __post_init__(self):
         self.parameter_alias_templates = tuple(self.parameter_alias_templates)
+
+        targets = set()
+        for pat in self.parameter_alias_templates:
+            if pat.target in targets:
+                raise ValueError(
+                    f"Duplicated ParameterAliasTemplate target {pat.target}"
+                )
+            targets.add(pat.target)
 
     @classmethod
     def from_method_class(cls, method_class):
@@ -115,11 +132,6 @@ class SKNMSIRunConfig:
                     "All elements of '_sknms_run_method_config' must be "
                     "instances of  'ParameterAliasTemplate' or parameters for "
                     f"their constructor. Found: {patpl!r}"
-                )
-
-            if patpl.target in parameter_alias_templates:
-                raise ValueError(
-                    f"Duplicated ParameterAliasTemplate target {patpl.target}"
                 )
 
             parameter_alias_templates[patpl.target] = patpl
@@ -295,9 +307,8 @@ class SKNMSIRunConfig:
             # a una variable de template lo agregamos al diccionario que se
             # va a usar para crear los alias de run()
             run_parameters_template_context = {
-                k: v
-                for k, v in bound_args.arguments.items()
-                if k in self.template_variables
+                tvar: bound_args.arguments[tvar]
+                for tvar in self.template_variables
             }
 
             # creamos el nuevo run, y lo chantamos a nivel de instancia!
@@ -314,6 +325,7 @@ class SKNMSIRunConfig:
 
 
 class SKNMSIMethodABC:
+    """Abstract class that allows to configure method names dynamically."""
 
     _sknms_abstract = True
     _sknms_run_method_config = None
