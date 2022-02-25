@@ -227,9 +227,14 @@ def test_wrap_run():
     assert foo_calls == [{"self": None, "foo": "zaraza"}]
 
     with pytest.raises(TypeError) as err:
-        new_run(self=None, foo="zaraza")
+        new_run(self=None)
 
     err.match("missing a required argument: 'x_foo'")
+
+    with pytest.raises(TypeError) as err:
+        new_run(foo="zaraza")
+
+    err.match(r"run\(\) got an unexpected keyword argument 'foo'")
 
 
 def test_wrap_init():
@@ -264,9 +269,14 @@ def test_wrap_init():
     ]
 
     with pytest.raises(TypeError) as err:
-        instance.run(self=None, foo="zaraza")
+        instance.run()
 
     err.match("missing a required argument: 'x_foo'")
+
+    with pytest.raises(TypeError) as err:
+        instance.run(foo="zaraza")
+
+    err.match(r"run\(\) got an unexpected keyword argument 'foo'")
 
 
 # =============================================================================
@@ -298,9 +308,14 @@ def test_SKNMSIMethodABC():
     assert foo_calls == [{"self": instance, "foo": "zaraza"}]
 
     with pytest.raises(TypeError) as err:
-        instance.run(foo="zaraza")
+        instance.run()
 
     err.match("missing a required argument: 'x_foo'")
+
+    with pytest.raises(TypeError) as err:
+        instance.run(foo="zaraza")
+
+    err.match(r"run\(\) got an unexpected keyword argument 'foo'")
 
 
 def test_SKNMSIMethodABC_abstract():

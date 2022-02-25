@@ -271,6 +271,19 @@ class SKNMSIRunConfig:
         @functools.wraps(run_method)
         def wrapper(*args, **kwargs):
 
+            # if some parameters are not valid in the aliased function
+            # we must raise a type error with the correct message
+            invalid_kws = set(kwargs).difference(
+                signature_with_alias.parameters
+            )
+
+            if invalid_kws:
+
+                invalid = invalid_kws.pop()
+                raise TypeError(
+                    f"run() got an unexpected keyword argument {invalid!r}"
+                )
+
             # ya dentro del wrapper lo que hacemos es bindear los parametros
             # asi asignamos los valores de manera correcta a los nombres
             # de parametros adecuados
