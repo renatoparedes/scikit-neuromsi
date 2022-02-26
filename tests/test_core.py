@@ -51,14 +51,14 @@ def test_SKNMSIRunConfig_init():
     assert config.targets == {"foo", "baz"}
     assert config.template_variables == {"p0", "p1", "p2", "p3"}
 
-    alias_map = config.create_alias_target_map(
+    alias_map = config.make_run_target_alias_map(
         {"p0": "w", "p1": "x", "p2": "y", "p3": "z"}
     )
 
-    assert alias_map["w_x_foo"] == "foo" and alias_map["y_z_baz"] == "baz"
     assert (
-        alias_map.inv["foo"] == "w_x_foo" and alias_map.inv["baz"] == "y_z_baz"
+        alias_map.inv["w_x_foo"] == "foo" and alias_map.inv["y_z_baz"] == "baz"
     )
+    assert alias_map["foo"] == "w_x_foo" and alias_map["baz"] == "y_z_baz"
 
 
 def test_SKNMSIRunConfig_duplicated_targets():
@@ -83,14 +83,14 @@ def test_SKNMSIRunConfig_from_method_class():
     assert config.targets == {"foo", "baz"}
     assert config.template_variables == {"p0", "p1", "p2", "p3"}
 
-    alias_map = config.create_alias_target_map(
+    alias_map = config.make_run_target_alias_map(
         {"p0": "w", "p1": "x", "p2": "y", "p3": "z"}
     )
 
-    assert alias_map["w_x_foo"] == "foo" and alias_map["y_z_baz"] == "baz"
     assert (
-        alias_map.inv["foo"] == "w_x_foo" and alias_map.inv["baz"] == "y_z_baz"
+        alias_map.inv["w_x_foo"] == "foo" and alias_map.inv["y_z_baz"] == "baz"
     )
+    assert alias_map["foo"] == "w_x_foo" and alias_map["baz"] == "y_z_baz"
 
 
 def test_SKNMSIRunConfig_from_method_class_with_tuples():
@@ -110,14 +110,14 @@ def test_SKNMSIRunConfig_from_method_class_with_tuples():
     assert config.targets == {"foo", "baz"}
     assert config.template_variables == {"p0", "p1", "p2", "p3"}
 
-    alias_map = config.create_alias_target_map(
+    alias_map = config.make_run_target_alias_map(
         {"p0": "w", "p1": "x", "p2": "y", "p3": "z"}
     )
 
-    assert alias_map["w_x_foo"] == "foo" and alias_map["y_z_baz"] == "baz"
     assert (
-        alias_map.inv["foo"] == "w_x_foo" and alias_map.inv["baz"] == "y_z_baz"
+        alias_map.inv["w_x_foo"] == "foo" and alias_map.inv["y_z_baz"] == "baz"
     )
+    assert alias_map["foo"] == "w_x_foo" and alias_map["baz"] == "y_z_baz"
 
 
 def test_SKNMSIRunConfig_from_method_class_with_dicts():
@@ -137,14 +137,14 @@ def test_SKNMSIRunConfig_from_method_class_with_dicts():
     assert config.targets == {"foo", "baz"}
     assert config.template_variables == {"p0", "p1", "p2", "p3"}
 
-    alias_map = config.create_alias_target_map(
+    alias_map = config.make_run_target_alias_map(
         {"p0": "w", "p1": "x", "p2": "y", "p3": "z"}
     )
 
-    assert alias_map["w_x_foo"] == "foo" and alias_map["y_z_baz"] == "baz"
     assert (
-        alias_map.inv["foo"] == "w_x_foo" and alias_map.inv["baz"] == "y_z_baz"
+        alias_map.inv["w_x_foo"] == "foo" and alias_map.inv["y_z_baz"] == "baz"
     )
+    assert alias_map["foo"] == "w_x_foo" and alias_map["baz"] == "y_z_baz"
 
 
 def test_SKNMSIRunConfig_from_method_class_invalid_type():
@@ -209,7 +209,7 @@ def test_SKNMSIRunConfig_validate_init_and_run_missing_template_variable():
     err.match("Template variable/s 'p0' not found as parameter in '__init__'")
 
 
-def test_wrap_run():
+def test_SKNMSIRunConfig_wrap_run():
 
     config = core.SKNMSIRunConfig(
         [core.ParameterAliasTemplate("foo", "${p0}_foo")]
@@ -219,9 +219,13 @@ def test_wrap_run():
 
     class MethodClass:
         def run(self, foo):
+            """foo: zaraza foo"""
             foo_calls.append({"self": self, "foo": foo})
 
     new_run = config.wrap_run(MethodClass.run, {"p0": "x"})
+
+    assert new_run.__doc__ == "x_foo: zaraza x_foo"
+
     new_run(self=None, x_foo="zaraza")
 
     assert foo_calls == [{"self": None, "foo": "zaraza"}]
@@ -237,7 +241,7 @@ def test_wrap_run():
     err.match(r"run\(\) got an unexpected keyword argument 'foo'")
 
 
-def test_wrap_init():
+def test_SKNMSIRunConfig_wrap_init():
 
     config = core.SKNMSIRunConfig(
         [core.ParameterAliasTemplate("foo", "${p0}_foo")]

@@ -14,6 +14,7 @@
 
 import functools
 import inspect
+import re
 import string
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
@@ -47,6 +48,9 @@ class ParameterAliasTemplate:
         Es el nombre del parametro a reemplazar.
     template: string.Template
         Es el template sobre el cual se generaran los alias para el target.
+    doc_pattern: re.Pattern
+        Regex para reemplazar todas las ocurrencias del target por el alias
+        en la documentación.
 
     Attributes
     ----------
@@ -57,10 +61,20 @@ class ParameterAliasTemplate:
 
     target: str
     template: string.Template
+    doc_pattern: str = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.template, string.Template):
             self.template = string.Template(self.template)
+
+        self.doc_pattern = (
+            self.doc_pattern
+            if self.doc_pattern
+            else (r"(?<=\b)" + self.target + r"(?=\b)")
+        )
+
+        if not isinstance(self.doc_pattern, re.Pattern):
+            self.doc_pattern = re.compile(self.doc_pattern)
 
     def __hash__(self):
         return hash((self.target, self.template))
@@ -70,6 +84,7 @@ class ParameterAliasTemplate:
             isinstance(other, type(self))
             and self.target == other.target
             and self.template.template == other.template.template
+            and self.doc_pattern == other.doc_pattern
         )
 
     def __ne__(self, other):
@@ -158,7 +173,7 @@ class SKNMSIRunConfig:
             template_variables.update(patpl.template_variables)
         return frozenset(template_variables)
 
-    def create_alias_target_map(self, context):
+    def make_run_target_alias_map(self, context):
         """Crea un diccionario bidireccional que mapea los alias con los \
         targets.
 
@@ -167,7 +182,7 @@ class SKNMSIRunConfig:
 
         """
         at_map = frozenbidict(
-            (patpl.render(context), patpl.target)
+            (patpl.target, patpl.render(context))
             for patpl in self.parameter_alias_templates
         )
         return at_map
@@ -230,7 +245,38 @@ class SKNMSIRunConfig:
                 "parameter in '__init__' method"
             )
 
-    # INIT AND RUN METHODS REPLACEMENT ========================================
+    # RUN METHOD REPLACEMENT ==================================================
+    def _make_run_signature_with_alias(self, run_method, target_alias_map):
+        # reemplazamos cada parametro "target" por uno con un alias
+        # los que no son target lo dejamos como vienen
+        # el resto de la metadata de loa parametros no cambian
+        run_signature = inspect.signature(run_method)
+        aliased_run_parameters = []
+        for run_parameter in run_signature.parameters.values():
+            alias_parameter = inspect.Parameter(
+                name=target_alias_map.get(
+                    run_parameter.name, run_parameter.name
+                ),
+                kind=run_parameter.kind,
+                default=run_parameter.default,
+                annotation=run_parameter.annotation,
+            )
+            aliased_run_parameters.append(alias_parameter)
+
+        signature_with_alias = run_signature.replace(
+            parameters=aliased_run_parameters
+        )
+
+        return signature_with_alias
+
+    def _make_run_doc_with_alias(self, run_method, target_alias_map):
+        doc = run_method.__doc__ or ""
+        for pat in self.parameter_alias_templates:
+            pattern = pat.doc_pattern
+            alias = target_alias_map.get(pat.target)
+            doc = pattern.sub(alias, doc)
+        return doc
+
     def wrap_run(self, run_method, run_parameters_template_context):
         """Retorna una wrapper para el metodo run.
 
@@ -243,29 +289,16 @@ class SKNMSIRunConfig:
         """
 
         # creamos el mapeo de alias y target en un diccionario bidireccional
-        alias_target_map = self.create_alias_target_map(
+        target_alias_map = self.make_run_target_alias_map(
             run_parameters_template_context
         )
 
-        # reemplazamos cada parametro "target" por uno con un alias
-        # los que no son target lo dejamos como vienen
-        # el resto de la metadata de loa parametros no cambian
-        run_signature = inspect.signature(run_method)
-        aliased_run_parameters = []
-        for run_parameter in run_signature.parameters.values():
+        signature_with_alias = self._make_run_signature_with_alias(
+            run_method, target_alias_map
+        )
 
-            alias_parameter = inspect.Parameter(
-                name=alias_target_map.inv.get(
-                    run_parameter.name, run_parameter.name
-                ),
-                kind=run_parameter.kind,
-                default=run_parameter.default,
-                annotation=run_parameter.annotation,
-            )
-            aliased_run_parameters.append(alias_parameter)
-
-        signature_with_alias = run_signature.replace(
-            parameters=aliased_run_parameters
+        doc_with_alias = self._make_run_doc_with_alias(
+            run_method, target_alias_map
         )
 
         @functools.wraps(run_method)
@@ -293,15 +326,18 @@ class SKNMSIRunConfig:
             # alias a los targets correspondientes.
             target_args = bound_params.args
             target_kwargs = {
-                alias_target_map.get(k, k): v
+                target_alias_map.inv.get(k, k): v
                 for k, v in bound_params.kwargs.items()
             }
 
             return run_method(*target_args, **target_kwargs)
 
         wrapper.__signature__ = signature_with_alias
+        wrapper.__doc__ = doc_with_alias
 
         return wrapper
+
+    # WRAP INIT================================================================
 
     def wrap_init(self, init_method):
         signature = inspect.signature(init_method)
