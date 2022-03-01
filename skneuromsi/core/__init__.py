@@ -19,7 +19,7 @@
 # =============================================================================
 
 
-from .modelabc import ParameterAliasTemplate, SKNMSIRunConfig, SKNMSIMethodABC
+from .modelabc import ParameterAliasTemplate, SKNMSIMethodABC, SKNMSIRunConfig
 
 # =============================================================================
 # ALL

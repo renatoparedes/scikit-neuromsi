@@ -53,6 +53,7 @@ class Cuppini2017:
     :cite:p:`cuppini2017biologically`
 
     """
+
     def __init__(
         self,
         *,
