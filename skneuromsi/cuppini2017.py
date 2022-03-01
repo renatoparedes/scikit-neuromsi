@@ -15,6 +15,8 @@ import brainpy as bp
 
 import numpy as np
 
+from .core import SKNMSIMethodABC
+
 
 @dataclass
 class Cuppini2017Integrator:
@@ -44,7 +46,7 @@ class Cuppini2017Integrator:
         return dy_a, dy_v, dy_m
 
 
-class Cuppini2017:
+class Cuppini2017(SKNMSIMethodABC):
     """Zaraza.
 
 
@@ -54,6 +56,13 @@ class Cuppini2017:
 
     """
 
+    _sknms_run_method_config = [
+        {"target": "auditory_position", "template": "${mode0}_position"},
+        {"target": "visual_position", "template": "${mode1}_position"},
+        {"target": "auditory_intensity", "template": "${mode0}_intensity"},
+        {"target": "visual_intensity", "template": "${mode1}_intensity"},
+    ]
+
     def __init__(
         self,
         *,
@@ -62,6 +71,8 @@ class Cuppini2017:
         s=0.3,
         theta=20,
         seed=None,
+        mode0="auditory",
+        mode1="visual",
         **integrator_kws,
     ):
         if len(tau) != 3:
