@@ -52,10 +52,6 @@ class ParameterAliasTemplate:
         Regex para reemplazar todas las ocurrencias del target por el alias
         en la documentación.
 
-    Attributes
-    ----------
-    template_variables: frozenset
-        Lista todas las variables que aparecen en el template.
 
     """
 
