@@ -87,6 +87,9 @@ class Cuppini2017(SKNMSIMethodABC):
         integrator_model = Cuppini2017Integrator(tau=tau, s=s, theta=theta)
         self._integrator = bp.odeint(f=integrator_model, **integrator_kws)
 
+        self._mode0 = mode0
+        self._mode1 = mode1
+
     # PROPERTY ================================================================
 
     @property
@@ -108,6 +111,14 @@ class Cuppini2017(SKNMSIMethodABC):
     @property
     def random(self):
         return self._random
+
+    @property
+    def mode0(self):
+        return self._mode0
+
+    @property
+    def mode1(self):
+        return self._mode1
 
     # Model architecture methods
 
