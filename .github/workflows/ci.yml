@@ -1,0 +1,17 @@
+# ==============================================================
+# CI with GitHub Actions
+# ==============================================================
+
+name: Build
+
+on:
+  - push
+  - pull_request
+
+env:
+  default-python: 3.9
+
+jobs:
+  testing:
+    uses: renatoparedes/scikit-neuromsi/.github/workflows/tests.yml@2fc4631cbfa625adb56a4663b50cc7c4d5df16fe
+
