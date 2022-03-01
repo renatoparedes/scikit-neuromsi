@@ -45,6 +45,14 @@ class Cuppini2017Integrator:
 
 
 class Cuppini2017:
+    """Zaraza.
+
+
+    References
+    ----------
+    :cite:p:`cuppini2017biologically`
+
+    """
     def __init__(
         self,
         *,

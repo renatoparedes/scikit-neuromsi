@@ -1,6 +1,8 @@
 # Scikit-neuromsi
 ![logo](https://raw.githubusercontent.com/renatoparedes/scikit-neuromsi/main/res/logo_banner.png)
 
+<!-- BODY -->
+
 [![scikit-neuromsi](https://github.com/renatoparedes/scikit-neuromsi/actions/workflows/skneuromsi_ci.yml/badge.svg)](https://github.com/renatoparedes/scikit-neuromsi/actions/workflows/skneuromsi_ci.yml)
 [![Documentation Status](https://readthedocs.org/projects/scikit-neuromsi/badge/?version=latest)](https://scikit-neuromsi.readthedocs.io/en/latest/?badge=latest)
 [![PyPI](https://img.shields.io/pypi/v/scikit-neuromsi)](https://pypi.org/project/scikit-neuromsi/)
@@ -13,14 +15,28 @@
 
 ## Motivation
 
-Research on the the neural process by which unisensory signals are combined to form a significantly different multisensory response has grown exponentially in the recent years. Nevertheless, there is as yet no unified theoretical approach to multisensory integration. We believe that building a framework for multisensory integration modelling would greatly contribute to originate a unifying theory that narrows the gap between neural and behavioural multisensory responses. 
+Research on the the neural process by which unisensory signals are combined to form a significantly different multisensory response has grown exponentially in the recent years. Nevertheless, there is as yet no unified theoretical approach to multisensory integration. We believe that building a framework for multisensory integration modelling would greatly contribute to originate a unifying theory that narrows the gap between neural and behavioural multisensory responses.
 
 ## Contact
 Renato Paredes (paredesrenato92@gmail.com)
 
+## Repository and Issues
+
+https://github.com/renatoparedes/scikit-neuromsi
+
+
+## License
+
+Scikit-NeuroMSI is under
+[The 3-Clause BSD License](https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt)
+
+This license allows unlimited redistribution for any purpose as long as
+its copyright notices and the license’s disclaimers of warranty are maintained.
+
+
 ## Features
 
-**Scikit-neuromsi** currently has three classes which implement neurocomputational 
+**Scikit-neuromsi** currently has three classes which implement neurocomputational
 models of multisensory integration.
 
 The available modules are:
@@ -45,7 +61,7 @@ You need Python 3.9+ to run scikit-neuromsi.
 
 Run the following command:
 
-        $ pip install scikit-neuromsi 
+        $ pip install scikit-neuromsi
 
 or clone this repo and then inside the local directory execute:
 

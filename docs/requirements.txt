@@ -1,0 +1,15 @@
+
+Sphinx
+sphinx_rtd_theme
+
+nbsphinx
+sphinx_copybutton
+
+ipykernel
+ipython
+
+sphinxcontrib-bibtex
+sphinx-nested-apidoc
+pybtex-apa-style
+
+m2r
