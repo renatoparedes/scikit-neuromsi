@@ -44,21 +44,46 @@ def test_SKNMSIRunConfig_init():
     pat0 = modelabc.ParameterAliasTemplate("foo", "${p0}_${p1}_foo")
     pat1 = modelabc.ParameterAliasTemplate("baz", "${p2}_${p3}_baz")
 
-    config = modelabc.SKNMSIRunConfig([pat0, pat1])
+    pat2 = modelabc.ParameterAliasTemplate("foo", "${p0}_${p1}_foo")
+    pat3 = modelabc.ParameterAliasTemplate("baz", "${p2}_${p4}_baz")
 
-    assert isinstance(config.parameter_alias_templates, tuple)
-    assert config.parameter_alias_templates == (pat0, pat1)
-    assert config.targets == {"foo", "baz"}
-    assert config.template_variables == {"p0", "p1", "p2", "p3"}
+    config = modelabc.SKNMSIRunConfig([pat0, pat1], [pat2, pat3])
 
-    alias_map = config.make_run_target_alias_map(
+    assert isinstance(config._input, tuple)
+    assert isinstance(config._output, tuple)
+
+    assert config._input == (pat0, pat1)
+    assert config.input_targets == {"foo", "baz"}
+
+    assert config._output == (pat2, pat3)
+    assert config.output_targets == {"foo", "baz"}
+
+    assert config.template_variables == {"p0", "p1", "p2", "p3", "p4"}
+
+    input_alias_map = config.make_run_input_alias_map(
         {"p0": "w", "p1": "x", "p2": "y", "p3": "z"}
     )
 
     assert (
-        alias_map.inv["w_x_foo"] == "foo" and alias_map.inv["y_z_baz"] == "baz"
+        input_alias_map.inv["w_x_foo"] == "foo"
+        and input_alias_map.inv["y_z_baz"] == "baz"
     )
-    assert alias_map["foo"] == "w_x_foo" and alias_map["baz"] == "y_z_baz"
+    assert (
+        input_alias_map["foo"] == "w_x_foo"
+        and input_alias_map["baz"] == "y_z_baz"
+    )
+
+    output_alias_map = config.make_run_output_alias_map(
+        {"p0": "w", "p1": "x", "p2": "y", "p4": "z"}
+    )
+    assert (
+        output_alias_map.inv["w_x_foo"] == "foo"
+        and output_alias_map.inv["y_z_baz"] == "baz"
+    )
+    assert (
+        output_alias_map["foo"] == "w_x_foo"
+        and output_alias_map["baz"] == "y_z_baz"
+    )
 
 
 def test_SKNMSIRunConfig_duplicated_targets():
@@ -66,90 +91,177 @@ def test_SKNMSIRunConfig_duplicated_targets():
     pat1 = modelabc.ParameterAliasTemplate("foo", "${p2}_${p3}_baz")
 
     with pytest.raises(ValueError):
-        modelabc.SKNMSIRunConfig([pat0, pat1])
+        modelabc.SKNMSIRunConfig([pat0, pat1], [pat0])
+
+    with pytest.raises(ValueError):
+        modelabc.SKNMSIRunConfig([pat0], [pat0, pat1])
 
 
 def test_SKNMSIRunConfig_from_method_class():
     pat0 = modelabc.ParameterAliasTemplate("foo", "${p0}_${p1}_foo")
     pat1 = modelabc.ParameterAliasTemplate("baz", "${p2}_${p3}_baz")
 
+    pat2 = modelabc.ParameterAliasTemplate("foo", "${p0}_${p1}_foo")
+    pat3 = modelabc.ParameterAliasTemplate("baz", "${p2}_${p4}_baz")
+
     class MethodClass:
-        _sknms_run_method_config = [pat0, pat1]
+        _run_input = [pat0, pat1]
+        _run_output = [pat2, pat3]
 
     config = modelabc.SKNMSIRunConfig.from_method_class(MethodClass)
 
-    assert isinstance(config.parameter_alias_templates, tuple)
-    assert config.parameter_alias_templates == (pat0, pat1)
-    assert config.targets == {"foo", "baz"}
-    assert config.template_variables == {"p0", "p1", "p2", "p3"}
+    assert isinstance(config._input, tuple)
+    assert isinstance(config._output, tuple)
 
-    alias_map = config.make_run_target_alias_map(
+    assert config._input == (pat0, pat1)
+    assert config.input_targets == {"foo", "baz"}
+
+    assert config._output == (pat2, pat3)
+    assert config.output_targets == {"foo", "baz"}
+
+    assert config.template_variables == {"p0", "p1", "p2", "p3", "p4"}
+
+    input_alias_map = config.make_run_input_alias_map(
         {"p0": "w", "p1": "x", "p2": "y", "p3": "z"}
     )
 
     assert (
-        alias_map.inv["w_x_foo"] == "foo" and alias_map.inv["y_z_baz"] == "baz"
+        input_alias_map.inv["w_x_foo"] == "foo"
+        and input_alias_map.inv["y_z_baz"] == "baz"
     )
-    assert alias_map["foo"] == "w_x_foo" and alias_map["baz"] == "y_z_baz"
+    assert (
+        input_alias_map["foo"] == "w_x_foo"
+        and input_alias_map["baz"] == "y_z_baz"
+    )
+
+    output_alias_map = config.make_run_output_alias_map(
+        {"p0": "w", "p1": "x", "p2": "y", "p4": "z"}
+    )
+    assert (
+        output_alias_map.inv["w_x_foo"] == "foo"
+        and output_alias_map.inv["y_z_baz"] == "baz"
+    )
+    assert (
+        output_alias_map["foo"] == "w_x_foo"
+        and output_alias_map["baz"] == "y_z_baz"
+    )
 
 
 def test_SKNMSIRunConfig_from_method_class_with_tuples():
     pat0 = ("foo", "${p0}_${p1}_foo")
     pat1 = ("baz", "${p2}_${p3}_baz")
 
+    pat2 = ("foo", "${p0}_${p1}_foo")
+    pat3 = ("baz", "${p2}_${p4}_baz")
+
     class MethodClass:
-        _sknms_run_method_config = [pat0, pat1]
+        _run_input = [pat0, pat1]
+        _run_output = [pat2, pat3]
 
     config = modelabc.SKNMSIRunConfig.from_method_class(MethodClass)
 
-    assert isinstance(config.parameter_alias_templates, tuple)
-    assert config.parameter_alias_templates == (
+    assert isinstance(config._input, tuple)
+    assert isinstance(config._output, tuple)
+
+    assert config._input == (
         modelabc.ParameterAliasTemplate(*pat0),
         modelabc.ParameterAliasTemplate(*pat1),
     )
-    assert config.targets == {"foo", "baz"}
-    assert config.template_variables == {"p0", "p1", "p2", "p3"}
+    assert config.input_targets == {"foo", "baz"}
 
-    alias_map = config.make_run_target_alias_map(
+    assert config._output == (
+        modelabc.ParameterAliasTemplate(*pat2),
+        modelabc.ParameterAliasTemplate(*pat3),
+    )
+    assert config.output_targets == {"foo", "baz"}
+
+    assert config.template_variables == {"p0", "p1", "p2", "p3", "p4"}
+
+    input_alias_map = config.make_run_input_alias_map(
         {"p0": "w", "p1": "x", "p2": "y", "p3": "z"}
     )
 
     assert (
-        alias_map.inv["w_x_foo"] == "foo" and alias_map.inv["y_z_baz"] == "baz"
+        input_alias_map.inv["w_x_foo"] == "foo"
+        and input_alias_map.inv["y_z_baz"] == "baz"
     )
-    assert alias_map["foo"] == "w_x_foo" and alias_map["baz"] == "y_z_baz"
+    assert (
+        input_alias_map["foo"] == "w_x_foo"
+        and input_alias_map["baz"] == "y_z_baz"
+    )
+
+    output_alias_map = config.make_run_output_alias_map(
+        {"p0": "w", "p1": "x", "p2": "y", "p4": "z"}
+    )
+    assert (
+        output_alias_map.inv["w_x_foo"] == "foo"
+        and output_alias_map.inv["y_z_baz"] == "baz"
+    )
+    assert (
+        output_alias_map["foo"] == "w_x_foo"
+        and output_alias_map["baz"] == "y_z_baz"
+    )
 
 
 def test_SKNMSIRunConfig_from_method_class_with_dicts():
     pat0 = {"target": "foo", "template": "${p0}_${p1}_foo"}
     pat1 = {"target": "baz", "template": "${p2}_${p3}_baz"}
 
+    pat2 = {"target": "foo", "template": "${p0}_${p1}_foo"}
+    pat3 = {"target": "baz", "template": "${p2}_${p4}_baz"}
+
     class MethodClass:
-        _sknms_run_method_config = [pat0, pat1]
+        _run_input = [pat0, pat1]
+        _run_output = [pat2, pat3]
 
     config = modelabc.SKNMSIRunConfig.from_method_class(MethodClass)
 
-    assert isinstance(config.parameter_alias_templates, tuple)
-    assert config.parameter_alias_templates == (
+    assert isinstance(config._input, tuple)
+    assert isinstance(config._output, tuple)
+
+    assert config._input == (
         modelabc.ParameterAliasTemplate(**pat0),
         modelabc.ParameterAliasTemplate(**pat1),
     )
-    assert config.targets == {"foo", "baz"}
-    assert config.template_variables == {"p0", "p1", "p2", "p3"}
+    assert config.input_targets == {"foo", "baz"}
 
-    alias_map = config.make_run_target_alias_map(
+    assert config._output == (
+        modelabc.ParameterAliasTemplate(**pat2),
+        modelabc.ParameterAliasTemplate(**pat3),
+    )
+    assert config.output_targets == {"foo", "baz"}
+
+    assert config.template_variables == {"p0", "p1", "p2", "p3", "p4"}
+
+    input_alias_map = config.make_run_input_alias_map(
         {"p0": "w", "p1": "x", "p2": "y", "p3": "z"}
     )
 
     assert (
-        alias_map.inv["w_x_foo"] == "foo" and alias_map.inv["y_z_baz"] == "baz"
+        input_alias_map.inv["w_x_foo"] == "foo"
+        and input_alias_map.inv["y_z_baz"] == "baz"
     )
-    assert alias_map["foo"] == "w_x_foo" and alias_map["baz"] == "y_z_baz"
+    assert (
+        input_alias_map["foo"] == "w_x_foo"
+        and input_alias_map["baz"] == "y_z_baz"
+    )
+
+    output_alias_map = config.make_run_output_alias_map(
+        {"p0": "w", "p1": "x", "p2": "y", "p4": "z"}
+    )
+    assert (
+        output_alias_map.inv["w_x_foo"] == "foo"
+        and output_alias_map.inv["y_z_baz"] == "baz"
+    )
+    assert (
+        output_alias_map["foo"] == "w_x_foo"
+        and output_alias_map["baz"] == "y_z_baz"
+    )
 
 
 def test_SKNMSIRunConfig_from_method_class_invalid_type():
     class MethodClass:
-        _sknms_run_method_config = [None]
+        _run_input = [None]
 
     with pytest.raises(TypeError):
         modelabc.SKNMSIRunConfig.from_method_class(MethodClass)
@@ -159,7 +271,7 @@ def test_SKNMSIRunConfig_validate_init_and_run():
     pat0 = modelabc.ParameterAliasTemplate("foo", "${p0}_${p1}_foo")
     pat1 = modelabc.ParameterAliasTemplate("baz", "${p2}_${p3}_baz")
 
-    config = modelabc.SKNMSIRunConfig([pat0, pat1])
+    config = modelabc.SKNMSIRunConfig([pat0, pat1], [pat0, pat1])
 
     class MethodClass:
         def __init__(self, p0, p1, p2, p3, p4):
@@ -175,7 +287,7 @@ def test_SKNMSIRunConfig_validate_init_and_run_missing_target():
     pat0 = modelabc.ParameterAliasTemplate("foo", "${p0}_${p1}_foo")
     pat1 = modelabc.ParameterAliasTemplate("baz", "${p2}_${p3}_baz")
 
-    config = modelabc.SKNMSIRunConfig([pat0, pat1])
+    config = modelabc.SKNMSIRunConfig([pat0, pat1], [pat0, pat1])
 
     class MethodClass:
         def __init__(self, p0, p1, p2, p3, p4):
@@ -194,7 +306,7 @@ def test_SKNMSIRunConfig_validate_init_and_run_missing_template_variable():
     pat0 = modelabc.ParameterAliasTemplate("foo", "${p0}_${p1}_foo")
     pat1 = modelabc.ParameterAliasTemplate("baz", "${p2}_${p3}_baz")
 
-    config = modelabc.SKNMSIRunConfig([pat0, pat1])
+    config = modelabc.SKNMSIRunConfig([pat0, pat1], [pat0, pat1])
 
     class MethodClass:
         def __init__(self, p1, p2, p3, p4):
@@ -212,7 +324,7 @@ def test_SKNMSIRunConfig_validate_init_and_run_missing_template_variable():
 def test_SKNMSIRunConfig_wrap_run():
 
     config = modelabc.SKNMSIRunConfig(
-        [modelabc.ParameterAliasTemplate("foo", "${p0}_foo")]
+        [modelabc.ParameterAliasTemplate("foo", "${p0}_foo")], []
     )
 
     foo_calls = []
@@ -244,7 +356,7 @@ def test_SKNMSIRunConfig_wrap_run():
 def test_SKNMSIRunConfig_wrap_init():
 
     config = modelabc.SKNMSIRunConfig(
-        [modelabc.ParameterAliasTemplate("foo", "${p0}_foo")]
+        [modelabc.ParameterAliasTemplate("foo", "${p0}_foo")], []
     )
 
     foo_calls = []
@@ -294,7 +406,10 @@ def test_SKNMSIMethodABC():
 
     class Method(modelabc.SKNMSIMethodABC):
 
-        _sknms_run_method_config = [
+        _run_input = [
+            {"target": "foo", "template": "${p0}_foo"},
+        ]
+        _run_output = [
             {"target": "foo", "template": "${p0}_foo"},
         ]
 
@@ -304,9 +419,7 @@ def test_SKNMSIMethodABC():
         def run(self, foo):
             foo_calls.append({"self": self, "foo": foo})
 
-    assert isinstance(
-        Method._sknms_run_method_config, modelabc.SKNMSIRunConfig
-    )
+    assert isinstance(Method._run_io, modelabc.SKNMSIRunConfig)
 
     instance = Method(p0="x")
     instance.run(x_foo="zaraza")
@@ -327,14 +440,12 @@ def test_SKNMSIMethodABC():
 def test_SKNMSIMethodABC_abstract():
     class Method(modelabc.SKNMSIMethodABC):
 
-        _sknms_abstract = True
-        _sknms_run_method_config = [
+        _abstract = True
+        _run_input = [
             {"target": "foo", "template": "${p0}_foo"},
         ]
 
-    assert Method._sknms_run_method_config == [
-        {"target": "foo", "template": "${p0}_foo"}
-    ]
+    assert Method._run_input == [{"target": "foo", "template": "${p0}_foo"}]
 
 
 def test_SKNMSIMethodABC_missing_run():
@@ -342,27 +453,46 @@ def test_SKNMSIMethodABC_missing_run():
 
         class Method(modelabc.SKNMSIMethodABC):
 
-            _sknms_run_method_config = [
+            _run_input = [
+                {"target": "foo", "template": "${p0}_foo"},
+            ]
+
+            _run_output = [
                 {"target": "foo", "template": "${p0}_foo"},
             ]
 
     err.match("'run' method must be redefined")
 
 
-def test_SKNMSIMethodABC_missing__sknms_run_method_config():
+def test_SKNMSIMethodABC_missing__run_input():
     with pytest.raises(TypeError) as err:
 
         class Method(modelabc.SKNMSIMethodABC):
+            _run_output = []
+
             def run(self):
                 pass
 
-    err.match("Class attribute '_sknms_run_method_config' must be redefined")
+    err.match("Class attribute '_run_input' must be redefined")
+
+
+def test_SKNMSIMethodABC_missing__run_output():
+    with pytest.raises(TypeError) as err:
+
+        class Method(modelabc.SKNMSIMethodABC):
+            _run_input = []
+
+            def run(self):
+                pass
+
+    err.match("Class attribute '_run_output' must be redefined")
 
 
 def test_SKNMSIMethodABC_base_run_not_implemethed():
     class Method(modelabc.SKNMSIMethodABC):
 
-        _sknms_run_method_config = []
+        _run_input = []
+        _run_output = []
 
         def __init__(self):
             pass

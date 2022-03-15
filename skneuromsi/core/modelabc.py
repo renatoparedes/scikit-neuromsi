@@ -14,10 +14,11 @@
 
 import functools
 import inspect
+import itertools as it
 import re
 import string
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 from bidict import frozenbidict
@@ -104,59 +105,71 @@ class ParameterAliasTemplate:
 
 @dataclass
 class SKNMSIRunConfig:
-    parameter_alias_templates: tuple
+    _input: tuple
+    _output: tuple
 
     # initialization
 
     def __post_init__(self):
-        self.parameter_alias_templates = tuple(self.parameter_alias_templates)
+        self._input = tuple(self._input)
+        self._output = tuple(self._output)
 
-        targets = set()
-        for pat in self.parameter_alias_templates:
-            if pat.target in targets:
-                raise ValueError(
-                    f"Duplicated ParameterAliasTemplate target {pat.target}"
-                )
-            targets.add(pat.target)
+        for pats in [self._input, self._output]:
+            targets = set()
+            for pat in pats:
+                if pat.target in targets:
+                    target = pat.target
+                    raise ValueError(
+                        f"Duplicated ParameterAliasTemplate target {target}"
+                    )
+                targets.add(pat.target)
 
     @classmethod
     def from_method_class(cls, method_class):
         """Crea una nueva instancia de configuracion basandose en una
         subclase de SKNMSIMethodABC.
 
-        La clase debe implementar la variable de ''_sknms_run_method_config''
+        La clase debe implementar la variable de ''_run_input''
         la cual contiene la configuracion de los alias templates.
 
         """
 
-        parameter_alias_templates = {}
-        for patpl in method_class._sknms_run_method_config:
+        def parse_run_conf(conf, name):
+            cache = {}
+            for patpl in conf:
 
-            if isinstance(patpl, Mapping):
-                patpl = ParameterAliasTemplate(**patpl)
+                if isinstance(patpl, Mapping):
+                    patpl = ParameterAliasTemplate(**patpl)
 
-            elif isinstance(patpl, Iterable):
-                patpl = ParameterAliasTemplate(*patpl)
+                elif isinstance(patpl, Iterable):
+                    patpl = ParameterAliasTemplate(*patpl)
 
-            if not isinstance(patpl, ParameterAliasTemplate):
-                raise TypeError(
-                    "All elements of '_sknms_run_method_config' must be "
-                    "instances of  'ParameterAliasTemplate' or parameters for "
-                    f"their constructor. Found: {patpl!r}"
-                )
+                if not isinstance(patpl, ParameterAliasTemplate):
+                    raise TypeError(
+                        f"All elements of '{name}' must be "
+                        "instances of  'ParameterAliasTemplate' or parameters "
+                        f"for their constructor. Found: {patpl!r}"
+                    )
+                cache[patpl.target] = patpl
 
-            parameter_alias_templates[patpl.target] = patpl
+            return tuple(cache.values())
 
-        return cls(parameter_alias_templates.values())
+        _input = parse_run_conf(method_class._run_input, "_run_input")
+        _output = parse_run_conf(method_class._run_output, "_run_output")
+
+        return cls(_input=_input, _output=_output)
 
     # API
 
     @property
-    def targets(self):
+    def input_targets(self):
         """Set con todos los parametros configurables de run."""
-        return frozenset(
-            patpl.target for patpl in self.parameter_alias_templates
-        )
+        return frozenset(patpl.target for patpl in self._input)
+
+    @property
+    def output_targets(self):
+        """Set con todos los parametros configurables de run output."""
+        return frozenset(patpl.target for patpl in self._output)
 
     @property
     def template_variables(self):
@@ -165,11 +178,11 @@ class SKNMSIRunConfig:
 
         """
         template_variables = set()
-        for patpl in self.parameter_alias_templates:
+        for patpl in it.chain(self._input, self._output):
             template_variables.update(patpl.template_variables)
         return frozenset(template_variables)
 
-    def make_run_target_alias_map(self, context):
+    def make_run_input_alias_map(self, context):
         """Crea un diccionario bidireccional que mapea los alias con los \
         targets.
 
@@ -178,8 +191,14 @@ class SKNMSIRunConfig:
 
         """
         at_map = frozenbidict(
-            (patpl.target, patpl.render(context))
-            for patpl in self.parameter_alias_templates
+            (patpl.target, patpl.render(context)) for patpl in self._input
+        )
+        return at_map
+
+    def make_run_output_alias_map(self, context):
+
+        at_map = frozenbidict(
+            (patpl.target, patpl.render(context)) for patpl in self._output
         )
         return at_map
 
@@ -222,7 +241,7 @@ class SKNMSIRunConfig:
 
         # THE RUN ------------------------------------------------------------
         targets_not_found = self._parameters_difference(
-            method_class.run, self.targets
+            method_class.run, self.input_targets
         )
         if targets_not_found:
             tnf = ", ".join(targets_not_found)
@@ -267,7 +286,7 @@ class SKNMSIRunConfig:
 
     def _make_run_doc_with_alias(self, run_method, target_alias_map):
         doc = run_method.__doc__ or ""
-        for pat in self.parameter_alias_templates:
+        for pat in self._input:
             pattern = pat.doc_pattern
             alias = target_alias_map.get(pat.target)
             doc = pattern.sub(alias, doc)
@@ -285,7 +304,7 @@ class SKNMSIRunConfig:
         """
 
         # creamos el mapeo de alias y target en un diccionario bidireccional
-        target_alias_map = self.make_run_target_alias_map(
+        target_alias_map = self.make_run_input_alias_map(
             run_parameters_template_context
         )
 
@@ -372,8 +391,9 @@ class SKNMSIRunConfig:
 class SKNMSIMethodABC:
     """Abstract class that allows to configure method names dynamically."""
 
-    _sknms_abstract = True
-    _sknms_run_method_config = None
+    _abstract = True
+    _run_input = None
+    _run_output = None
 
     def run(self):
         raise NotImplementedError("Default run method has has no implentation")
@@ -381,15 +401,15 @@ class SKNMSIMethodABC:
     def __init_subclass__(cls):
 
         # simple validation
-        if vars(cls).get("_sknms_abstract", False):
+        if vars(cls).get("_abstract", False):
             return
 
         if cls.run is SKNMSIMethodABC.run:
             raise TypeError("'run' method must be redefined")
-        if cls._sknms_run_method_config is None:
-            raise TypeError(
-                "Class attribute '_sknms_run_method_config' must be redefined"
-            )
+        if cls._run_input is None:
+            raise TypeError("Class attribute '_run_input' must be redefined")
+        if cls._run_output is None:
+            raise TypeError("Class attribute '_run_output' must be redefined")
 
         # config creation
         config = SKNMSIRunConfig.from_method_class(cls)
@@ -399,4 +419,6 @@ class SKNMSIMethodABC:
 
         # teardown
         cls.__init__ = config.wrap_init(cls.__init__)
-        cls._sknms_run_method_config = config
+        cls._run_io = config
+
+        del cls._run_input, cls._run_output

@@ -48,11 +48,10 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",
     "sphinx.ext.autosummary",
-
     # skneuromsi
     "nbsphinx",
     "sphinxcontrib.bibtex",
-    "sphinx_copybutton"
+    "sphinx_copybutton",
 ]
 
 # =============================================================================
