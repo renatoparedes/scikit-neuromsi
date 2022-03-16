@@ -18,10 +18,12 @@ import itertools as it
 import re
 import string
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 from bidict import frozenbidict
+
+from . import result
 
 
 # =============================================================================
@@ -107,6 +109,8 @@ class ParameterAliasTemplate:
 class SKNMSIRunConfig:
     _input: tuple
     _output: tuple
+    _result_cls: result.Result
+    _model_name: str
 
     # initialization
 
@@ -156,8 +160,17 @@ class SKNMSIRunConfig:
 
         _input = parse_run_conf(method_class._run_input, "_run_input")
         _output = parse_run_conf(method_class._run_output, "_run_output")
+        _result = method_class._run_result
+        _model_name = str(
+            getattr(method_class, "_model_name", method_class.__name__)
+        )
 
-        return cls(_input=_input, _output=_output)
+        return cls(
+            _model_name=_model_name,
+            _input=_input,
+            _output=_output,
+            _result_cls=_result,
+        )
 
     # API
 
@@ -292,7 +305,7 @@ class SKNMSIRunConfig:
             doc = pattern.sub(alias, doc)
         return doc
 
-    def wrap_run(self, run_method, run_parameters_template_context):
+    def wrap_run(self, run_method, run_template_context):
         """Retorna una wrapper para el metodo run.
 
         Este metodo es utilizado *por cada instancia* de un objeto de clase
@@ -304,16 +317,16 @@ class SKNMSIRunConfig:
         """
 
         # creamos el mapeo de alias y target en un diccionario bidireccional
-        target_alias_map = self.make_run_input_alias_map(
-            run_parameters_template_context
-        )
+        # para el input y el output
+        input_alias_map = self.make_run_input_alias_map(run_template_context)
+        output_alias_map = self.make_run_output_alias_map(run_template_context)
 
         signature_with_alias = self._make_run_signature_with_alias(
-            run_method, target_alias_map
+            run_method, input_alias_map
         )
 
         doc_with_alias = self._make_run_doc_with_alias(
-            run_method, target_alias_map
+            run_method, input_alias_map
         )
 
         @functools.wraps(run_method)
@@ -341,11 +354,16 @@ class SKNMSIRunConfig:
             # alias a los targets correspondientes.
             target_args = bound_params.args
             target_kwargs = {
-                target_alias_map.inv.get(k, k): v
+                input_alias_map.inv.get(k, k): v
                 for k, v in bound_params.kwargs.items()
             }
+            result = run_method(*target_args, **target_kwargs)
 
-            return run_method(*target_args, **target_kwargs)
+            # now we rename the output
+            result_aliased = {
+                output_alias_map.get(k, k): v for k, v in result.items()
+            }
+            return self._result_cls(name=self._model_name, data=result_aliased)
 
         wrapper.__signature__ = signature_with_alias
         wrapper.__doc__ = doc_with_alias
@@ -370,15 +388,13 @@ class SKNMSIRunConfig:
             # agarramos los parametros bindeados y si ese parametro, pertenece
             # a una variable de template lo agregamos al diccionario que se
             # va a usar para crear los alias de run()
-            run_parameters_template_context = {
+            run_template_context = {
                 tvar: bound_args.arguments[tvar]
                 for tvar in self.template_variables
             }
 
             # creamos el nuevo run, y lo chantamos a nivel de instancia!
-            instance.run = self.wrap_run(
-                instance.run, run_parameters_template_context
-            )
+            instance.run = self.wrap_run(instance.run, run_template_context)
 
         return wrapper
 
@@ -392,6 +408,8 @@ class SKNMSIMethodABC:
     """Abstract class that allows to configure method names dynamically."""
 
     _abstract = True
+    _model_name = None
+    _run_result = result.Result
     _run_input = None
     _run_output = None
 
@@ -420,5 +438,3 @@ class SKNMSIMethodABC:
         # teardown
         cls.__init__ = config.wrap_init(cls.__init__)
         cls._run_io = config
-
-        del cls._run_input, cls._run_output

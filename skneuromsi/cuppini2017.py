@@ -56,13 +56,17 @@ class Cuppini2017(SKNMSIMethodABC):
 
     """
 
+    _model_name = "Cuppini2017"
     _run_input = [
         {"target": "auditory_position", "template": "${mode0}_position"},
         {"target": "visual_position", "template": "${mode1}_position"},
         {"target": "auditory_intensity", "template": "${mode0}_intensity"},
         {"target": "visual_intensity", "template": "${mode1}_intensity"},
     ]
-    _run_output = []
+    _run_output = [
+        {"target": "auditory", "template": "${mode0}"},
+        {"target": "visual", "template": "${mode1}"},
+    ]
 
     def __init__(
         self,
@@ -280,8 +284,8 @@ class Cuppini2017(SKNMSIMethodABC):
                 u_m=u_m,
             )
 
-        return auditory_y, visual_y, multi_y
-        # return {"auditory": auditory_y, "visual": visual_y, "multi": multi_y}
+        # return auditory_y, visual_y, multi_y
+        return {"auditory": auditory_y, "visual": visual_y, "multi": multi_y}
 
 
 def unisensory_barycenter_readout(

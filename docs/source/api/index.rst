@@ -10,10 +10,18 @@
 
 .. toctree::
    :maxdepth: 2
-   :glob:
 
    core/index
-   *
 
 
+.. toctree::
+   :maxdepth: 2
 
+   utils/index
+
+
+.. toctree::
+   :maxdepth: 2
+   :glob:
+
+   cuppini2017
