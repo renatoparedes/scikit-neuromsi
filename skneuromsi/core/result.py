@@ -42,6 +42,12 @@ class Result:
             return self._df[a].copy()
         raise AttributeError(a)
 
+    def __getitem__(self, a):
+        return self._df[a].copy()
+
+    def __dir__(self):
+        return super().__dir__() + list(self._df.columns)
+
     def __len__(self):
         return len(self._df)
 
@@ -54,8 +60,8 @@ class Result:
         return np.shape(self._df)
 
     def _get_dimensions(self):
-        s_number, m_number = self.shape
-        dimensions = f"{s_number} Stimuli x {m_number} Modes"
+        p_number, m_number = self.shape
+        dimensions = f"{p_number} Positions x {m_number} Modes"
         return dimensions
 
     def __repr__(self):
