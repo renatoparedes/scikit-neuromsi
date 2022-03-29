@@ -28,9 +28,14 @@ from skneuromsi.alais_burr2004 import AlaisBurr2004
 )
 def test_alaisburr2004_run_zero(visual, auditory, expected):
     model = AlaisBurr2004()
-    out = model.run(visual_position=visual, auditory_position=auditory)
+    locations = np.arange(-20, 20, 0.01)
+    out = model.run(
+        visual_position=visual,
+        auditory_position=auditory,
+        possible_locations=locations,
+    )
     idx = out["multi"].argmax()
-    m_loc = model.possible_locations[idx]
+    m_loc = locations[idx]
 
     np.testing.assert_almost_equal(m_loc, expected)
 
@@ -50,9 +55,12 @@ def test_alaisburr2004_mle_integration(
         pp. 429-433, Jan. 2002, doi: 10.1038/415429a.
     """
 
-    model = AlaisBurr2004(
-        auditory_sigma=auditory_sigma, visual_sigma=visual_sigma
+    model = AlaisBurr2004()
+
+    model_visual_weight = model.weight_calculator(visual_sigma, auditory_sigma)
+    model_auditory_weight = model.weight_calculator(
+        auditory_sigma, visual_sigma
     )
 
-    assert model.visual_weight == visual_weight
-    assert model.auditory_weight == auditory_weight
+    assert model_visual_weight == visual_weight
+    assert model_auditory_weight == auditory_weight

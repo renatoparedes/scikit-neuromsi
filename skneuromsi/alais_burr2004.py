@@ -39,6 +39,8 @@ class AlaisBurr2004(SKNMSIMethodABC):
     _run_input = [
         {"target": "auditory_position", "template": "${mode0}_position"},
         {"target": "visual_position", "template": "${mode1}_position"},
+        {"target": "auditory_sigma", "template": "${mode0}_sigma"},
+        {"target": "visual_sigma", "template": "${mode1}_sigma"},
     ]
 
     _run_output = [
@@ -49,59 +51,14 @@ class AlaisBurr2004(SKNMSIMethodABC):
     def __init__(
         self,
         *,
-        possible_locations=np.arange(-20, 20, 0.01),
-        auditory_sigma=3.0,
-        visual_sigma=3.0,
         mode0="auditory",
         mode1="visual",
     ):
-
-        self._possible_locations = possible_locations
-
-        self._auditory_sigma = auditory_sigma
-        self._visual_sigma = visual_sigma
-
-        self._auditory_weight = np.square(visual_sigma) / (
-            np.square(auditory_sigma) + np.square(visual_sigma)
-        )
-
-        self._visual_weight = np.square(auditory_sigma) / (
-            np.square(visual_sigma) + np.square(auditory_sigma)
-        )
-
-        self._multisensory_sigma = np.sqrt(
-            (np.square(visual_sigma) * np.square(auditory_sigma))
-            / (np.square(auditory_sigma) + np.square(visual_sigma))
-        )
 
         self._mode0 = mode0
         self._mode1 = mode1
 
     # PROPERTY ================================================================
-
-    @property
-    def possible_locations(self):
-        return self._possible_locations
-
-    @property
-    def auditory_sigma(self):
-        return self._auditory_sigma
-
-    @property
-    def visual_sigma(self):
-        return self._visual_sigma
-
-    @property
-    def auditory_weight(self):
-        return self._auditory_weight
-
-    @property
-    def visual_weight(self):
-        return self._visual_weight
-
-    @property
-    def multisensory_sigma(self):
-        return self._multisensory_sigma
 
     @property
     def mode0(self):
@@ -112,11 +69,13 @@ class AlaisBurr2004(SKNMSIMethodABC):
         return self._mode1
 
     # Model methods
-    def unisensory_estimator(self, unisensory_sigma, unisensory_position):
+    def unisensory_estimator(
+        self, unisensory_sigma, unisensory_position, possible_locations
+    ):
 
         sigma = unisensory_sigma
         location = unisensory_position
-        plocations = self.possible_locations
+        plocations = possible_locations
 
         unisensory_estimate = (
             1 / np.sqrt(2 * np.pi * np.square(sigma))
@@ -126,6 +85,12 @@ class AlaisBurr2004(SKNMSIMethodABC):
 
         return unisensory_estimate
 
+    def weight_calculator(self, target_sigma, reference_sigma):
+        target_weight = np.square(reference_sigma) / (
+            np.square(target_sigma) + np.square(reference_sigma)
+        )
+        return target_weight
+
     def multisensory_estimator(
         self,
         unisensory_position_a,
@@ -133,6 +98,7 @@ class AlaisBurr2004(SKNMSIMethodABC):
         unisensory_weight_a,
         unisensory_weight_b,
         multisensory_sigma,
+        possible_locations,
     ):
 
         sigma = multisensory_sigma
@@ -141,7 +107,7 @@ class AlaisBurr2004(SKNMSIMethodABC):
             unisensory_weight_a * unisensory_position_a
             + unisensory_weight_b * unisensory_position_b
         )
-        plocations = self.possible_locations
+        plocations = possible_locations
 
         multisensory_estimate = (
             1 / np.sqrt(2 * np.pi * np.square(sigma))
@@ -156,20 +122,27 @@ class AlaisBurr2004(SKNMSIMethodABC):
         self,
         auditory_position,
         visual_position,
+        *,
+        possible_locations=np.arange(-20, 20, 0.01),
+        auditory_sigma=3.0,
+        visual_sigma=3.0,
     ):
 
         auditory_estimate = self.unisensory_estimator(
-            self.auditory_sigma, auditory_position
+            auditory_sigma, auditory_position, possible_locations
         )
         visual_estimate = self.unisensory_estimator(
-            self.visual_sigma, visual_position
+            visual_sigma, visual_position, possible_locations
         )
 
-        auditory_weight = self.auditory_weight
+        multisensory_sigma = np.sqrt(
+            (np.square(visual_sigma) * np.square(auditory_sigma))
+            / (np.square(auditory_sigma) + np.square(visual_sigma))
+        )
 
-        visual_weight = self.visual_weight
+        auditory_weight = self.weight_calculator(auditory_sigma, visual_sigma)
 
-        multisensory_sigma = self.multisensory_sigma
+        visual_weight = self.weight_calculator(visual_sigma, auditory_sigma)
 
         multisensory_estimate = self.multisensory_estimator(
             auditory_position,
@@ -177,6 +150,7 @@ class AlaisBurr2004(SKNMSIMethodABC):
             auditory_weight,
             visual_weight,
             multisensory_sigma,
+            possible_locations,
         )
 
         return {
