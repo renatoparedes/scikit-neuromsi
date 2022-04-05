@@ -13,6 +13,7 @@
 # =============================================================================
 
 import functools
+from turtle import back
 
 import numpy as np
 
@@ -150,7 +151,7 @@ class Result:
         aname = self._nmap[name]
         return self._df[aname].to_numpy()
 
-    def _neural_readout(self):
+    def _neural_location_readout(self):
 
         neurons = len(self._df)
         auditory_position = self.get_aliased_column("auditory_position")
@@ -206,7 +207,15 @@ class Result:
     def _bayesian_location_readout(self):
         ...
 
+    def _mre_location_readout(self):
+        pass
+
     def location_readout(self):
-        if self._model_type == "Bayesian":
-            return self._bayesian_location_readout()
-        return self._neural_readout()
+        backends = {
+            "Bayesian": self._bayesian_location_readout,
+            "Neural": self._neural_readout,
+            "MRE": self._mre_location_readout
+        }
+
+        readout = backends[self._model_type]
+        return readout()
