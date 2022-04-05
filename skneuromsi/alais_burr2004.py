@@ -36,6 +36,7 @@ class AlaisBurr2004(SKNMSIMethodABC):
     """
 
     _model_name = "AlaisBurr2004"
+    _model_type = "MLE"
     _run_input = [
         {"target": "auditory_position", "template": "${mode0}_position"},
         {"target": "visual_position", "template": "${mode1}_position"},

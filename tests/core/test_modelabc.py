@@ -52,6 +52,7 @@ def test_SKNMSIRunConfig_init():
         _output=[pat2, pat3],
         _result_cls=None,
         _model_name="model",
+        _model_type="Neural",
     )
 
     assert isinstance(config._input, tuple)
@@ -97,10 +98,10 @@ def test_SKNMSIRunConfig_duplicated_targets():
     pat1 = modelabc.ParameterAliasTemplate("foo", "${p2}_${p3}_baz")
 
     with pytest.raises(ValueError):
-        modelabc.SKNMSIRunConfig([pat0, pat1], [pat0], None, "model")
+        modelabc.SKNMSIRunConfig([pat0, pat1], [pat0], None, "model", "Neural")
 
     with pytest.raises(ValueError):
-        modelabc.SKNMSIRunConfig([pat0], [pat0, pat1], None, "model")
+        modelabc.SKNMSIRunConfig([pat0], [pat0, pat1], None, "model", "Neural")
 
 
 def test_SKNMSIRunConfig_from_method_class():
@@ -114,6 +115,7 @@ def test_SKNMSIRunConfig_from_method_class():
         _run_input = [pat0, pat1]
         _run_output = [pat2, pat3]
         _run_result = None
+        _model_type = "Neural"
 
     config = modelabc.SKNMSIRunConfig.from_method_class(MethodClass)
 
@@ -166,6 +168,7 @@ def test_SKNMSIRunConfig_from_method_class_with_tuples():
         _run_input = [pat0, pat1]
         _run_output = [pat2, pat3]
         _run_result = None
+        _model_type = "Neural"
 
     config = modelabc.SKNMSIRunConfig.from_method_class(MethodClass)
 
@@ -224,6 +227,7 @@ def test_SKNMSIRunConfig_from_method_class_with_dicts():
         _run_input = [pat0, pat1]
         _run_output = [pat2, pat3]
         _run_result = None
+        _model_type = "Neural"
 
     config = modelabc.SKNMSIRunConfig.from_method_class(MethodClass)
 
@@ -284,7 +288,11 @@ def test_SKNMSIRunConfig_validate_init_and_run():
     pat1 = modelabc.ParameterAliasTemplate("baz", "${p2}_${p3}_baz")
 
     config = modelabc.SKNMSIRunConfig(
-        [pat0, pat1], [pat0, pat1], None, _model_name="model"
+        [pat0, pat1],
+        [pat0, pat1],
+        None,
+        _model_name="model",
+        _model_type="Neural",
     )
 
     class MethodClass:
@@ -302,7 +310,11 @@ def test_SKNMSIRunConfig_validate_init_and_run_missing_target():
     pat1 = modelabc.ParameterAliasTemplate("baz", "${p2}_${p3}_baz")
 
     config = modelabc.SKNMSIRunConfig(
-        [pat0, pat1], [pat0, pat1], None, _model_name="model"
+        [pat0, pat1],
+        [pat0, pat1],
+        None,
+        _model_name="model",
+        _model_type="Neural",
     )
 
     class MethodClass:
@@ -323,7 +335,11 @@ def test_SKNMSIRunConfig_validate_init_and_run_missing_template_variable():
     pat1 = modelabc.ParameterAliasTemplate("baz", "${p2}_${p3}_baz")
 
     config = modelabc.SKNMSIRunConfig(
-        [pat0, pat1], [pat0, pat1], None, _model_name="model"
+        [pat0, pat1],
+        [pat0, pat1],
+        None,
+        _model_name="model",
+        _model_type="Neural",
     )
 
     class MethodClass:
@@ -346,6 +362,7 @@ def test_SKNMSIRunConfig_wrap_run():
         [],
         lambda **kw: {},
         "model",
+        _model_type="Neural",
     )
 
     foo_calls = []
@@ -382,6 +399,7 @@ def test_SKNMSIRunConfig_wrap_init():
         _output=[],
         _result_cls=lambda **kw: {},
         _model_name="model",
+        _model_type="Neural",
     )
 
     foo_calls = []
@@ -431,7 +449,7 @@ def test_SKNMSIMethodABC():
     foo_calls = []
 
     class Method(modelabc.SKNMSIMethodABC):
-
+        _model_type = "Neural"
         _run_input = [
             {"target": "foo", "template": "${p0}_foo"},
         ]
@@ -520,6 +538,7 @@ def test_SKNMSIMethodABC_base_run_not_implemethed():
 
         _run_input = []
         _run_output = []
+        _model_type = "Neural"
 
         def __init__(self):
             pass

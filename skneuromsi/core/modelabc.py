@@ -35,6 +35,12 @@ and methods.
 
 """
 
+# =============================================================================
+# CONSTANTS
+# =============================================================================
+
+MODEL_TYPES = {"MLE", "Bayesian", "Neural"}
+
 
 # =============================================================================
 #
@@ -105,18 +111,28 @@ class ParameterAliasTemplate:
         return self.template.substitute(context)
 
 
+# =============================================================================
+# CONFIG
+# =============================================================================
 @dataclass
 class SKNMSIRunConfig:
     _input: tuple
     _output: tuple
     _result_cls: result.Result
     _model_name: str
+    _model_type: str
 
     # initialization
 
     def __post_init__(self):
         self._input = tuple(self._input)
         self._output = tuple(self._output)
+
+        if self._model_type not in MODEL_TYPES:
+            mtypes = ", ".join(MODEL_TYPES)
+            raise ValueError(
+                f"Class attribute '_model_type' must be one of {mtypes}"
+            )
 
         for pats in [self._input, self._output]:
             targets = set()
@@ -164,9 +180,11 @@ class SKNMSIRunConfig:
         _model_name = str(
             getattr(method_class, "_model_name", method_class.__name__)
         )
+        _model_type = method_class._model_type
 
         return cls(
             _model_name=_model_name,
+            _model_type=_model_type,
             _input=_input,
             _output=_output,
             _result_cls=_result,
@@ -364,7 +382,10 @@ class SKNMSIRunConfig:
                 output_alias_map.get(k, k): v for k, v in result.items()
             }
             return self._result_cls(
-                name=self._model_name, nmap=result_aliased, data=result_aliased
+                name=self._model_name,
+                model_type=self._model_type,
+                nmap=result_aliased,
+                data=result_aliased,
             )
 
         wrapper.__signature__ = signature_with_alias
@@ -411,6 +432,7 @@ class SKNMSIMethodABC:
 
     _abstract = True
     _model_name = None
+    _model_type = None
     _run_result = result.Result
     _run_input = None
     _run_output = None
@@ -430,6 +452,8 @@ class SKNMSIMethodABC:
             raise TypeError("Class attribute '_run_input' must be redefined")
         if cls._run_output is None:
             raise TypeError("Class attribute '_run_output' must be redefined")
+        if cls._model_type is None:
+            raise TypeError("Class attribute '_model_type' must be redefined")
 
         # config creation
         config = SKNMSIRunConfig.from_method_class(cls)

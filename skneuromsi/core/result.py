@@ -27,16 +27,25 @@ from .stats import ResultStatsAccessor
 
 
 class Result:
-    def __init__(self, *, name, nmap, data):
+    def __init__(self, *, name, model_type, nmap, data):
         self._name = name
         self._df = (
             data if isinstance(data, pd.DataFrame) else pd.DataFrame(data)
         )
         self._nmap = nmap
+        self._model_type = model_type
 
     @property
     def name(self):
         return self._name
+
+    @property
+    def nmap(self):
+        return self._nmap
+
+    @property
+    def model_type(self):
+        return self._model_type
 
     def __getattr__(self, a):
         if a in self._df.columns:
@@ -54,7 +63,12 @@ class Result:
 
     def copy(self):
         cls = type(self)
-        return cls(self._name, self._df.copy())
+        return cls(
+            name=self._name,
+            model_type=self._model_type,
+            nmap=self._nmap,
+            data=self._df.copy(),
+        )
 
     @property
     def shape(self):
@@ -193,7 +207,6 @@ class Result:
         ...
 
     def location_readout(self):
-        if self._model_type is "Bayesian":
+        if self._model_type == "Bayesian":
             return self._bayesian_location_readout()
-
         return self._neural_readout()

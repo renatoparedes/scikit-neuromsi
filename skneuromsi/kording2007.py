@@ -35,6 +35,7 @@ class Kording2007(SKNMSIMethodABC):
     """
 
     _model_name = "Kording2007"
+    _model_type = "Bayesian"
     _run_input = [
         {"target": "auditory_position", "template": "${mode0}_position"},
         {"target": "visual_position", "template": "${mode1}_position"},
