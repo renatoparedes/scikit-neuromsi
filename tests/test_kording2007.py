@@ -27,6 +27,7 @@ from skneuromsi.kording2007 import Kording2007
     "auditory, visual, auditory_expected, visual_expected",
     [(-10, 10, -9.43, -4.29)],
 )
+@pytest.mark.model
 def test_kording2007_run(visual, auditory, visual_expected, auditory_expected):
     """
     Data From:

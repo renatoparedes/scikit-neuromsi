@@ -24,4 +24,6 @@
    :maxdepth: 2
    :glob:
 
+   alais_burr2004
+   kording2007
    cuppini2017

@@ -26,6 +26,7 @@ from skneuromsi.alais_burr2004 import AlaisBurr2004
 @pytest.mark.parametrize(
     "visual, auditory, expected", [(0, 0, 0), (-5, 5, 0), (-10, 10, 0)]
 )
+@pytest.mark.model
 def test_alaisburr2004_run_zero(visual, auditory, expected):
     model = AlaisBurr2004()
     locations = np.arange(-20, 20, 0.01)
@@ -44,6 +45,7 @@ def test_alaisburr2004_run_zero(visual, auditory, expected):
     "auditory_sigma, visual_sigma, visual_weight, auditory_weight",
     [(4, 4, 0.5, 0.5), (2, 1, 0.8, 0.2), (8, 4, 0.8, 0.2), (1, 1, 0.5, 0.5)],
 )
+@pytest.mark.model
 def test_alaisburr2004_mle_integration(
     auditory_sigma, visual_sigma, visual_weight, auditory_weight
 ):

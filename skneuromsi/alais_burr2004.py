@@ -48,12 +48,7 @@ class AlaisBurr2004(SKNMSIMethodABC):
         {"target": "visual", "template": "${mode1}"},
     ]
 
-    def __init__(
-        self,
-        *,
-        mode0="auditory",
-        mode1="visual",
-    ):
+    def __init__(self, *, mode0="auditory", mode1="visual"):
 
         self._mode0 = mode0
         self._mode1 = mode1
@@ -123,10 +118,16 @@ class AlaisBurr2004(SKNMSIMethodABC):
         auditory_position,
         visual_position,
         *,
-        possible_locations=np.arange(-20, 20, 0.01),
+        possible_locations=None,
         auditory_sigma=3.0,
         visual_sigma=3.0,
     ):
+
+        possible_locations = (
+            np.arange(-20, 20, 0.01)
+            if possible_locations is None
+            else possible_locations
+        )
 
         auditory_estimate = self.unisensory_estimator(
             auditory_sigma, auditory_position, possible_locations

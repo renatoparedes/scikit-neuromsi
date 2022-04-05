@@ -212,7 +212,7 @@ class Kording2007(SKNMSIMethodABC):
         auditory_position,
         visual_position,
         *,
-        possible_locations=np.linspace(-42, 42, 50, retstep=True),
+        possible_locations=None,
         auditory_sigma=2.0,
         visual_sigma=10.0,
         p_common=0.5,
@@ -220,6 +220,12 @@ class Kording2007(SKNMSIMethodABC):
         prior_mu=0,
         strategy="averaging",
     ):
+
+        possible_locations = (
+            np.linspace(-42, 42, 50, retstep=True)
+            if possible_locations is None
+            else possible_locations
+        )
 
         visual_var = np.square(visual_sigma)
         auditory_var = np.square(auditory_sigma)

@@ -27,11 +27,12 @@ from .stats import ResultStatsAccessor
 
 
 class Result:
-    def __init__(self, name, data):
+    def __init__(self, *, name, nmap, data):
         self._name = name
         self._df = (
             data if isinstance(data, pd.DataFrame) else pd.DataFrame(data)
         )
+        self._nmap = nmap
 
     @property
     def name(self):
@@ -128,3 +129,71 @@ class Result:
     def stats(self):
         """Descriptive statistics accessor."""
         return ResultStatsAccessor(self)
+
+    # UTILITIES================================================================
+
+    def get_aliased_column(self, name):
+        aname = self._nmap[name]
+        return self._df[aname].to_numpy()
+
+    def _neural_readout(self):
+
+        neurons = len(self._df)
+        auditory_position = self.get_aliased_column("auditory_position")
+        visual_position = self.get_aliased_column("visual_position")
+        auditory_y = self.get_aliased_column("auditory_y")
+        visual_y = self.get_aliased_column("visual_y")
+
+        mid = neurons / 2
+
+        if auditory_position < mid:
+            abscissa_x = np.concatenate(
+                (
+                    np.arange(auditory_position + mid),
+                    np.arange(auditory_position - mid, 0),
+                )
+            )
+
+        if auditory_position > mid:
+            abscissa_x = np.concatenate(
+                (
+                    np.arange(neurons, auditory_position + mid),
+                    np.arange(auditory_position - mid, neurons),
+                )
+            )
+
+        if auditory_position == mid:
+            abscissa_x = np.arange(neurons)
+
+        if visual_position < mid:
+            abscissa_y = np.concatenate(
+                (
+                    np.arange(visual_position + mid),
+                    np.arange(visual_position - mid, 0),
+                )
+            )
+
+        if visual_position > mid:
+            abscissa_y = np.concatenate(
+                (
+                    np.arange(neurons, visual_position + mid),
+                    np.arange(visual_position - mid, neurons),
+                )
+            )
+
+        if visual_position == mid:
+            abscissa_y = np.arange(neurons)
+
+        auditory_percept = np.sum(auditory_y * abscissa_x) / np.sum(auditory_y)
+        visual_percept = np.sum(visual_y * abscissa_y) / np.sum(visual_y)
+
+        return auditory_percept, visual_percept
+
+    def _bayesian_location_readout(self):
+        ...
+
+    def location_readout(self):
+        if self._model_type is "Bayesian":
+            return self._bayesian_location_readout()
+
+        return self._neural_readout()

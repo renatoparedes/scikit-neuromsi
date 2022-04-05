@@ -363,7 +363,9 @@ class SKNMSIRunConfig:
             result_aliased = {
                 output_alias_map.get(k, k): v for k, v in result.items()
             }
-            return self._result_cls(name=self._model_name, data=result_aliased)
+            return self._result_cls(
+                name=self._model_name, nmap=result_aliased, data=result_aliased
+            )
 
         wrapper.__signature__ = signature_with_alias
         wrapper.__doc__ = doc_with_alias
