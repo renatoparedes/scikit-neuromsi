@@ -214,7 +214,7 @@ class Result:
         backends = {
             "Bayesian": self._bayesian_location_readout,
             "Neural": self._neural_readout,
-            "MRE": self._mre_location_readout
+            "MRE": self._mre_location_readout,
         }
 
         readout = backends[self._model_type]

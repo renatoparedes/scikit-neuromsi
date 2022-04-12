@@ -19,11 +19,11 @@ from .core import SKNMSIMethodABC
 
 
 @dataclass
-class Cuppini2017Integrator:
+class Paredes2022Integrator:
     tau: tuple
     s: float
     theta: float
-    name: str = "Cuppini2017Integrator"
+    name: str = "Paredes2022Integrator"
 
     @property
     def __name__(self):
@@ -46,7 +46,7 @@ class Cuppini2017Integrator:
         return dy_a, dy_v, dy_m
 
 
-class Cuppini2017(SKNMSIMethodABC):
+class Paredes2022(SKNMSIMethodABC):
     """Zaraza.
 
 
@@ -56,13 +56,15 @@ class Cuppini2017(SKNMSIMethodABC):
 
     """
 
-    _model_name = "Cuppini2017"
+    _model_name = "Paredes2022"
     _model_type = "Neural"
     _run_input = [
         {"target": "auditory_position", "template": "${mode0}_position"},
         {"target": "visual_position", "template": "${mode1}_position"},
         {"target": "auditory_intensity", "template": "${mode0}_intensity"},
         {"target": "visual_intensity", "template": "${mode1}_intensity"},
+        {"target": "auditory_duration", "template": "${mode0}_duration"},
+        {"target": "visual_duration", "template": "${mode1}_duration"},
     ]
     _run_output = [
         {"target": "auditory", "template": "${mode0}"},
@@ -72,7 +74,7 @@ class Cuppini2017(SKNMSIMethodABC):
     def __init__(
         self,
         *,
-        neurons=180,
+        neurons=90,
         tau=(3, 15, 1),
         s=0.3,
         theta=20,
@@ -90,7 +92,7 @@ class Cuppini2017(SKNMSIMethodABC):
         integrator_kws.setdefault("method", "euler")
         integrator_kws.setdefault("dt", 0.01)
 
-        integrator_model = Cuppini2017Integrator(tau=tau, s=s, theta=theta)
+        integrator_model = Paredes2022Integrator(tau=tau, s=s, theta=theta)
         self._integrator = bp.odeint(f=integrator_model, **integrator_kws)
 
         self._mode0 = mode0
@@ -187,26 +189,37 @@ class Cuppini2017(SKNMSIMethodABC):
     def run(
         self,
         simulation_length,
-        auditory_position,
-        visual_position,
+        soa,
         *,
+        onset=16,
+        auditory_duration=7,
+        visual_duration=12,
+        auditory_position=None,
+        visual_position=None,
         auditory_intensity=28,
         visual_intensity=27,
         noise=False,
+        lateral_excitation=5,
+        lateral_inhibition=4,
     ):
+
+        if auditory_position == None:
+            auditory_position = int(self.neurons / 2)
+        if visual_position == None:
+            visual_position = int(self.neurons / 2)
 
         hist_times = np.arange(0, simulation_length, self._integrator.dt)
 
         # Build synapses
         auditory_latsynapses = self.lateral_synapses(
-            excitation_loc=5,
-            inhibition_loc=4,
+            excitation_loc=lateral_excitation,
+            inhibition_loc=lateral_inhibition,
             excitation_scale=3,
             inhibition_scale=120,
         )
         visual_latsynapses = self.lateral_synapses(
-            excitation_loc=5,
-            inhibition_loc=4,
+            excitation_loc=lateral_excitation,
+            inhibition_loc=lateral_inhibition,
             excitation_scale=3,
             inhibition_scale=120,
         )
@@ -218,15 +231,55 @@ class Cuppini2017(SKNMSIMethodABC):
         )
         auditory_to_visual_synapses = self.synapses(weight=1.4, sigma=5)
         visual_to_auditory_synapses = self.synapses(weight=1.4, sigma=5)
-        auditory_to_multi_synapses = self.synapses(weight=18, sigma=0.5)
-        visual_to_multi_synapses = self.synapses(weight=18, sigma=0.5)
+        auditory_to_multi_synapses = self.synapses(weight=22.5, sigma=0.5)
+        visual_to_multi_synapses = self.synapses(weight=22.5, sigma=0.5)
+        multi_to_auditory_synapses = self.synapses(weight=13.5, sigma=0.5)
+        multi_to_visual_synapses = self.synapses(weight=13.5, sigma=0.5)
 
         # Generate Stimuli
-        auditory_stimuli = self.stimuli_input(
+        point_auditory_stimuli = self.stimuli_input(
             intensity=auditory_intensity, scale=32, loc=auditory_position
         )
-        visual_stimuli = self.stimuli_input(
+        point_visual_simuli = self.stimuli_input(
             intensity=visual_intensity, scale=4, loc=visual_position
+        )
+
+        auditory_stimuli = np.repeat(
+            np.vstack(
+                (
+                    np.tile(np.zeros(self.neurons), (onset, 1)),
+                    np.tile(point_auditory_stimuli, (auditory_duration, 1)),
+                    np.tile(np.zeros(self.neurons), (soa, 1)),
+                    np.tile(point_auditory_stimuli, (auditory_duration, 1)),
+                    np.tile(
+                        np.zeros(self.neurons),
+                        (
+                            simulation_length
+                            - onset
+                            - auditory_duration * 2
+                            - soa,
+                            1,
+                        ),
+                    ),
+                )
+            ),
+            1 / self._integrator.dt,
+            axis=0,
+        )
+
+        visual_stimuli = np.repeat(
+            np.vstack(
+                (
+                    np.tile(np.zeros(self.neurons), (onset, 1)),
+                    np.tile(point_visual_simuli, (visual_duration, 1)),
+                    np.tile(
+                        np.zeros(self.neurons),
+                        (simulation_length - onset - visual_duration, 1),
+                    ),
+                )
+            ),
+            1 / self._integrator.dt,
+            axis=0,
         )
 
         auditory_y, visual_y, multi_y = (
@@ -235,7 +288,21 @@ class Cuppini2017(SKNMSIMethodABC):
             np.zeros(self.neurons),
         )
 
-        for time in hist_times:
+        auditory_res, visual_res, multi_res = (
+            np.zeros(
+                (self.neurons, int(simulation_length / self._integrator.dt))
+            ),
+            np.zeros(
+                (self.neurons, int(simulation_length / self._integrator.dt))
+            ),
+            np.zeros(
+                (self.neurons, int(simulation_length / self._integrator.dt))
+            ),
+        )
+
+        for i in range(hist_times.size):
+
+            time = hist_times[i]
 
             # Compute cross-modal input
             auditory_cm_input = np.sum(
@@ -245,9 +312,23 @@ class Cuppini2017(SKNMSIMethodABC):
                 auditory_to_visual_synapses * auditory_y, axis=1
             )
 
+            # Compute feedback input
+            auditory_feedback_input = np.sum(
+                multi_to_auditory_synapses * multi_y, axis=1
+            )
+            visual_feedback_input = np.sum(
+                multi_to_visual_synapses * multi_y, axis=1
+            )
+
             # Compute external input
-            auditory_input = auditory_stimuli + auditory_cm_input
-            visual_input = visual_stimuli + visual_cm_input
+            auditory_input = (
+                auditory_stimuli[i]
+                + auditory_cm_input
+                + auditory_feedback_input
+            )
+            visual_input = (
+                visual_stimuli[i] + visual_cm_input + visual_feedback_input
+            )
             multi_input = np.sum(
                 auditory_to_multi_synapses * auditory_y, axis=1
             ) + np.sum(visual_to_multi_synapses * visual_y, axis=1)
@@ -285,5 +366,14 @@ class Cuppini2017(SKNMSIMethodABC):
                 u_m=u_m,
             )
 
-        # return auditory_y, visual_y, multi_y
-        return {"auditory": auditory_y, "visual": visual_y, "multi": multi_y}
+            auditory_res[:, i], visual_res[:, i], multi_res[:, i] = (
+                auditory_y,
+                visual_y,
+                multi_y,
+            )
+
+        return {
+            "auditory": auditory_res[auditory_position, :],
+            "visual": visual_res[visual_position, :],
+            "multi": multi_res[visual_position, :],
+        }
