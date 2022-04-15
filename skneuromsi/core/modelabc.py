@@ -384,7 +384,7 @@ class SKNMSIRunConfig:
             return self._result_cls(
                 name=self._model_name,
                 model_type=self._model_type,
-                nmap=result_aliased,
+                nmap=output_alias_map,
                 data=result_aliased,
             )
 

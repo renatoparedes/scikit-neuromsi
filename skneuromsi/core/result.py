@@ -219,3 +219,81 @@ class Result:
 
         readout = backends[self._model_type]
         return readout()
+
+
+I_MODES = "modes"
+I_POS = "positions"
+I_TIMES = "times"
+
+
+class MDResult:
+    def __init__(self, *, name, model_type, nmap, data):
+
+        self._name = name
+        self._nmap = nmap
+        self._model_type = model_type
+
+        modes = tuple(data)
+        frames = (pd.DataFrame(data[modes]) for modes in modes)
+
+        self._df = pd.concat(frames, keys=modes, axis="columns")
+        self._df.index.name = I_TIMES
+        self._df.columns.names = [I_MODES, I_POS]
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def nmap_(self):
+        return self._nmap.copy()
+
+    @property
+    def model_type(self):
+        return self._model_type
+
+    @property
+    def times_(self):
+        return np.array(self._df.index)
+
+    @property
+    def modes_(self):
+        modes = set(self._df.columns.get_level_values(I_MODES))
+        modes = sorted(modes)
+        return np.array(modes)
+
+    @property
+    def positions_(self):
+        positions = set(self._df.columns.get_level_values(I_POS))
+        positions = sorted(positions)
+        return np.array(positions)
+
+    def __repr__(self):
+
+        cls_name = type(self).__name__
+        model_name = self.name
+        modes = self.modes_
+        times, pos = self._df.shape
+
+        return (
+            f"{cls_name}({model_name}, modes={modes}, "
+            f"times={times}, positions={pos})"
+        )
+
+    def to_frame(self):
+        return self._df.copy()
+
+    def get_time(self, time):
+        time_serie = self._df.loc[time].unstack()
+
+        series = (time_serie.loc[mode] for mode in self.modes_)
+        df = pd.DataFrame(series, index=self.modes_)
+        df.index.name = I_MODES
+
+        return df.T
+
+    def get_mode(self, mode):
+        return self._df.xs(mode, level=I_MODES, axis="columns")
+
+    def get_position(self, position):
+        return self._df.xs(position, level=I_POS, axis="columns")

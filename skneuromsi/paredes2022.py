@@ -15,7 +15,7 @@ import brainpy as bp
 
 import numpy as np
 
-from .core import SKNMSIMethodABC
+from .core import SKNMSIMethodABC, MDResult
 
 
 @dataclass
@@ -70,6 +70,7 @@ class Paredes2022(SKNMSIMethodABC):
         {"target": "auditory", "template": "${mode0}"},
         {"target": "visual", "template": "${mode1}"},
     ]
+    _run_result = MDResult
 
     def __init__(
         self,
@@ -373,7 +374,7 @@ class Paredes2022(SKNMSIMethodABC):
             )
 
         return {
-            "auditory": auditory_res[auditory_position, :],
-            "visual": visual_res[visual_position, :],
-            "multi": multi_res[visual_position, :],
+            "auditory": auditory_res,
+            "visual": visual_res,
+            "multi": multi_res,
         }
