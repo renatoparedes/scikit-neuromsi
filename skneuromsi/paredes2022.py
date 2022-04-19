@@ -174,6 +174,55 @@ class Paredes2022(SKNMSIMethodABC):
 
         return the_stimuli
 
+    def create_unimodal_stimuli_matrix(
+        self,
+        stimuli,
+        stimuli_duration,
+        onset,
+        simulation_length,
+        stimuli_n=1,
+        soa=None,
+    ):
+        # TODO expand for more than 2 stimuli and for different stimuli
+
+        # Input before onset
+        no_stim = np.zeros(self.neurons)
+        pre_stim = np.tile(no_stim, (onset, 1))
+
+        # Input during stimulus delivery
+        stim = np.tile(stimuli, (stimuli_duration, 1))
+
+        # If two stimuli are delivered
+        if stimuli_n == 2:
+            # Input during onset asyncrhony
+            soa_stim = np.tile(no_stim, (soa, 1))
+
+            # Input after stimulation
+            post_stim_time = (
+                simulation_length - onset - stimuli_duration * 2 - soa
+            )
+            post_stim = np.tile(no_stim, (post_stim_time, 1))
+
+            # Input concatenation
+            complete_stim = np.vstack(
+                (pre_stim, stim, soa_stim, stim, post_stim)
+            )
+            stimuli_matrix = np.repeat(
+                complete_stim, 1 / self._integrator.dt, axis=0
+            )
+
+        # Input after stimulation
+        post_stim_time = simulation_length - onset - stimuli_duration
+        post_stim = np.tile(no_stim, (post_stim_time, 1))
+
+        # Input concatenation
+        complete_stim = np.vstack((pre_stim, stim, post_stim))
+        stimuli_matrix = np.repeat(
+            complete_stim, 1 / self._integrator.dt, axis=0
+        )
+
+        return stimuli_matrix
+
     def synapses(self, weight, sigma):
 
         the_synapses = np.zeros((self.neurons, self.neurons))
@@ -241,46 +290,24 @@ class Paredes2022(SKNMSIMethodABC):
         point_auditory_stimuli = self.stimuli_input(
             intensity=auditory_intensity, scale=32, loc=auditory_position
         )
-        point_visual_simuli = self.stimuli_input(
+        point_visual_stimuli = self.stimuli_input(
             intensity=visual_intensity, scale=4, loc=visual_position
         )
 
-        auditory_stimuli = np.repeat(
-            np.vstack(
-                (
-                    np.tile(np.zeros(self.neurons), (onset, 1)),
-                    np.tile(point_auditory_stimuli, (auditory_duration, 1)),
-                    np.tile(np.zeros(self.neurons), (soa, 1)),
-                    np.tile(point_auditory_stimuli, (auditory_duration, 1)),
-                    np.tile(
-                        np.zeros(self.neurons),
-                        (
-                            simulation_length
-                            - onset
-                            - auditory_duration * 2
-                            - soa,
-                            1,
-                        ),
-                    ),
-                )
-            ),
-            1 / self._integrator.dt,
-            axis=0,
+        auditory_stimuli = self.create_unimodal_stimuli_matrix(
+            stimuli=point_auditory_stimuli,
+            stimuli_duration=auditory_duration,
+            onset=onset,
+            simulation_length=simulation_length,
+            stimuli_n=2,
+            soa=soa,
         )
 
-        visual_stimuli = np.repeat(
-            np.vstack(
-                (
-                    np.tile(np.zeros(self.neurons), (onset, 1)),
-                    np.tile(point_visual_simuli, (visual_duration, 1)),
-                    np.tile(
-                        np.zeros(self.neurons),
-                        (simulation_length - onset - visual_duration, 1),
-                    ),
-                )
-            ),
-            1 / self._integrator.dt,
-            axis=0,
+        visual_stimuli = self.create_unimodal_stimuli_matrix(
+            stimuli=point_visual_stimuli,
+            stimuli_duration=visual_duration,
+            onset=onset,
+            simulation_length=simulation_length,
         )
 
         auditory_y, visual_y, multi_y = (
@@ -291,13 +318,13 @@ class Paredes2022(SKNMSIMethodABC):
 
         auditory_res, visual_res, multi_res = (
             np.zeros(
-                (self.neurons, int(simulation_length / self._integrator.dt))
+                (int(simulation_length / self._integrator.dt), self.neurons)
             ),
             np.zeros(
-                (self.neurons, int(simulation_length / self._integrator.dt))
+                (int(simulation_length / self._integrator.dt), self.neurons)
             ),
             np.zeros(
-                (self.neurons, int(simulation_length / self._integrator.dt))
+                (int(simulation_length / self._integrator.dt), self.neurons)
             ),
         )
 
@@ -367,7 +394,7 @@ class Paredes2022(SKNMSIMethodABC):
                 u_m=u_m,
             )
 
-            auditory_res[:, i], visual_res[:, i], multi_res[:, i] = (
+            auditory_res[i, :], visual_res[i, :], multi_res[i, :] = (
                 auditory_y,
                 visual_y,
                 multi_y,
