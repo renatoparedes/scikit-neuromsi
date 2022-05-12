@@ -211,15 +211,16 @@ class Paredes2022(SKNMSIMethodABC):
                 complete_stim, 1 / self._integrator.dt, axis=0
             )
 
-        # Input after stimulation
-        post_stim_time = simulation_length - onset - stimuli_duration
-        post_stim = np.tile(no_stim, (post_stim_time, 1))
+        else:
+            # Input after stimulation
+            post_stim_time = simulation_length - onset - stimuli_duration
+            post_stim = np.tile(no_stim, (post_stim_time, 1))
 
-        # Input concatenation
-        complete_stim = np.vstack((pre_stim, stim, post_stim))
-        stimuli_matrix = np.repeat(
-            complete_stim, 1 / self._integrator.dt, axis=0
-        )
+            # Input concatenation
+            complete_stim = np.vstack((pre_stim, stim, post_stim))
+            stimuli_matrix = np.repeat(
+                complete_stim, 1 / self._integrator.dt, axis=0
+            )
 
         return stimuli_matrix
 
