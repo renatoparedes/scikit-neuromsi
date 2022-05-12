@@ -38,12 +38,51 @@ class Cuppini2014Integrator:
         dy_a = (-y_a + self.sigmoid(u_a)) * (1 / self.tau[0])
 
         # Visual
-        dy_v = (-y_v + self.sigmoid(u_v)) * (1 / self.tau[1])
+        dy_v = (-y_v + self.sigmoid(u_v)) * (1 / self.tau[0])
 
         return dy_a, dy_v
 
 
-class Cuppini2014(SKNMSIMethodABC):  # TODO Include temporal filter
+@dataclass
+class Cuppini2014TemporalFilter:
+    tau: tuple
+    name: str = "Cuppini2014TemporalFilter"
+
+    @property
+    def __name__(self):
+        return self.name
+
+    def __call__(
+        self,
+        a_outside_input,
+        v_outside_input,
+        t,
+        a_external_input,
+        v_external_input,
+        a_cross_modal_input,
+        v_cross_modal_input,
+        a_gain,
+        v_gain,
+    ):
+
+        # Auditory
+        dauditory_outside_input = (
+            a_gain / self.tau[1] * (a_external_input + a_cross_modal_input)
+            - ((2 * a_outside_input) / self.tau[1])
+            - a_outside_input / np.square(self.tau[1])
+        )
+
+        # Visual
+        dvisual_outside_input = (
+            v_gain / self.tau[2] * (v_external_input + v_cross_modal_input)
+            - ((2 * v_outside_input) / self.tau[2])
+            - v_outside_input / np.square(self.tau[2])
+        )
+
+        return dauditory_outside_input, dvisual_outside_input
+
+
+class Cuppini2014(SKNMSIMethodABC):
     """Zaraza.
 
 
@@ -62,6 +101,8 @@ class Cuppini2014(SKNMSIMethodABC):  # TODO Include temporal filter
         {"target": "visual_intensity", "template": "${mode1}_intensity"},
         {"target": "auditory_duration", "template": "${mode0}_duration"},
         {"target": "visual_duration", "template": "${mode1}_duration"},
+        {"target": "auditory_gain", "template": "${mode0}_gain"},
+        {"target": "visual_gain", "template": "${mode1}_gain"},
     ]
     _run_output = [
         {"target": "auditory", "template": "${mode0}"},
@@ -73,7 +114,7 @@ class Cuppini2014(SKNMSIMethodABC):  # TODO Include temporal filter
         self,
         *,
         neurons=180,
-        tau=(15, 25),
+        tau=(1, 15, 25),  # neuron, auditory and visual
         s=2,
         theta=16,
         seed=None,
@@ -81,7 +122,7 @@ class Cuppini2014(SKNMSIMethodABC):  # TODO Include temporal filter
         mode1="visual",
         **integrator_kws,
     ):
-        if len(tau) != 2:
+        if len(tau) != 3:
             raise ValueError()
 
         self._neurons = neurons
@@ -92,6 +133,11 @@ class Cuppini2014(SKNMSIMethodABC):  # TODO Include temporal filter
 
         integrator_model = Cuppini2014Integrator(tau=tau, s=s, theta=theta)
         self._integrator = bp.odeint(f=integrator_model, **integrator_kws)
+
+        temporal_filter_model = Cuppini2014TemporalFilter(tau=tau)
+        self._temporal_filter = bp.odeint(
+            f=temporal_filter_model, **integrator_kws
+        )
 
         self._mode0 = mode0
         self._mode1 = mode1
@@ -208,15 +254,16 @@ class Cuppini2014(SKNMSIMethodABC):  # TODO Include temporal filter
                 complete_stim, 1 / self._integrator.dt, axis=0
             )
 
-        # Input after stimulation
-        post_stim_time = simulation_length - onset - stimuli_duration
-        post_stim = np.tile(no_stim, (post_stim_time, 1))
+        else:
+            # Input after stimulation
+            post_stim_time = simulation_length - onset - stimuli_duration
+            post_stim = np.tile(no_stim, (post_stim_time, 1))
 
-        # Input concatenation
-        complete_stim = np.vstack((pre_stim, stim, post_stim))
-        stimuli_matrix = np.repeat(
-            complete_stim, 1 / self._integrator.dt, axis=0
-        )
+            # Input concatenation
+            complete_stim = np.vstack((pre_stim, stim, post_stim))
+            stimuli_matrix = np.repeat(
+                complete_stim, 1 / self._integrator.dt, axis=0
+            )
 
         return stimuli_matrix
 
@@ -232,9 +279,9 @@ class Cuppini2014(SKNMSIMethodABC):  # TODO Include temporal filter
         simulation_length,
         soa,
         *,
-        onset=16,  # TODO Fine tune stimuli delivery timing
-        auditory_duration=7,
-        visual_duration=12,
+        onset=16,
+        auditory_duration=15,
+        visual_duration=20,
         auditory_position=None,
         visual_position=None,
         auditory_intensity=3,
@@ -243,12 +290,18 @@ class Cuppini2014(SKNMSIMethodABC):  # TODO Include temporal filter
         lateral_excitation=2,
         lateral_inhibition=1.8,
         cross_modal_latency=16,
+        auditory_gain=None,
+        visual_gain=None,
     ):
 
         if auditory_position == None:
             auditory_position = int(self.neurons / 2)
         if visual_position == None:
             visual_position = int(self.neurons / 2)
+        if auditory_gain == None:
+            auditory_gain = np.exp(1)
+        if visual_gain == None:
+            visual_gain = np.exp(1)
 
         hist_times = np.arange(0, simulation_length, self._integrator.dt)
         sim_cross_modal_latency = int(
@@ -298,8 +351,12 @@ class Cuppini2014(SKNMSIMethodABC):  # TODO Include temporal filter
 
         # Data holders
 
-        auditory_y, visual_y, multi_y = (
+        auditory_y, visual_y = (
             np.zeros(self.neurons),
+            np.zeros(self.neurons),
+        )
+
+        auditory_outside_input, visual_outside_input = (
             np.zeros(self.neurons),
             np.zeros(self.neurons),
         )
@@ -346,13 +403,28 @@ class Cuppini2014(SKNMSIMethodABC):  # TODO Include temporal filter
                 auditory_input += auditory_noise
                 visual_input += visual_noise
 
+            (
+                auditory_outside_input,
+                visual_outside_input,
+            ) = self._temporal_filter(
+                a_outside_input=auditory_outside_input,
+                v_outside_input=visual_outside_input,
+                t=time,
+                a_external_input=auditory_stimuli[i],
+                v_external_input=visual_stimuli[i],
+                a_cross_modal_input=auditory_cm_input,
+                v_cross_modal_input=visual_cm_input,
+                a_gain=auditory_gain,
+                v_gain=visual_gain,
+            )
+
             # Compute lateral inpunt
             la = np.sum(auditory_latsynapses * auditory_y, axis=1)
             lv = np.sum(visual_latsynapses * visual_y, axis=1)
 
             # Compute unisensory total input
-            auditory_u = la + auditory_input
-            visual_u = lv + visual_input
+            auditory_u = la + auditory_outside_input
+            visual_u = lv + visual_outside_input
 
             # Compute neurons activity
             auditory_y, visual_y = self._integrator(
