@@ -20,7 +20,7 @@
 
 
 from .modelabc import ParameterAliasTemplate, SKNMSIMethodABC, SKNMSIRunConfig
-from .result import Result, MDResult
+from .result import NDResult
 
 # =============================================================================
 # ALL
@@ -31,6 +31,5 @@ __all__ = [
     "ParameterAliasTemplate",
     "SKNMSIRunConfig",
     "SKNMSIMethodABC",
-    "Result",
-    "MDResult",
+    "NDResult",
 ]
