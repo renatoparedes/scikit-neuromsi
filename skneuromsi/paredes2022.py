@@ -15,8 +15,7 @@ import brainpy as bp
 
 import numpy as np
 
-from .core import SKNMSIMethodABC, MDResult
-
+from .core import SKNMSIMethodABC
 
 @dataclass
 class Paredes2022Integrator:
@@ -70,7 +69,7 @@ class Paredes2022(SKNMSIMethodABC):
         {"target": "auditory", "template": "${mode0}"},
         {"target": "visual", "template": "${mode1}"},
     ]
-    _run_result = MDResult
+
 
     def __init__(
         self,

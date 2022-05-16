@@ -120,7 +120,6 @@ class SKNMSIRunConfig:
     _result_cls: result.NDResult
     _model_name: str
     _model_type: str
-    _output_edims: tuple
 
     # initialization
 
@@ -181,15 +180,13 @@ class SKNMSIRunConfig:
             getattr(method_class, "_model_name", method_class.__name__)
         )
         _model_type = method_class._model_type
-        _output_edims = method_class._output_edims or None
 
         return cls(
             _model_name=_model_name,
             _model_type=_model_type,
             _input=_input,
             _output=_output,
-            _result_cls=_result,
-            _output_edims=_output_edims,
+            _result_cls=_result
         )
 
     # API
@@ -387,7 +384,6 @@ class SKNMSIRunConfig:
                 mname=self._model_name,
                 mtype=self._model_type,
                 nmap=output_alias_map,
-                edims=self._output_edims,
                 nddata=result_aliased,
             )
 
@@ -439,7 +435,6 @@ class SKNMSIMethodABC:
     _run_result = result.NDResult
     _run_input = None
     _run_output = None
-    _output_edims = None
 
     def run(self):
         raise NotImplementedError("Default run method has has no implentation")

@@ -25,59 +25,31 @@ from .plot import ResultPlotter
 from .stats import ResultStatsAccessor
 
 # =============================================================================
+# CONSTANTS
+# =============================================================================
+
+D_MODES = "modes"
+D_TIMES = "times"
+D_POSITIONS = "positions"
+D_POSITIONS_COORDINATES = "positions_coordinates"
+
+DIMENSIONS = np.array([D_MODES, D_TIMES, D_POSITIONS, D_POSITIONS_COORDINATES])
+
+# =============================================================================
 # CLASS RESULT
 # =============================================================================
 
 
-I_MODES = "modes"
-I_DIMS = "dimensions"
-I_TIMES = "times"
-
-
 class NDResult:
     def __init__(self, *, mname, mtype, nmap, nddata):
-        self._nddata = self._modes_to_xarray(nddata)
+        self._mname = mname
+        self._mtype = mtype
+        self._nmap = dict(nmap)
+        self._nddata = (
+            modes_to_xarray(nddata) if isinstance(nddata, dict) else nddata
+        )
 
-    def _modes_to_xarray(self, nddata):
-        modes_xa = []
-
-        # iteramos sobre cada uno de los modos
-        for mode_name, mode_coords in nddata.items():
-
-            # si solo hay una matriz en el modo lo metemos en una
-            # tupla de un elemento
-            if not isinstance(mode_coords, (list, tuple)):
-                mode_coords = (mode_coords,)
-
-            # we merge all the matrix of modes in a single cube
-            nd_mode_coords = np.dstack(mode_coords)
-
-            # vemos cuantos tiempos, posisiones y coordenadas hay
-            times_n, positions_n, position_coords_n = np.shape(nd_mode_coords)
-
-            # creamos los indices para cada dimension
-            modes_names = [mode_name]
-            times = np.arange(times_n)
-            positions = np.arange(positions_n)
-            pos_coords = np.array(
-                [f"x{idx}" for idx in range(position_coords_n)]
-            )
-
-            # here we add the mode as the first dimension
-            final_shape = (1,) + nd_mode_coords.shape
-
-            mode_xa = xr.DataArray(
-                nd_mode_coords.reshape(final_shape),
-                coords=[modes_names, times, positions, pos_coords],
-                dims=["mode", "time", "positions", "position_coordinates"],
-                name=mode_name,
-            )
-            modes_xa.append(mode_xa)
-
-        # mergeamos todos los modos en un unico DataArray
-        xa = xr.combine_nested(modes_xa, "mode")
-
-        return xa
+    # PROPERTIES ==============================================================
 
     @property
     def mname(self):
@@ -88,63 +60,155 @@ class NDResult:
         return self._mtype
 
     @property
+    def dims(self):
+        return DIMENSIONS.copy()
+
+    @property
     def nmap_(self):
         return self._nmap.copy()
 
     @property
     def modes_(self):
-        return self._modes
+        return self._nddata[D_MODES].to_numpy()
 
     @property
-    def dims_(self):
-        return self._dims
+    def times_(self):
+        return self._nddata[D_TIMES].to_numpy()
 
     @property
-    def ndims_(self):
-        return self._ndims
+    def positions_(self):
+        return self._nddata[D_POSITIONS].to_numpy()
 
-    # @property
-    # def times_(self):
-    #     return np.array(self._df.index)
+    @property
+    def positions_coordinates_(self):
+        return self._nddata[D_POSITIONS_COORDINATES].to_numpy()
 
-    # @property
-    # def modes_(self):
-    #     modes = set(self._df.columns.get_level_values(I_MODES))
-    #     modes = sorted(modes)
-    #     return np.array(modes)
+    pcoords_ = positions_coordinates_
 
-    # @property
-    # def positions_(self):
-    #     positions = set(self._df.columns.get_level_values(I_POS))
-    #     positions = sorted(positions)
-    #     return np.array(positions)
+    # UTILS ===================================================================
 
     def __repr__(self):
 
         cls_name = type(self).__name__
         mname = self.mname
         modes = self.modes_
-        times, pos = 1, 2
+        _, times, pos, pos_coords = self._nddata.shape
 
         return (
-            f"{cls_name}({mname}, modes={modes}, "
-            f"times={times}, positions={pos})"
+            f"{cls_name}({mname}, modes={modes!s}, "
+            f"times={times}, positions={pos}, "
+            f"positions_coordinates={pos_coords})"
         )
 
+    def to_xarray(self):
+        return self._nddata.copy()
+
     def to_frame(self):
-        return self._df.copy()
+        return self._nddata.to_dataframe()
 
-    def get_time(self, time):
-        time_serie = self._df.loc[time].unstack()
+    # DF BY DIMENSION =========================================================
 
-        series = (time_serie.loc[mode] for mode in self.modes_)
-        df = pd.ndDataFrame(series, index=self.modes_)
-        df.index.name = I_MODES
+    def get_mode(self, mode, rename_stimuli=True):
+        if mode not in self.modes_:
+            raise ValueError(f"Mode {mode} not found")
 
-        return df.T
+        name = mode if rename_stimuli else None
 
-    def get_mode(self, mode):
-        return self._df.xs(mode, level=I_MODES, axis="columns")
+        df = self._nddata.sel({D_MODES: mode}).to_dataframe(name=name)
+        del df[D_MODES]
+        return df
 
-    def get_position(self, position):
-        return self._df.xs(position, level=I_POS, axis="columns")
+    def get_time(self, time, rename_stimuli=True):
+        if time not in self.times_:
+            raise ValueError(f"Time {time} not found")
+
+        name = f"Time {time}" if rename_stimuli else None
+
+        df = self._nddata.sel({D_TIMES: time}).to_dataframe(name=name)
+        del df[D_TIMES]
+        return df
+
+    def get_position(self, position, rename_stimuli=True):
+        if position not in self.positions_:
+            raise ValueError(f"Position {position} not found")
+
+        name = f"Position {position}" if rename_stimuli else None
+
+        df = self._nddata.sel({D_POSITIONS: position}).to_dataframe(name=name)
+        del df[D_POSITIONS]
+        return df
+
+    def get_position_coordinate(self, coordinate, rename_stimuli=True):
+        if coordinate not in self.positions_coordinates_:
+            raise ValueError(f"Position coordinate {coordinate} not found")
+
+        name = coordinate if rename_stimuli else None
+
+        df = self._nddata.sel(
+            {D_POSITIONS_COORDINATES: coordinate}
+        ).to_dataframe(name=name)
+        del df[D_POSITIONS_COORDINATES]
+        return df
+
+    get_pcoord = get_position_coordinate
+
+
+# =============================================================================
+# UTILITIES
+# =============================================================================
+
+
+def modes_to_xarray(nddata):
+    modes, coords = [], None
+
+    # we iterate over each mode
+    for mode_name, mode_coords in nddata.items():
+
+        # NDResult always expects to have more than one coordinate per
+        # position. If it has only one coordinate, it puts it into a
+        # collection of length 1, so that it can continue te operations.
+        if not isinstance(mode_coords, (list, tuple)):
+            mode_coords = (mode_coords,)
+
+        # we merge all the matrix of modes in a single 3D array
+        # for example if we have two coordinates
+        # x0 = [[1, 2, 3],
+        #       [4, 5, 6]]
+        # x1 = [[10, 20, 30],
+        #       [40, 50, 60]]
+        # np.dstack((x0, x1))
+        # [[[1, 10], [2, 20], [3, 30]],
+        #  [[4, 40], [5, 50], [6, 60]]]
+        nd_mode_coords = np.dstack(mode_coords)
+
+        if coords is None:  # first time we need to populate the indexes
+
+            # retrieve how many times, positions and
+            # position coordinates has the modes
+            times_n, positions_n, pcoords_n = np.shape(nd_mode_coords)
+
+            # we create the indexes for each dimension
+            coords = [
+                [],  # modes
+                np.arange(times_n),  # times
+                np.arange(positions_n),  # positions
+                [f"x{idx}" for idx in range(pcoords_n)],  # pcoords
+            ]
+
+        # we add the mode name to the mode indexes
+        coords[0].append(mode_name)
+
+        # here we add the mode as the first dimension
+        final_shape = (1,) + nd_mode_coords.shape
+
+        # here we add the
+        modes.append(nd_mode_coords.reshape(final_shape))
+
+    xa = xr.DataArray(
+        np.concatenate(modes),
+        coords=coords,
+        dims=DIMENSIONS,
+        name="Stimuli",
+    )
+
+    return xa
