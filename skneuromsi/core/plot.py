@@ -19,62 +19,128 @@
 # IMPORTS
 # =============================================================================
 
+from collections.abc import Iterable
+
+import numpy as np
+
 import seaborn as sns
+
+import matplotlib.pyplot as plt
 
 from ..utils import AccessorABC
 
+# =============================================================================
+# HELPERS
+# =============================================================================
+
+
+def max_value(dim, xa):
+    arr = xa[dim].to_numpy()
+    idx = xa.argmax(...)[dim].to_numpy()
+    return arr[idx]
+
+
+def mean_max_value(dim, xa):
+    arr = xa[dim].to_numpy()
+    groups = xa.groupby(dim)
+    groups_cvar = groups.mean(...)
+    idx = groups_cvar.argmax(...)[dim].to_numpy()
+    return arr[idx]
+
+
+HEURISTICS = {
+    "max_value": max_value,
+    "mean_max_value": mean_max_value,
+}
 
 # =============================================================================
 # PLOTTER OBJECT
 # =============================================================================
+
+
 class ResultPlotter(AccessorABC):
     """Make plots of Result.
 
     Kind of plot to produce:
 
-    - 'hist' : criteria histogram.
-    - 'box' : criteria boxplot.
-    - 'kde' : criteria Kernel Density Estimation plot.
+
 
     """
 
-    _default_kind = "line"
+    _default_kind = "pline"
 
     def __init__(self, result):
         self._result = result
 
-    # PRIVATE =================================================================
-    # This method are used "a lot" inside all the different plots, so we can
-    # save some lines of code
-
-    @property
-    def _df(self):
-        # proxy to access the dataframe with the data
-        return self._result._df
-
-    @property
-    def _criteria_labels(self):
-        # list with all the criteria + objectives
-        dm = self._result
-        labels = [
-            f"{c} {o.to_string()}" for c, o in zip(dm.criteria, dm.objectives)
-        ]
-        return labels
-
-    # HIST ====================================================================
-
-    def hist(self, **kwargs):
-        ax = sns.histplot(self._df, **kwargs)
-        return ax
-
-    # BOX =====================================================================
-
-    def box(self, **kwargs):
-        ax = sns.boxplot(data=self._df, **kwargs)
-        return ax
-
     # LINE ====================================================================
+    def _resolve_axis(self, positions_coordinates_number, ax):
 
-    def line(self, **kwargs):
-        ax = sns.lineplot(data=self._df, **kwargs)
+        if ax is None:
+            fig, ax = plt.subplots(
+                1, positions_coordinates_number, sharey=True
+            )
+
+            size_x, size_y = fig.get_size_inches()
+            fig.set_size_inches(size_x * positions_coordinates_number, size_y)
+
+        if not isinstance(ax, Iterable):
+            ax = np.array([ax])
+
+        return ax
+
+    def pline(self, time="mean_max_value", **kwargs):
+
+        coords = self._result.pcoords_
+
+        ax = self._resolve_axis(len(coords), kwargs.pop("ax", None))
+
+        xa = self._result.to_xarray()
+
+        if time in HEURISTICS:
+            timeheu = HEURISTICS[time]
+            time = timeheu("times", xa)
+
+        for coord, ax in zip(coords, ax):
+
+            df = xa.sel(positions_coordinates=coord, times=time).to_dataframe()
+
+            sns.lineplot(
+                x="positions",
+                y="values",
+                hue="modes",
+                data=df,
+                ax=ax,
+                **kwargs,
+            )
+
+        ax.set_title(f"Time {time}")
+        ax.legend()
+
+        return ax
+
+    def tlinel(self, position="mean_max_value", **kwargs):
+
+        coords = self._result.pcoords_
+
+        ax = self._resolve_axis(len(coords), kwargs.pop("ax", None))
+
+        xa = self._result.to_xarray()
+
+        if position in HEURISTICS:
+            posheu = HEURISTICS[position]
+            position = posheu("positions", xa)
+
+        for coord, ax in zip(coords, ax):
+
+            df = xa.sel(
+                positions_coordinates=coord, positions=position
+            ).to_dataframe()
+
+            sns.lineplot(
+                x="times", y="values", hue="modes", data=df, ax=ax, **kwargs
+            )
+
+        ax.set_title(f"Position {position}")
+        ax.legend()
+
         return ax
