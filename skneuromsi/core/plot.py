@@ -88,7 +88,7 @@ class ResultPlotter(AccessorABC):
 
         return ax
 
-    def pline(self, time="mean_max_value", **kwargs):
+    def linep(self, time="mean_max_value", **kwargs):
 
         coords = self._result.pcoords_
 
@@ -99,6 +99,7 @@ class ResultPlotter(AccessorABC):
         if time in HEURISTICS:
             timeheu = HEURISTICS[time]
             time = timeheu("times", xa)
+
 
         for coord, ax in zip(coords, ax):
 
@@ -118,7 +119,7 @@ class ResultPlotter(AccessorABC):
 
         return ax
 
-    def tlinel(self, position="mean_max_value", **kwargs):
+    def linet(self, position="mean_max_value", **kwargs):
 
         coords = self._result.pcoords_
 
