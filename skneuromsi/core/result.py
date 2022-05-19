@@ -35,6 +35,8 @@ D_POSITIONS_COORDINATES = "positions_coordinates"
 
 DIMENSIONS = np.array([D_MODES, D_TIMES, D_POSITIONS, D_POSITIONS_COORDINATES])
 
+XA_NAME = "values"
+
 # =============================================================================
 # CLASS RESULT
 # =============================================================================
@@ -106,43 +108,51 @@ class NDResult:
     def to_frame(self):
         return self._nddata.to_dataframe()
 
+    # ACCESSORS ===============================================================
+
+    @property
+    @functools.lru_cache(maxsize=None)
+    def plot(self):
+        """Plot accessor."""
+        return ResultPlotter(self)
+
     # DF BY DIMENSION =========================================================
 
-    def get_mode(self, mode, rename_stimuli=True):
+    def get_mode(self, mode, *, rename_values=True):
         if mode not in self.modes_:
             raise ValueError(f"Mode {mode} not found")
 
-        name = mode if rename_stimuli else None
+        name = mode if rename_values else None
 
         df = self._nddata.sel({D_MODES: mode}).to_dataframe(name=name)
         del df[D_MODES]
         return df
 
-    def get_time(self, time, rename_stimuli=True):
+    def get_time(self, time, *, rename_values=True):
         if time not in self.times_:
             raise ValueError(f"Time {time} not found")
 
-        name = f"Time {time}" if rename_stimuli else None
+        name = f"Time {time}" if rename_values else None
 
         df = self._nddata.sel({D_TIMES: time}).to_dataframe(name=name)
         del df[D_TIMES]
         return df
 
-    def get_position(self, position, rename_stimuli=True):
+    def get_position(self, position, *, rename_values=True):
         if position not in self.positions_:
             raise ValueError(f"Position {position} not found")
 
-        name = f"Position {position}" if rename_stimuli else None
+        name = f"Position {position}" if rename_values else None
 
         df = self._nddata.sel({D_POSITIONS: position}).to_dataframe(name=name)
         del df[D_POSITIONS]
         return df
 
-    def get_position_coordinate(self, coordinate, rename_stimuli=True):
+    def get_position_coordinate(self, coordinate, *, rename_values=True):
         if coordinate not in self.positions_coordinates_:
             raise ValueError(f"Position coordinate {coordinate} not found")
 
-        name = coordinate if rename_stimuli else None
+        name = coordinate if rename_values else None
 
         df = self._nddata.sel(
             {D_POSITIONS_COORDINATES: coordinate}
@@ -167,7 +177,7 @@ def modes_to_xarray(nddata):
         # NDResult always expects to have more than one coordinate per
         # position. If it has only one coordinate, it puts it into a
         # collection of length 1, so that it can continue te operations.
-        if not isinstance(mode_coords, (list, tuple)):
+        if not isinstance(mode_coords, tuple):
             mode_coords = (mode_coords,)
 
         # we merge all the matrix of modes in a single 3D array
@@ -208,7 +218,7 @@ def modes_to_xarray(nddata):
         np.concatenate(modes),
         coords=coords,
         dims=DIMENSIONS,
-        name="Stimuli",
+        name=XA_NAME,
     )
 
     return xa
