@@ -238,9 +238,9 @@ class Paredes2022(SKNMSIMethodABC):
     # Model run
     def run(
         self,
-        simulation_length,
-        soa,
         *,
+        simulation_length=100,
+        soa=50,
         onset=16,
         auditory_duration=7,
         visual_duration=12,

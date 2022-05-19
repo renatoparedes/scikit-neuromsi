@@ -210,9 +210,9 @@ class Kording2007(SKNMSIMethodABC):
 
     def run(
         self,
-        auditory_position,
-        visual_position,
         *,
+        auditory_position=-15,
+        visual_position=15,
         possible_locations=None,
         auditory_sigma=2.0,
         visual_sigma=10.0,

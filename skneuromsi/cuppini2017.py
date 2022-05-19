@@ -186,14 +186,19 @@ class Cuppini2017(SKNMSIMethodABC):
     # Model run
     def run(
         self,
-        simulation_length,
-        auditory_position,
-        visual_position,
         *,
+        simulation_length=100,
+        auditory_position=None,
+        visual_position=None,
         auditory_intensity=28,
         visual_intensity=27,
         noise=False,
     ):
+
+        if auditory_position == None:
+            auditory_position = int(self.neurons / 2)
+        if visual_position == None:
+            visual_position = int(self.neurons / 2)
 
         hist_times = np.arange(0, simulation_length, self._integrator.dt)
 
@@ -229,13 +234,28 @@ class Cuppini2017(SKNMSIMethodABC):
             intensity=visual_intensity, scale=4, loc=visual_position
         )
 
+        # Data holders
         auditory_y, visual_y, multi_y = (
             np.zeros(self.neurons),
             np.zeros(self.neurons),
             np.zeros(self.neurons),
         )
 
-        for time in hist_times:
+        auditory_res, visual_res, multi_res = (
+            np.zeros(
+                (int(simulation_length / self._integrator.dt), self.neurons)
+            ),
+            np.zeros(
+                (int(simulation_length / self._integrator.dt), self.neurons)
+            ),
+            np.zeros(
+                (int(simulation_length / self._integrator.dt), self.neurons)
+            ),
+        )
+
+        for i in range(hist_times.size):
+
+            time = hist_times[i]
 
             # Compute cross-modal input
             auditory_cm_input = np.sum(
@@ -285,5 +305,10 @@ class Cuppini2017(SKNMSIMethodABC):
                 u_m=u_m,
             )
 
-        # return auditory_y, visual_y, multi_y
-        return {"auditory": auditory_y, "visual": visual_y, "multi": multi_y}
+            auditory_res[i, :], visual_res[i, :], multi_res[i, :] = (
+                auditory_y,
+                visual_y,
+                multi_y,
+            )
+
+        return {"auditory": auditory_res, "visual": visual_res, "multi": multi_res}

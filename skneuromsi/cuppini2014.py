@@ -275,9 +275,9 @@ class Cuppini2014(SKNMSIMethodABC):
     # Model run
     def run(
         self,
-        simulation_length,
-        soa,
         *,
+        simulation_length=100,
+        soa=40,
         onset=16,
         auditory_duration=15,
         visual_duration=20,
