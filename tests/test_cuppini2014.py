@@ -24,24 +24,28 @@ from skneuromsi.cuppini2014 import Cuppini2014
 
 
 @pytest.mark.parametrize(
-    "loc, stim_location", [(90, 90), (70, 70), (110, 110)]
+    "loc, intensity, scale", [(90, 10, 6), (70, 20, 7), (110, 30, 6)]
 )
 @pytest.mark.model
 def test_cuppini2014_stim_generation(
-    loc, stim_location
-):  # TODO Include values far from centre.
+    loc, intensity, scale
+):  # TODO Include values far from centre. Fix scale evaluation: maybe fit gaussian.
     model = Cuppini2014()
-    stim = model.stimuli_input(intensity=30, scale=32, loc=loc)
+    stim = model.stimuli_input(intensity=intensity, scale=scale, loc=loc)
     stim_loc = stim.argmax()
+    stim_intensity = stim.max()
+    stim_scale = stim.std()
 
-    np.testing.assert_almost_equal(stim_location, stim_loc)
+    np.testing.assert_almost_equal(loc, stim_loc)
+    np.testing.assert_almost_equal(intensity, stim_intensity)
+    #np.testing.assert_almost_equal(scale, stim_scale)
 
 
-@pytest.mark.parametrize("loc, onset, duration", [(70, 16, 10), (90, 14, 10)])
+@pytest.mark.parametrize(
+    "loc, onset, duration", [(70, 16, 10), (90, 24, 10), (110, 8, 20)]
+)
 @pytest.mark.model
-def test_cuppini2014_stim_matrix_generation_single(
-    duration, loc, onset
-):  # TODO include more examples.
+def test_cuppini2014_stim_matrix_generation_single(duration, loc, onset):
     model = Cuppini2014()
     stim = model.stimuli_input(intensity=30, scale=32, loc=loc)
     simulation_length = 250
@@ -69,28 +73,34 @@ def test_cuppini2014_stim_matrix_generation_single(
     np.testing.assert_almost_equal(stim_matrix_duration, duration_sim_time)
 
 
-@pytest.mark.parametrize("soa, duration", [(90, 90), (70, 56), (110, 110)])
+@pytest.mark.parametrize("soa, duration", [(90, 20), (70, 30), (110, 10)])
 @pytest.mark.model
-def test_cuppini2014_stim_matrix_generation_double(
-    soa, duration
-):  # TODO complete test
+def test_cuppini2014_stim_matrix_generation_double(soa, duration):
     model = Cuppini2014()
     loc = 90
-    stim = model.stimuli_input(intensity=30, scale=32, loc=loc)
-
-    duration = 15
     onset = 16
     simulation_length = 250
+    nstim = 2
+
+    stim = model.stimuli_input(intensity=30, scale=32, loc=loc)
 
     matrix = model.create_unimodal_stimuli_matrix(
         stimuli=stim,
         stimuli_duration=duration,
         onset=onset,
         simulation_length=simulation_length,
-        stimuli_n=2,
+        stimuli_n=nstim,
         soa=soa,
     )
 
-    #   np.testing.assert_almost_equal(stim_location, stim_loc)
+    time_res = matrix[:, loc]
+    soa_sim_time = int(soa * (1 / model._integrator.dt))
+    duration_sim_time = int(duration * (1 / model._integrator.dt))
 
-    assert True
+    stim_matrix_duration = np.where(time_res == time_res.max())[0].size / nstim
+
+    tpoint = int(time_res.argmax() + duration * (1 / model._integrator.dt))
+    stim_matrix_soa = matrix[tpoint:, loc].argmax()
+
+    np.testing.assert_almost_equal(stim_matrix_duration, duration_sim_time)
+    np.testing.assert_almost_equal(stim_matrix_soa, soa_sim_time)
