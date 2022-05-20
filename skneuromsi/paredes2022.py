@@ -17,6 +17,7 @@ import numpy as np
 
 from .core import SKNMSIMethodABC
 
+
 @dataclass
 class Paredes2022Integrator:
     tau: tuple
@@ -69,7 +70,6 @@ class Paredes2022(SKNMSIMethodABC):
         {"target": "auditory", "template": "${mode0}"},
         {"target": "visual", "template": "${mode1}"},
     ]
-
 
     def __init__(
         self,

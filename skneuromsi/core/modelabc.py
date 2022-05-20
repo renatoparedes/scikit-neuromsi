@@ -186,7 +186,7 @@ class SKNMSIRunConfig:
             _model_type=_model_type,
             _input=_input,
             _output=_output,
-            _result_cls=_result
+            _result_cls=_result,
         )
 
     # API

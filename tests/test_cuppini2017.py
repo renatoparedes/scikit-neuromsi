@@ -28,8 +28,14 @@ from skneuromsi.cuppini2017 import Cuppini2017
 @pytest.mark.model
 def test_cuppini2017_run_zero(visual, auditory, multi):
     model = Cuppini2017()
-    result = model.run(100, auditory_position=auditory, visual_position=visual)
-    m_loc = result.multi.argmax()
+    result = model.run(
+        simulation_length=100,
+        auditory_position=auditory,
+        visual_position=visual,
+    )
+
+    time = result.to_xarray()["times"].max().values
+    m_loc = result.get_mode("multi").query("times==@time").values.argmax()
     np.testing.assert_almost_equal(m_loc, multi)
 
 
@@ -67,7 +73,7 @@ def test_cuppini2017_unisensory_multisensory_integration(
 ):
     model = Cuppini2017()
     result = model.run(
-        100,
+        simulation_length=100,
         auditory_position=90,
         visual_position=90,
         auditory_intensity=auditory_intensity,
@@ -75,7 +81,7 @@ def test_cuppini2017_unisensory_multisensory_integration(
     )
 
     n_cause = 0
-    if result.multi.max() > 0.2:
+    if result.get_mode("multi").values.max() > 0.2:
         n_cause = 1
 
     np.testing.assert_equal(n_cause, causes)

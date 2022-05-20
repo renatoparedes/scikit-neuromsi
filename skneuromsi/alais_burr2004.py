@@ -130,9 +130,8 @@ class AlaisBurr2004(SKNMSIMethodABC):
             else possible_locations
         )
 
-#        auditory_position = int(possible_locations.size / 2) if auditory_position is None else auditory_position
-#        visual_position = int(possible_locations.size / 2) if visual_position is None else visual_position
-            
+        #        auditory_position = int(possible_locations.size / 2) if auditory_position is None else auditory_position
+        #        visual_position = int(possible_locations.size / 2) if visual_position is None else visual_position
 
         auditory_estimate = self.unisensory_estimator(
             auditory_sigma, auditory_position, possible_locations

@@ -100,7 +100,6 @@ class ResultPlotter(AccessorABC):
             timeheu = HEURISTICS[time]
             time = timeheu("times", xa)
 
-
         for coord, ax in zip(coords, ax):
 
             df = xa.sel(positions_coordinates=coord, times=time).to_dataframe()
