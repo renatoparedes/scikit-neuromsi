@@ -116,6 +116,12 @@ class NDResult:
         """Plot accessor."""
         return ResultPlotter(self)
 
+    @property
+    @functools.lru_cache(maxsize=None)
+    def stats(self):
+        """Stats accessor."""
+        return ResultStatsAccessor(self)
+
     # DF BY DIMENSION =========================================================
 
     def get_mode(self, mode, *, rename_values=True):

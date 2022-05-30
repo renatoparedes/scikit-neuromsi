@@ -19,6 +19,8 @@
 # IMPORTS
 # =============================================================================k
 
+import pandas as pd
+
 from ..utils import AccessorABC
 
 # =============================================================================
@@ -31,63 +33,102 @@ class ResultStatsAccessor(AccessorABC):
 
     Kind of statistic to produce:
 
-    - 'corr' : Compute pairwise correlation of columns, excluding
-        NA/null values.
-    - 'cov' : Compute pairwise covariance of columns, excluding NA/null
-        values.
-    - 'describe' : Generate descriptive statistics.
-    - 'kurtosis' : Return unbiased kurtosis over requested axis.
-    - 'mad' : Return the mean absolute deviation of the values over the
-        requested axis.
-    - 'max' : Return the maximum of the values over the requested axis.
-    - 'mean' : Return the mean of the values over the requested axis.
-    - 'median' : Return the median of the values over the requested
-        axis.
-    - 'min' : Return the minimum of the values over the requested axis.
-    - 'pct_change' : Percentage change between the current and a prior
-        element.
-    - 'quantile' : Return values at the given quantile over requested
-        axis.
-    - 'sem' : Return unbiased standard error of the mean over requested
-        axis.
-    - 'skew' : Return unbiased skew over requested axis.
-    - 'std' : Return sample standard deviation over requested axis.
-    - 'var' : Return unbiased variance over requested axis.
 
     """
 
-    # The list of methods that can be accessed of the subjacent dataframe.
-    _DF_WHITELIST = (
-        "corr",
-        "cov",
-        "describe",
-        "kurtosis",
-        "mad",
-        "max",
-        "mean",
-        "median",
-        "min",
-        "pct_change",
-        "quantile",
-        "sem",
-        "skew",
-        "std",
-        "var",
-    )
+    # # The list of methods that can be accessed of the subjacent dataframe.
+    # _DF_WHITELIST = (
+    #     "corr",
+    #     "cov",
+    #     "describe",
+    #     "kurtosis",
+    #     "mad",
+    #     "max",
+    #     "mean",
+    #     "median",
+    #     "min",
+    #     "pct_change",
+    #     "quantile",
+    #     "sem",
+    #     "skew",
+    #     "std",
+    #     "var",
+    # )
 
     _default_kind = "describe"
 
     def __init__(self, result):
         self._result = result
 
-    def __getattr__(self, a):
-        """x.__getattr__(a) <==> x.a <==> getattr(x, "a")."""
-        if a not in self._DF_WHITELIST:
-            raise AttributeError(a)
-        return getattr(self._result._df, a)
+    def count(self):
+        xa = self._result.to_xarray()
+        return int(xa.count().to_numpy())
 
-    def __dir__(self):
-        """x.__dir__() <==> dir(x)."""
-        return super().__dir__() + [
-            e for e in dir(self._result._df) if e in self._DF_WHITELIST
-        ]
+    def mean(self):
+        xa = self._result.to_xarray()
+        return float(xa.mean().to_numpy())
+
+    def std(self):
+        xa = self._result.to_xarray()
+        return float(xa.std().to_numpy())
+
+    def min(self):
+        xa = self._result.to_xarray()
+        return float(xa.min().to_numpy())
+
+    def dimmin(self):
+        xa = self._result.to_xarray()
+
+        data = {}
+
+        for dim, min_idx_xa in xa.argmin(...).items():
+            arr = xa[dim].to_numpy()
+            min_idx = min_idx_xa.to_numpy()
+            data[dim] = arr[min_idx]
+
+        data["values"] = xa.min(...).to_numpy()
+
+        return pd.Series(data, name="min")
+
+    def max(self):
+        xa = self._result.to_xarray()
+        return float(xa.max().to_numpy())
+
+    def dimmax(self):
+        xa = self._result.to_xarray()
+
+        data = {}
+
+        for dim, max_idx_xa in xa.argmax(...).items():
+            arr = xa[dim].to_numpy()
+            max_idx = max_idx_xa.to_numpy()
+            data[dim] = arr[max_idx]
+
+        data["values"] = xa.max(...).to_numpy()
+
+        return pd.Series(data, name="max")
+
+    def quantile(self, q=0.25, **kwargs):
+        xa = self._result.to_xarray()
+        return xa.quantile(q=q, **kwargs).to_numpy()
+
+    def describe(self, percentiles=None):
+        percentiles = [0.25, 0.5, 0.75] if percentiles is None else percentiles
+
+        xa = self._result.to_xarray()
+        data = {}
+
+        data["count"] = xa.count().to_numpy()
+        data["mean"] = xa.mean().to_numpy()
+        data["std"] = xa.std().to_numpy()
+        data["min"] = xa.min().to_numpy()
+
+        for perc, pvalue in zip(
+            percentiles, xa.quantile(percentiles).to_numpy()
+        ):
+            pkey = f"{int(perc * 100)}%"
+            data[pkey] = pvalue
+
+        data["max"] = xa.max().to_numpy()
+
+        return pd.Series(data, name="describe")
