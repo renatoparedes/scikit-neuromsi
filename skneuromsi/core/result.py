@@ -13,7 +13,9 @@
 # =============================================================================
 
 import functools
+import numbers
 from turtle import back
+from typing import Iterable
 
 import numpy as np
 
@@ -123,50 +125,63 @@ class NDResult:
         return ResultStatsAccessor(self)
 
     # DF BY DIMENSION =========================================================
+    def _coherce_filters(self, flt, defaults, dim_name):
+        if flt is None:
+            return list(defaults)
 
-    def get_mode(self, mode, *, rename_values=True):
-        if mode not in self.modes_:
-            raise ValueError(f"Mode {mode} not found")
+        if isinstance(flt, (str, int, float, np.number)):
+            flt = [flt]
+        elif isinstance(flt, Iterable):
+            flt = list(flt)
 
-        name = mode if rename_values else None
+        diff = set(flt).difference(defaults)
+        if diff:
+            raise ValueError(f"{dim_name}{diff!r} not found")
 
-        df = self._nddata.sel({D_MODES: mode}).to_dataframe(name=name)
-        del df[D_MODES]
+        return flt
+
+    def _dim_as_dataframe(self, flt, dim_name, rename_values):
+        xa, dfs = self._nddata.sel({dim_name: flt}), []
+
+        for gname, group in xa.groupby(dim_name):
+            name = gname if rename_values else None
+            partial_df = group.to_dataframe(name=name)
+            if dim_name in partial_df.columns:
+                partial_df = partial_df.drop(dim_name, axis="columns")
+            else:
+                partial_df = partial_df.droplevel(dim_name)
+
+            dfs.append(partial_df)
+
+        df = pd.concat(dfs, axis="columns")
+        df.columns.name = dim_name
         return df
 
-    def get_time(self, time, *, rename_values=True):
-        if time not in self.times_:
-            raise ValueError(f"Time {time} not found")
-
-        name = f"Time {time}" if rename_values else None
-
-        df = self._nddata.sel({D_TIMES: time}).to_dataframe(name=name)
-        del df[D_TIMES]
+    def get_modes(self, include=None, *, rename_values=True):
+        flt = self._coherce_filters(include, self.modes_, D_MODES)
+        df = self._dim_as_dataframe(flt, D_MODES, rename_values)
         return df
 
-    def get_position(self, position, *, rename_values=True):
-        if position not in self.positions_:
-            raise ValueError(f"Position {position} not found")
-
-        name = f"Position {position}" if rename_values else None
-
-        df = self._nddata.sel({D_POSITIONS: position}).to_dataframe(name=name)
-        del df[D_POSITIONS]
+    def get_times(self, include=None, *, rename_values=True):
+        flt = self._coherce_filters(include, self.times_, D_TIMES)
+        df = self._dim_as_dataframe(flt, D_TIMES, rename_values)
         return df
 
-    def get_position_coordinate(self, coordinate, *, rename_values=True):
-        if coordinate not in self.positions_coordinates_:
-            raise ValueError(f"Position coordinate {coordinate} not found")
-
-        name = coordinate if rename_values else None
-
-        df = self._nddata.sel(
-            {D_POSITIONS_COORDINATES: coordinate}
-        ).to_dataframe(name=name)
-        del df[D_POSITIONS_COORDINATES]
+    def get_positions(self, include=None, *, rename_values=True):
+        flt = self._coherce_filters(include, self.positions_, D_POSITIONS)
+        df = self._dim_as_dataframe(flt, D_POSITIONS, rename_values)
         return df
 
-    get_pcoord = get_position_coordinate
+    def get_positions_coordinates(self, include=None, *, rename_values=True):
+        flt = self._coherce_filters(
+            include, self.positions_coordinates_, D_POSITIONS_COORDINATES
+        )
+        df = self._dim_as_dataframe(
+            flt, D_POSITIONS_COORDINATES, rename_values
+        )
+        return df
+
+    get_pcoords = get_positions_coordinates
 
 
 # =============================================================================
