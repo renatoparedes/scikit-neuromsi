@@ -26,34 +26,12 @@ import numpy as np
 import seaborn as sns
 
 import matplotlib.pyplot as plt
+from skneuromsi.core.constants import D_MODES, D_POSITIONS, D_TIMES, XA_NAME
 
 import xarray as xr
 
 from ..utils import AccessorABC
 
-# =============================================================================
-# HELPERS
-# =============================================================================
-
-
-def max_value(dim, xa):
-    arr = xa[dim].to_numpy()
-    idx = xa.argmax(...)[dim].to_numpy()
-    return arr[idx]
-
-
-def mean_max_value(dim, xa):
-    arr = xa[dim].to_numpy()
-    groups = xa.groupby(dim)
-    groups_cvar = groups.mean(...)
-    idx = groups_cvar.argmax(...)[dim].to_numpy()
-    return arr[idx]
-
-
-HEURISTICS = {
-    "max_value": max_value,
-    "mean_max_value": mean_max_value,
-}
 
 # =============================================================================
 # PLOTTER OBJECT
@@ -90,13 +68,6 @@ class ResultPlotter(AccessorABC):
 
         return ax
 
-    def _resolve_fix_dimension(self, dim, dim_value, xa):
-        if dim_value in HEURISTICS:
-            dim_value = HEURISTICS[dim_value]
-        if callable(dim_value):
-            dim_value = dim_value(dim, xa)
-        return dim_value
-
     def _complete_dimension(self, xa, dim, n, scalar_dim=True):
         # the original array must be in the final data
         completed = [xa]
@@ -114,16 +85,18 @@ class ResultPlotter(AccessorABC):
 
         return xr.combine_nested(completed, dim)
 
-    def linep(self, time="mean_max_value", **kwargs):
+    def line_positions(self, time=None, **kwargs):
 
-        xa = self._result.to_xarray()
+        if time is None:
+            time = self._result.stats.dimmax()[D_TIMES]
 
-        time = self._resolve_fix_dimension("times", time, xa)
         axes = self._resolve_axis(kwargs.pop("ax", None))
         has_single_position = len(self._result.positions_) == 1
 
+        xa = self._result.to_xarray()
+
         if has_single_position:
-            xa = self._complete_dimension(xa, "positions", 25, scalar_dim=True)
+            xa = self._complete_dimension(xa, D_POSITIONS, 25, scalar_dim=True)
 
         kwargs.setdefault("alpha", 0.75)
 
@@ -132,9 +105,9 @@ class ResultPlotter(AccessorABC):
             df = xa.sel(positions_coordinates=coord, times=time).to_dataframe()
 
             sns.lineplot(
-                x="positions",
-                y="values",
-                hue="modes",
+                x=D_POSITIONS,
+                y=XA_NAME,
+                hue=D_MODES,
                 data=df,
                 ax=ax,
                 **kwargs,
@@ -146,15 +119,18 @@ class ResultPlotter(AccessorABC):
 
         return ax
 
-    def linet(self, position="mean_max_value", **kwargs):
+    def line_times(self, position=None, **kwargs):
 
-        xa = self._result.to_xarray()
-        position = self._resolve_fix_dimension("positions", position, xa)
+        if position is None:
+            position = self._result.stats.dimmax()[D_POSITIONS]
+
         axes = self._resolve_axis(kwargs.pop("ax", None))
         has_single_time = len(self._result.times_) == 1
 
+        xa = self._result.to_xarray()
+
         if has_single_time:
-            xa = self._complete_dimension(xa, "times", 25, scalar_dim=False)
+            xa = self._complete_dimension(xa, D_TIMES, 25, scalar_dim=False)
 
         kwargs.setdefault("alpha", 0.75)
 
@@ -165,9 +141,9 @@ class ResultPlotter(AccessorABC):
             ).to_dataframe()
 
             sns.lineplot(
-                x="times",
-                y="values",
-                hue="modes",
+                x=D_TIMES,
+                y=XA_NAME,
+                hue=D_MODES,
                 data=df,
                 ax=ax,
                 **kwargs,

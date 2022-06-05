@@ -13,8 +13,6 @@
 # =============================================================================
 
 import functools
-import numbers
-from turtle import back
 from typing import Iterable
 
 import numpy as np
@@ -23,21 +21,17 @@ import pandas as pd
 
 import xarray as xr
 
+from .constants import (
+    D_MODES,
+    D_TIMES,
+    D_POSITIONS,
+    D_POSITIONS_COORDINATES,
+    DIMENSIONS,
+    XA_NAME,
+)
 from .plot import ResultPlotter
 from .stats import ResultStatsAccessor
 
-# =============================================================================
-# CONSTANTS
-# =============================================================================
-
-D_MODES = "modes"
-D_TIMES = "times"
-D_POSITIONS = "positions"
-D_POSITIONS_COORDINATES = "positions_coordinates"
-
-DIMENSIONS = np.array([D_MODES, D_TIMES, D_POSITIONS, D_POSITIONS_COORDINATES])
-
-XA_NAME = "values"
 
 # =============================================================================
 # CLASS RESULT
@@ -107,9 +101,6 @@ class NDResult:
     def to_xarray(self):
         return self._nddata.copy()
 
-    def to_frame(self):
-        return self._nddata.to_dataframe()
-
     # ACCESSORS ===============================================================
 
     @property
@@ -140,12 +131,11 @@ class NDResult:
 
         return flt
 
-    def _dim_as_dataframe(self, flt, dim_name, rename_values):
+    def _dim_as_dataframe(self, flt, dim_name):
         xa, dfs = self._nddata.sel({dim_name: flt}), []
 
         for gname, group in xa.groupby(dim_name):
-            name = gname if rename_values else None
-            partial_df = group.to_dataframe(name=name)
+            partial_df = group.to_dataframe(name=gname)
             if dim_name in partial_df.columns:
                 partial_df = partial_df.drop(dim_name, axis="columns")
             else:
@@ -157,28 +147,26 @@ class NDResult:
         df.columns.name = dim_name
         return df
 
-    def get_modes(self, include=None, *, rename_values=True):
+    def get_modes(self, include=None):
         flt = self._coherce_filters(include, self.modes_, D_MODES)
-        df = self._dim_as_dataframe(flt, D_MODES, rename_values)
+        df = self._dim_as_dataframe(flt, D_MODES)
         return df
 
-    def get_times(self, include=None, *, rename_values=True):
+    def get_times(self, include=None):
         flt = self._coherce_filters(include, self.times_, D_TIMES)
-        df = self._dim_as_dataframe(flt, D_TIMES, rename_values)
+        df = self._dim_as_dataframe(flt, D_TIMES)
         return df
 
-    def get_positions(self, include=None, *, rename_values=True):
+    def get_positions(self, include=None):
         flt = self._coherce_filters(include, self.positions_, D_POSITIONS)
-        df = self._dim_as_dataframe(flt, D_POSITIONS, rename_values)
+        df = self._dim_as_dataframe(flt, D_POSITIONS)
         return df
 
-    def get_positions_coordinates(self, include=None, *, rename_values=True):
+    def get_positions_coordinates(self, include=None):
         flt = self._coherce_filters(
             include, self.positions_coordinates_, D_POSITIONS_COORDINATES
         )
-        df = self._dim_as_dataframe(
-            flt, D_POSITIONS_COORDINATES, rename_values
-        )
+        df = self._dim_as_dataframe(flt, D_POSITIONS_COORDINATES)
         return df
 
     get_pcoords = get_positions_coordinates

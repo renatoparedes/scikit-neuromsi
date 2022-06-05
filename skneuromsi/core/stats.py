@@ -23,6 +23,8 @@ import pandas as pd
 
 from ..utils import AccessorABC
 
+from .constants import DIMENSIONS
+
 # =============================================================================
 # STATS ACCESSOR
 # =============================================================================
@@ -36,48 +38,46 @@ class ResultStatsAccessor(AccessorABC):
 
     """
 
-    # # The list of methods that can be accessed of the subjacent dataframe.
-    # _DF_WHITELIST = (
-    #     "corr",
-    #     "cov",
-    #     "describe",
-    #     "kurtosis",
-    #     "mad",
-    #     "max",
-    #     "mean",
-    #     "median",
-    #     "min",
-    #     "pct_change",
-    #     "quantile",
-    #     "sem",
-    #     "skew",
-    #     "std",
-    #     "var",
-    # )
-
     _default_kind = "describe"
 
     def __init__(self, result):
         self._result = result
 
-    def count(self):
+    def _to_xarray(self, modes, times, positions, coordinates):
         xa = self._result.to_xarray()
+        flt = {
+            dim_name: dim_flt
+            for dim_name, dim_flt in zip(
+                DIMENSIONS, (modes, times, positions, coordinates)
+            )
+            if dim_flt is not None
+        }
+        return xa.sel(flt) if flt else xa
+
+    def count(
+        self, *, modes=None, times=None, positions=None, coordinates=None
+    ):
+        xa = self._to_xarray(modes, times, positions, coordinates)
         return int(xa.count().to_numpy())
 
-    def mean(self):
-        xa = self._result.to_xarray()
+    def mean(
+        self, *, modes=None, times=None, positions=None, coordinates=None
+    ):
+        xa = self._to_xarray(modes, times, positions, coordinates)
         return float(xa.mean().to_numpy())
 
-    def std(self):
-        xa = self._result.to_xarray()
+    def std(self, *, modes=None, times=None, positions=None, coordinates=None):
+        xa = self._to_xarray(modes, times, positions, coordinates)
         return float(xa.std().to_numpy())
 
-    def min(self):
-        xa = self._result.to_xarray()
+    def min(self, *, modes=None, times=None, positions=None, coordinates=None):
+        xa = self._to_xarray(modes, times, positions, coordinates)
         return float(xa.min().to_numpy())
 
-    def dimmin(self):
-        xa = self._result.to_xarray()
+    def dimmin(
+        self, *, modes=None, times=None, positions=None, coordinates=None
+    ):
+        xa = self._to_xarray(modes, times, positions, coordinates)
 
         data = {}
 
@@ -90,12 +90,14 @@ class ResultStatsAccessor(AccessorABC):
 
         return pd.Series(data, name="min")
 
-    def max(self):
-        xa = self._result.to_xarray()
+    def max(self, *, modes=None, times=None, positions=None, coordinates=None):
+        xa = self._to_xarray(modes, times, positions, coordinates)
         return float(xa.max().to_numpy())
 
-    def dimmax(self):
-        xa = self._result.to_xarray()
+    def dimmax(
+        self, *, modes=None, times=None, positions=None, coordinates=None
+    ):
+        xa = self._to_xarray(modes, times, positions, coordinates)
 
         data = {}
 
@@ -108,8 +110,17 @@ class ResultStatsAccessor(AccessorABC):
 
         return pd.Series(data, name="max")
 
-    def quantile(self, q=0.25, **kwargs):
-        xa = self._result.to_xarray()
+    def quantile(
+        self,
+        q=0.25,
+        *,
+        modes=None,
+        times=None,
+        positions=None,
+        coordinates=None,
+        **kwargs,
+    ):
+        xa = self._to_xarray(modes, times, positions, coordinates)
         return xa.quantile(q=q, **kwargs).to_numpy()
 
     def describe(self, percentiles=None):
@@ -131,4 +142,4 @@ class ResultStatsAccessor(AccessorABC):
 
         data["max"] = xa.max().to_numpy()
 
-        return pd.Series(data, name="describe")
+        return pd.Series(data, name="describe", dtype=float).to_frame()
