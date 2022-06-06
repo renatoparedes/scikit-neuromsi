@@ -35,7 +35,7 @@ def test_alaisburr2004_run_zero(visual, auditory, expected):
         auditory_position=auditory,
         possible_locations=locations,
     )
-    idx = out.get_mode("multi").values.argmax()
+    idx = out.get_modes("multi").multi.argmax()
     m_loc = locations[idx]
 
     np.testing.assert_almost_equal(m_loc, expected)

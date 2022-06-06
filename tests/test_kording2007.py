@@ -43,8 +43,8 @@ def test_kording2007_run(visual, auditory, visual_expected, auditory_expected):
         auditory_position=auditory,
         possible_locations=locations,
     )
-    a_idx = out.get_mode("auditory").values.argmax()
-    v_idx = out.get_mode("visual").values.argmax()
+    a_idx = out.get_modes("auditory").auditory.argmax()
+    v_idx = out.get_modes("visual").visual.argmax()
 
     a_loc = locations[0][a_idx]
     v_loc = locations[0][v_idx]
