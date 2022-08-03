@@ -47,7 +47,7 @@ class ResultPlotter(AccessorABC):
 
     """
 
-    _default_kind = "linep"
+    _default_kind = "line_postions"
 
     def __init__(self, result):
         self._result = result
@@ -119,6 +119,8 @@ class ResultPlotter(AccessorABC):
 
         return ax
 
+    linep = line_positions
+
     def line_times(self, position=None, **kwargs):
 
         if position is None:
@@ -154,3 +156,5 @@ class ResultPlotter(AccessorABC):
         ax.legend()
 
         return ax
+
+    linet = line_times

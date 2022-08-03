@@ -39,13 +39,15 @@ from .stats import ResultStatsAccessor
 
 
 class NDResult:
-    def __init__(self, *, mname, mtype, nmap, nddata):
+    def __init__(self, *, mname, mtype, nmap, nddata, time_res, position_res):
         self._mname = mname
         self._mtype = mtype
         self._nmap = dict(nmap)
         self._nddata = (
             modes_to_xarray(nddata) if isinstance(nddata, dict) else nddata
         )
+        self._time_res = time_res
+        self._position_res = position_res
 
     # PROPERTIES ==============================================================
 
@@ -64,6 +66,14 @@ class NDResult:
     @property
     def nmap_(self):
         return self._nmap.copy()
+
+    @property
+    def time_res(self):
+        return self._time_res
+
+    @property
+    def position_res(self):
+        return self._position_res
 
     @property
     def modes_(self):

@@ -64,6 +64,10 @@ class AlaisBurr2004(SKNMSIMethodABC):
     def mode1(self):
         return self._mode1
 
+    @property
+    def time_res(self):
+        return 0.01
+
     # Model methods
     def unisensory_estimator(
         self, unisensory_sigma, unisensory_position, possible_locations
@@ -125,7 +129,7 @@ class AlaisBurr2004(SKNMSIMethodABC):
     ):
 
         possible_locations = (
-            np.arange(-20, 20, 0.01)
+            np.arange(-20, 20, self.time_res)
             if possible_locations is None
             else possible_locations
         )

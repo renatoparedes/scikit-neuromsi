@@ -38,6 +38,8 @@ def test_alaisburr2004_run_zero(visual, auditory, expected):
     idx = out.get_modes("multi").multi.argmax()
     m_loc = locations[idx]
 
+    import ipdb; ipdb.set_trace()
+
     np.testing.assert_almost_equal(m_loc, expected)
 
 

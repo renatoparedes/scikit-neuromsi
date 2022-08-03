@@ -322,7 +322,7 @@ class SKNMSIRunConfig:
             doc = pattern.sub(alias, doc)
         return doc
 
-    def wrap_run(self, run_method, run_template_context):
+    def wrap_run(self, model_instance, run_template_context):
         """Retorna una wrapper para el metodo run.
 
         Este metodo es utilizado *por cada instancia* de un objeto de clase
@@ -332,6 +332,8 @@ class SKNMSIRunConfig:
         la configuracion y los mapea a los "targets".
 
         """
+        # extraemos el run del modelo
+        run_method = model_instance.run
 
         # creamos el mapeo de alias y target en un diccionario bidireccional
         # para el input y el output
@@ -345,6 +347,9 @@ class SKNMSIRunConfig:
         doc_with_alias = self._make_run_doc_with_alias(
             run_method, input_alias_map
         )
+
+        time_res = model_instance.time_res
+        position_res = model_instance.position_res
 
         @functools.wraps(run_method)
         def wrapper(*args, **kwargs):
@@ -385,6 +390,8 @@ class SKNMSIRunConfig:
                 mtype=self._model_type,
                 nmap=output_alias_map,
                 nddata=result_aliased,
+                time_res=time_res,
+                position_res=position_res,
             )
 
         wrapper.__signature__ = signature_with_alias
@@ -416,7 +423,7 @@ class SKNMSIRunConfig:
             }
 
             # creamos el nuevo run, y lo chantamos a nivel de instancia!
-            instance.run = self.wrap_run(instance.run, run_template_context)
+            instance.run = self.wrap_run(instance, run_template_context)
 
         return wrapper
 
@@ -447,6 +454,7 @@ class SKNMSIMethodABC:
 
         if cls.run is SKNMSIMethodABC.run:
             raise TypeError("'run' method must be redefined")
+
         if cls._run_input is None:
             raise TypeError("Class attribute '_run_input' must be redefined")
         if cls._run_output is None:
@@ -463,3 +471,9 @@ class SKNMSIMethodABC:
         # teardown
         cls.__init__ = config.wrap_init(cls.__init__)
         cls._run_io = config
+
+    def time_res(self):
+        return 1.0
+
+    def position_res(self):
+        return 1.0

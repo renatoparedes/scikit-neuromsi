@@ -15,15 +15,15 @@ import brainpy as bp
 
 import numpy as np
 
-from .core import SKNMSIMethodABC
+from ..core import SKNMSIMethodABC
 
 
 @dataclass
-class Paredes2022Integrator:
+class Cuppini2017Integrator:
     tau: tuple
     s: float
     theta: float
-    name: str = "Paredes2022Integrator"
+    name: str = "Cuppini2017Integrator"
 
     @property
     def __name__(self):
@@ -46,7 +46,7 @@ class Paredes2022Integrator:
         return dy_a, dy_v, dy_m
 
 
-class Paredes2022(SKNMSIMethodABC):
+class Cuppini2017(SKNMSIMethodABC):
     """Zaraza.
 
 
@@ -56,15 +56,13 @@ class Paredes2022(SKNMSIMethodABC):
 
     """
 
-    _model_name = "Paredes2022"
+    _model_name = "Cuppini2017"
     _model_type = "Neural"
     _run_input = [
         {"target": "auditory_position", "template": "${mode0}_position"},
         {"target": "visual_position", "template": "${mode1}_position"},
         {"target": "auditory_intensity", "template": "${mode0}_intensity"},
         {"target": "visual_intensity", "template": "${mode1}_intensity"},
-        {"target": "auditory_duration", "template": "${mode0}_duration"},
-        {"target": "visual_duration", "template": "${mode1}_duration"},
     ]
     _run_output = [
         {"target": "auditory", "template": "${mode0}"},
@@ -74,13 +72,14 @@ class Paredes2022(SKNMSIMethodABC):
     def __init__(
         self,
         *,
-        neurons=90,
+        neurons=180,
         tau=(3, 15, 1),
         s=0.3,
         theta=20,
         seed=None,
         mode0="auditory",
         mode1="visual",
+        time_res=0.01,
         **integrator_kws,
     ):
         if len(tau) != 3:
@@ -88,11 +87,12 @@ class Paredes2022(SKNMSIMethodABC):
 
         self._neurons = neurons
         self._random = np.random.default_rng(seed=seed)
+        self._time_res = float(time_res)
 
         integrator_kws.setdefault("method", "euler")
-        integrator_kws.setdefault("dt", 0.01)
+        integrator_kws.setdefault("dt", self._time_res)
 
-        integrator_model = Paredes2022Integrator(tau=tau, s=s, theta=theta)
+        integrator_model = Cuppini2017Integrator(tau=tau, s=s, theta=theta)
         self._integrator = bp.odeint(f=integrator_model, **integrator_kws)
 
         self._mode0 = mode0
@@ -119,6 +119,10 @@ class Paredes2022(SKNMSIMethodABC):
     @property
     def random(self):
         return self._random
+
+    @property
+    def time_res(self):
+        return self._time_res
 
     @property
     def mode0(self):
@@ -173,56 +177,6 @@ class Paredes2022(SKNMSIMethodABC):
 
         return the_stimuli
 
-    def create_unimodal_stimuli_matrix(
-        self,
-        stimuli,
-        stimuli_duration,
-        onset,
-        simulation_length,
-        stimuli_n=1,
-        soa=None,
-    ):
-        # TODO expand for more than 2 stimuli and for different stimuli
-
-        # Input before onset
-        no_stim = np.zeros(self.neurons)
-        pre_stim = np.tile(no_stim, (onset, 1))
-
-        # Input during stimulus delivery
-        stim = np.tile(stimuli, (stimuli_duration, 1))
-
-        # If two stimuli are delivered
-        if stimuli_n == 2:
-            # Input during onset asyncrhony
-            soa_stim = np.tile(no_stim, (soa, 1))
-
-            # Input after stimulation
-            post_stim_time = (
-                simulation_length - onset - stimuli_duration * 2 - soa
-            )
-            post_stim = np.tile(no_stim, (post_stim_time, 1))
-
-            # Input concatenation
-            complete_stim = np.vstack(
-                (pre_stim, stim, soa_stim, stim, post_stim)
-            )
-            stimuli_matrix = np.repeat(
-                complete_stim, 1 / self._integrator.dt, axis=0
-            )
-
-        else:
-            # Input after stimulation
-            post_stim_time = simulation_length - onset - stimuli_duration
-            post_stim = np.tile(no_stim, (post_stim_time, 1))
-
-            # Input concatenation
-            complete_stim = np.vstack((pre_stim, stim, post_stim))
-            stimuli_matrix = np.repeat(
-                complete_stim, 1 / self._integrator.dt, axis=0
-            )
-
-        return stimuli_matrix
-
     def synapses(self, weight, sigma):
 
         the_synapses = np.zeros((self.neurons, self.neurons))
@@ -240,17 +194,11 @@ class Paredes2022(SKNMSIMethodABC):
         self,
         *,
         simulation_length=100,
-        soa=50,
-        onset=16,
-        auditory_duration=7,
-        visual_duration=12,
         auditory_position=None,
         visual_position=None,
         auditory_intensity=28,
         visual_intensity=27,
         noise=False,
-        lateral_excitation=5,
-        lateral_inhibition=4,
     ):
 
         if auditory_position == None:
@@ -262,14 +210,14 @@ class Paredes2022(SKNMSIMethodABC):
 
         # Build synapses
         auditory_latsynapses = self.lateral_synapses(
-            excitation_loc=lateral_excitation,
-            inhibition_loc=lateral_inhibition,
+            excitation_loc=5,
+            inhibition_loc=4,
             excitation_scale=3,
             inhibition_scale=120,
         )
         visual_latsynapses = self.lateral_synapses(
-            excitation_loc=lateral_excitation,
-            inhibition_loc=lateral_inhibition,
+            excitation_loc=5,
+            inhibition_loc=4,
             excitation_scale=3,
             inhibition_scale=120,
         )
@@ -281,35 +229,18 @@ class Paredes2022(SKNMSIMethodABC):
         )
         auditory_to_visual_synapses = self.synapses(weight=1.4, sigma=5)
         visual_to_auditory_synapses = self.synapses(weight=1.4, sigma=5)
-        auditory_to_multi_synapses = self.synapses(weight=22.5, sigma=0.5)
-        visual_to_multi_synapses = self.synapses(weight=22.5, sigma=0.5)
-        multi_to_auditory_synapses = self.synapses(weight=13.5, sigma=0.5)
-        multi_to_visual_synapses = self.synapses(weight=13.5, sigma=0.5)
+        auditory_to_multi_synapses = self.synapses(weight=18, sigma=0.5)
+        visual_to_multi_synapses = self.synapses(weight=18, sigma=0.5)
 
         # Generate Stimuli
-        point_auditory_stimuli = self.stimuli_input(
+        auditory_stimuli = self.stimuli_input(
             intensity=auditory_intensity, scale=32, loc=auditory_position
         )
-        point_visual_stimuli = self.stimuli_input(
+        visual_stimuli = self.stimuli_input(
             intensity=visual_intensity, scale=4, loc=visual_position
         )
 
-        auditory_stimuli = self.create_unimodal_stimuli_matrix(
-            stimuli=point_auditory_stimuli,
-            stimuli_duration=auditory_duration,
-            onset=onset,
-            simulation_length=simulation_length,
-            stimuli_n=2,
-            soa=soa,
-        )
-
-        visual_stimuli = self.create_unimodal_stimuli_matrix(
-            stimuli=point_visual_stimuli,
-            stimuli_duration=visual_duration,
-            onset=onset,
-            simulation_length=simulation_length,
-        )
-
+        # Data holders
         auditory_y, visual_y, multi_y = (
             np.zeros(self.neurons),
             np.zeros(self.neurons),
@@ -340,23 +271,9 @@ class Paredes2022(SKNMSIMethodABC):
                 auditory_to_visual_synapses * auditory_y, axis=1
             )
 
-            # Compute feedback input
-            auditory_feedback_input = np.sum(
-                multi_to_auditory_synapses * multi_y, axis=1
-            )
-            visual_feedback_input = np.sum(
-                multi_to_visual_synapses * multi_y, axis=1
-            )
-
             # Compute external input
-            auditory_input = (
-                auditory_stimuli[i]
-                + auditory_cm_input
-                + auditory_feedback_input
-            )
-            visual_input = (
-                visual_stimuli[i] + visual_cm_input + visual_feedback_input
-            )
+            auditory_input = auditory_stimuli + auditory_cm_input
+            visual_input = visual_stimuli + visual_cm_input
             multi_input = np.sum(
                 auditory_to_multi_synapses * auditory_y, axis=1
             ) + np.sum(visual_to_multi_synapses * visual_y, axis=1)
