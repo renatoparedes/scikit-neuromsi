@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 class Mock:
     _result: object
 
+
 # %%
 model = paredes2022.Paredes2022()
 result = model.run()
@@ -28,16 +29,18 @@ stats = Mock(result)
 
 # %%
 for n in dir(result.stats):
-    if n.startswith("_") or n == "describe": continue
+    if n.startswith("_") or n == "describe":
+        continue
     s = result.stats(n)
     print(n, s, type(s))
     print("-" * 30)
 
 
-
 # %%
 df = result.get_pcoords()
-import ipdb; ipdb.set_trace()
+import ipdb
+
+ipdb.set_trace()
 
 
-a=1
+a = 1

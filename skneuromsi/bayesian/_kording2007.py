@@ -17,7 +17,7 @@ Implementation of multisensory integration neurocomputational models in Python.
 # =============================================================================
 import numpy as np
 
-from .core import SKNMSIMethodABC
+from ..core import SKNMSIMethodABC
 
 # =============================================================================
 # FUNCTIONS
@@ -54,11 +54,13 @@ class Kording2007(SKNMSIMethodABC):
         n=10000,
         mode0="auditory",
         mode1="visual",
+        position=(-42, 42),
     ):
 
         self._n = n
         self._mode0 = mode0
         self._mode1 = mode1
+        self._position = position
 
     # PROPERTY ================================================================
 
@@ -213,7 +215,6 @@ class Kording2007(SKNMSIMethodABC):
         *,
         auditory_position=-15,
         visual_position=15,
-        possible_locations=None,
         auditory_sigma=2.0,
         visual_sigma=10.0,
         p_common=0.5,
@@ -222,10 +223,8 @@ class Kording2007(SKNMSIMethodABC):
         strategy="averaging",
     ):
 
-        possible_locations = (
-            np.linspace(-42, 42, 50, retstep=True)
-            if possible_locations is None
-            else possible_locations
+        possible_locations = np.linspace(
+            self._position[0], self._position[1], 50, retstep=True
         )
 
         visual_var = np.square(visual_sigma)

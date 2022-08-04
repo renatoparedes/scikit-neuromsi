@@ -38,7 +38,7 @@ def test_cuppini2014_stim_generation(
 
     np.testing.assert_almost_equal(loc, stim_loc)
     np.testing.assert_almost_equal(intensity, stim_intensity)
-    #np.testing.assert_almost_equal(scale, stim_scale)
+    # np.testing.assert_almost_equal(scale, stim_scale)
 
 
 @pytest.mark.parametrize(

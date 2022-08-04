@@ -18,7 +18,7 @@ Implementation of multisensory integration neurocomputational models in Python.
 
 import numpy as np
 
-from .core import SKNMSIMethodABC
+from ..core import SKNMSIMethodABC
 
 # =============================================================================
 # FUNCTIONS
@@ -49,10 +49,19 @@ class AlaisBurr2004(SKNMSIMethodABC):
         {"target": "visual", "template": "${mode1}"},
     ]
 
-    def __init__(self, *, mode0="auditory", mode1="visual"):
+    def __init__(
+        self,
+        *,
+        mode0="auditory",
+        mode1="visual",
+        position=(-20, 20),
+        position_res=0.01,
+    ):
 
         self._mode0 = mode0
         self._mode1 = mode1
+        self._position = position
+        self._position_res = float(position_res)
 
     # PROPERTY ================================================================
 
@@ -63,10 +72,6 @@ class AlaisBurr2004(SKNMSIMethodABC):
     @property
     def mode1(self):
         return self._mode1
-
-    @property
-    def time_res(self):
-        return 0.01
 
     # Model methods
     def unisensory_estimator(
@@ -123,15 +128,11 @@ class AlaisBurr2004(SKNMSIMethodABC):
         *,
         auditory_position=-5,
         visual_position=5,
-        possible_locations=None,
         auditory_sigma=3.0,
         visual_sigma=3.0,
     ):
-
-        possible_locations = (
-            np.arange(-20, 20, self.time_res)
-            if possible_locations is None
-            else possible_locations
+        possible_locations = np.arange(
+            self._position[0], self._position[1], self._position_res
         )
 
         #        auditory_position = int(possible_locations.size / 2) if auditory_position is None else auditory_position
