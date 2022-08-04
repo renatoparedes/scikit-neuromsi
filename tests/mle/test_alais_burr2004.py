@@ -16,7 +16,7 @@ import numpy as np
 
 import pytest
 
-from skneuromsi.alais_burr2004 import AlaisBurr2004
+from skneuromsi.mle import AlaisBurr2004
 
 # =============================================================================
 # Alais and Burr 2004
@@ -28,19 +28,18 @@ from skneuromsi.alais_burr2004 import AlaisBurr2004
 )
 @pytest.mark.model
 def test_alaisburr2004_run_zero(visual, auditory, expected):
-    model = AlaisBurr2004()
-    locations = np.arange(-20, 20, 0.01)
+    position = (-20, 20)
+    position_res = 0.01
+    locations = np.arange(position[0], position[1], position_res)
+
+    model = AlaisBurr2004(position=position, position_res=position_res)
     out = model.run(
         visual_position=visual,
         auditory_position=auditory,
-        possible_locations=locations,
     )
+
     idx = out.get_modes("multi").multi.argmax()
     m_loc = locations[idx]
-
-    import ipdb
-
-    ipdb.set_trace()
 
     np.testing.assert_almost_equal(m_loc, expected)
 

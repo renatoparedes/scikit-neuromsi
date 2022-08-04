@@ -16,7 +16,7 @@ import numpy as np
 
 import pytest
 
-from skneuromsi.kording2007 import Kording2007
+from skneuromsi.bayesian import Kording2007
 
 # =============================================================================
 # Kording 2007
@@ -36,12 +36,13 @@ def test_kording2007_run(visual, auditory, visual_expected, auditory_expected):
         https://shamslab.psych.ucla.edu/bci-matlab-toolbox/
     """
 
-    model = Kording2007(n=1000000)
-    locations = np.linspace(-42, 42, 50, retstep=True)
+    position = (-42, 42)
+    locations = np.linspace(position[0], position[1], 50, retstep=True)
+
+    model = Kording2007(n=1000000, position=position)
     out = model.run(
         visual_position=visual,
         auditory_position=auditory,
-        possible_locations=locations,
     )
     a_idx = out.get_modes("auditory").auditory.argmax()
     v_idx = out.get_modes("visual").visual.argmax()

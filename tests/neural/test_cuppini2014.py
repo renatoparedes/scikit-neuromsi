@@ -16,7 +16,7 @@ import numpy as np
 
 import pytest
 
-from skneuromsi.cuppini2014 import Cuppini2014
+from skneuromsi.neural import Cuppini2014
 
 # =============================================================================
 # CUPPINI 2014
