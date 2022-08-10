@@ -348,8 +348,8 @@ class SKNMSIRunConfig:
             run_method, input_alias_map
         )
 
-        time_res = model_instance.time_res
-        position_res = model_instance.position_res
+        time_res = float(model_instance.time_res)
+        position_res = float(model_instance.position_res)
 
         @functools.wraps(run_method)
         def wrapper(*args, **kwargs):
@@ -379,19 +379,20 @@ class SKNMSIRunConfig:
                 input_alias_map.inv.get(k, k): v
                 for k, v in bound_params.kwargs.items()
             }
-            result = run_method(*target_args, **target_kwargs)
+            response, extra = run_method(*target_args, **target_kwargs)
 
             # now we rename the output
-            result_aliased = {
-                output_alias_map.get(k, k): v for k, v in result.items()
+            response_aliased = {
+                output_alias_map.get(k, k): v for k, v in response.items()
             }
             return self._result_cls(
                 mname=self._model_name,
                 mtype=self._model_type,
                 nmap=output_alias_map,
-                nddata=result_aliased,
+                nddata=response_aliased,
                 time_res=time_res,
                 position_res=position_res,
+                extra=extra,
             )
 
         wrapper.__signature__ = signature_with_alias
@@ -443,6 +444,9 @@ class SKNMSIMethodABC:
     _run_input = None
     _run_output = None
 
+    time_res = None
+    position_res = None
+
     def run(self):
         raise NotImplementedError("Default run method has has no implentation")
 
@@ -462,6 +466,11 @@ class SKNMSIMethodABC:
         if cls._model_type is None:
             raise TypeError("Class attribute '_model_type' must be redefined")
 
+        if cls.time_res is None:
+            raise TypeError("Attribute 'time_res' must be redefined")
+        if cls.position_res is None:
+            raise TypeError("Attribute 'position_res' must be redefined")
+
         # config creation
         config = SKNMSIRunConfig.from_method_class(cls)
 
@@ -471,9 +480,3 @@ class SKNMSIMethodABC:
         # teardown
         cls.__init__ = config.wrap_init(cls.__init__)
         cls._run_io = config
-
-    def time_res(self):
-        return 1.0
-
-    def position_res(self):
-        return 1.0

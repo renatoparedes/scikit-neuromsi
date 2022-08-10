@@ -73,6 +73,14 @@ class AlaisBurr2004(SKNMSIMethodABC):
     def mode1(self):
         return self._mode1
 
+    @property
+    def time_res(self):
+        return 1.
+
+    @property
+    def position_res(self):
+        return self._position_res
+
     # Model methods
     def unisensory_estimator(
         self, unisensory_sigma, unisensory_position, possible_locations
@@ -163,8 +171,9 @@ class AlaisBurr2004(SKNMSIMethodABC):
             possible_locations,
         )
 
-        return {
+        response = {
             "auditory": auditory_estimate,
             "visual": visual_estimate,
             "multi": multisensory_estimate,
         }
+        return response, {"presidente": "castillo"}

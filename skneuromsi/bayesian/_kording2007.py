@@ -288,8 +288,10 @@ class Kording2007(SKNMSIMethodABC):
             visual_input,
         )
 
-        return {
+        response = {
             "auditory": multisensory_estimate["auditory"],
             "visual": multisensory_estimate["visual"],
             "multi": multisensory_estimate["multi"],
         }
+
+        return response, {}

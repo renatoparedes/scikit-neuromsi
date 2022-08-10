@@ -13,6 +13,7 @@
 # =============================================================================
 
 import functools
+from collections.abc import Mapping
 from typing import Iterable
 
 import numpy as np
@@ -32,6 +33,33 @@ from .constants import (
 from .plot import ResultPlotter
 from .stats import ResultStatsAccessor
 
+# =============================================================================
+# CLASS EXTRA
+# =============================================================================
+
+class _Extra(Mapping):
+    def __init__(self, d):
+        self._data = dict(d)
+
+    def __getitem__(self, d):
+        return self._data[d]
+
+    def __getattr__(self, d):
+        return self._data[d]
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def __len__(self):
+        return len(self._data)
+
+    def __repr__(self):
+        content = ", ".join(self._data.keys())
+        return f"extra({content})"
+
+    def __dir__(self):
+        return super().__dir__() + list(self._data.keys())
+
 
 # =============================================================================
 # CLASS RESULT
@@ -39,7 +67,9 @@ from .stats import ResultStatsAccessor
 
 
 class NDResult:
-    def __init__(self, *, mname, mtype, nmap, nddata, time_res, position_res):
+    def __init__(
+        self, *, mname, mtype, nmap, nddata, time_res, position_res, extra
+    ):
         self._mname = mname
         self._mtype = mtype
         self._nmap = dict(nmap)
@@ -48,6 +78,7 @@ class NDResult:
         )
         self._time_res = time_res
         self._position_res = position_res
+        self._extra = _Extra(extra)
 
     # PROPERTIES ==============================================================
 
@@ -74,6 +105,12 @@ class NDResult:
     @property
     def position_res(self):
         return self._position_res
+
+    @property
+    def extra_(self):
+        return self._extra
+
+    e_ = extra_
 
     @property
     def modes_(self):

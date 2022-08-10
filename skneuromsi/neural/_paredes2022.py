@@ -400,8 +400,9 @@ class Paredes2022(SKNMSIMethodABC):
                 multi_y,
             )
 
-        return {
+        response = {
             "auditory": auditory_res,
             "visual": visual_res,
             "multi": multi_res,
         }
+        return response, {}

@@ -47,7 +47,7 @@ class ResultPlotter(AccessorABC):
 
     """
 
-    _default_kind = "line_postions"
+    _default_kind = "line_positions"
 
     def __init__(self, result):
         self._result = result
@@ -85,6 +85,8 @@ class ResultPlotter(AccessorABC):
 
         return xr.combine_nested(completed, dim)
 
+    # API======================================================================
+
     def line_positions(self, time=None, **kwargs):
 
         if time is None:
@@ -92,6 +94,7 @@ class ResultPlotter(AccessorABC):
 
         axes = self._resolve_axis(kwargs.pop("ax", None))
         has_single_position = len(self._result.positions_) == 1
+        position_res = self._result.position_res
 
         xa = self._result.to_xarray()
 
@@ -113,6 +116,12 @@ class ResultPlotter(AccessorABC):
                 **kwargs,
             )
 
+            # rescale the ticks by resolution
+            ticks = ax.get_xticks()
+            labels = [float(t) * position_res for t in ticks]
+            ax.set_xticks(ticks)  # without this a warning will be raised
+            ax.set_xticklabels(labels)
+
         model_name = self._result.mname
         ax.set_title(f"{model_name} - Time {time}")
         ax.legend()
@@ -128,6 +137,7 @@ class ResultPlotter(AccessorABC):
 
         axes = self._resolve_axis(kwargs.pop("ax", None))
         has_single_time = len(self._result.times_) == 1
+        time_res = self._result.time_res
 
         xa = self._result.to_xarray()
 
@@ -150,6 +160,12 @@ class ResultPlotter(AccessorABC):
                 ax=ax,
                 **kwargs,
             )
+
+            # rescale the ticks by resolution
+            ticks = ax.get_xticks()
+            labels = [float(t) * time_res for t in ticks]
+            ax.set_xticks(ticks)  # without this a warning will be raised
+            ax.set_xticklabels(labels)
 
         model_name = self._result.mname
         ax.set_title(f"{model_name} - Position {position}")
