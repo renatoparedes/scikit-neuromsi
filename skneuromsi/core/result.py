@@ -37,6 +37,7 @@ from .stats import ResultStatsAccessor
 # CLASS EXTRA
 # =============================================================================
 
+
 class _Extra(Mapping):
     def __init__(self, d):
         self._data = dict(d)

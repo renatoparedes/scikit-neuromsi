@@ -55,12 +55,16 @@ class Kording2007(SKNMSIMethodABC):
         mode0="auditory",
         mode1="visual",
         position=(-42, 42),
+        position_res=1,
+        time_res=1,
     ):
 
         self._n = n
         self._mode0 = mode0
         self._mode1 = mode1
         self._position = position
+        self._position_res = float(position_res)
+        self._time_res = float(time_res)
 
     # PROPERTY ================================================================
 
@@ -75,6 +79,14 @@ class Kording2007(SKNMSIMethodABC):
     @property
     def n(self):
         return self._n
+
+    @property
+    def position_res(self):
+        return self._position_res
+
+    @property
+    def time_res(self):
+        return self._time_res
 
     # Model methods
 
@@ -206,6 +218,7 @@ class Kording2007(SKNMSIMethodABC):
             "auditory": pred_auditory,
             "visual": pred_visual,
             "multi": pred_multi,
+            "pc": pc,
         }
 
         return res
@@ -294,4 +307,10 @@ class Kording2007(SKNMSIMethodABC):
             "multi": multisensory_estimate["multi"],
         }
 
-        return response, {}
+        return response, {
+            "mean_p_common_cause": np.average(multisensory_estimate["pc"]),
+            "p_common_cause": multisensory_estimate["pc"],
+        }
+
+
+# TODO implement kde plot for p_common_cause for this model only: sns.kdeplot(res.e_.p_common_cause)

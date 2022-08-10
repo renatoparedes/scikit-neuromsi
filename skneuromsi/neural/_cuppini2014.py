@@ -119,6 +119,8 @@ class Cuppini2014(SKNMSIMethodABC):
         seed=None,
         mode0="auditory",
         mode1="visual",
+        time_res=0.01,
+        position_res=1,
         **integrator_kws,
     ):
         if len(tau) != 3:
@@ -126,9 +128,11 @@ class Cuppini2014(SKNMSIMethodABC):
 
         self._neurons = neurons
         self._random = np.random.default_rng(seed=seed)
+        self._time_res = float(time_res)
+        self._position_res = float(position_res)
 
         integrator_kws.setdefault("method", "euler")
-        integrator_kws.setdefault("dt", 0.01)
+        integrator_kws.setdefault("dt", self._time_res)
 
         integrator_model = Cuppini2014Integrator(tau=tau, s=s, theta=theta)
         self._integrator = bp.odeint(f=integrator_model, **integrator_kws)
@@ -162,6 +166,14 @@ class Cuppini2014(SKNMSIMethodABC):
     @property
     def random(self):
         return self._random
+
+    @property
+    def position_res(self):
+        return self._position_res
+
+    @property
+    def time_res(self):
+        return self._time_res
 
     @property
     def mode0(self):
@@ -439,8 +451,10 @@ class Cuppini2014(SKNMSIMethodABC):
                 visual_y,
             )
 
-        return {
+        response = {
             "auditory": auditory_res,
             "visual": visual_res,
             "multi": multi_res,
         }
+
+        return response, {}

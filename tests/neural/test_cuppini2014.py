@@ -104,3 +104,7 @@ def test_cuppini2014_stim_matrix_generation_double(soa, duration):
 
     np.testing.assert_almost_equal(stim_matrix_duration, duration_sim_time)
     np.testing.assert_almost_equal(stim_matrix_soa, soa_sim_time)
+
+
+## TODO Synapses and Temporal Filter. Then compare with paper temporal evolution.
+## TODO Include peak readout from paper.

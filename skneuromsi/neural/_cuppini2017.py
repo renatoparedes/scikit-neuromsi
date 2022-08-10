@@ -80,6 +80,7 @@ class Cuppini2017(SKNMSIMethodABC):
         mode0="auditory",
         mode1="visual",
         time_res=0.01,
+        position_res=1,
         **integrator_kws,
     ):
         if len(tau) != 3:
@@ -88,6 +89,7 @@ class Cuppini2017(SKNMSIMethodABC):
         self._neurons = neurons
         self._random = np.random.default_rng(seed=seed)
         self._time_res = float(time_res)
+        self._position_res = float(position_res)
 
         integrator_kws.setdefault("method", "euler")
         integrator_kws.setdefault("dt", self._time_res)
@@ -119,6 +121,10 @@ class Cuppini2017(SKNMSIMethodABC):
     @property
     def random(self):
         return self._random
+
+    @property
+    def position_res(self):
+        return self._position_res
 
     @property
     def time_res(self):

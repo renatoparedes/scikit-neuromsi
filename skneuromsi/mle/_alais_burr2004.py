@@ -47,6 +47,8 @@ class AlaisBurr2004(SKNMSIMethodABC):
     _run_output = [
         {"target": "auditory", "template": "${mode0}"},
         {"target": "visual", "template": "${mode1}"},
+        {"target": "auditory_weight", "template": "${mode0}_weight"},
+        {"target": "visual_weight", "template": "${mode1}_weight"},
     ]
 
     def __init__(
@@ -56,12 +58,14 @@ class AlaisBurr2004(SKNMSIMethodABC):
         mode1="visual",
         position=(-20, 20),
         position_res=0.01,
+        time_res=1,
     ):
 
         self._mode0 = mode0
         self._mode1 = mode1
         self._position = position
         self._position_res = float(position_res)
+        self._time_res = float(time_res)
 
     # PROPERTY ================================================================
 
@@ -75,7 +79,7 @@ class AlaisBurr2004(SKNMSIMethodABC):
 
     @property
     def time_res(self):
-        return 1.
+        return 1
 
     @property
     def position_res(self):
@@ -176,4 +180,7 @@ class AlaisBurr2004(SKNMSIMethodABC):
             "visual": visual_estimate,
             "multi": multisensory_estimate,
         }
-        return response, {"presidente": "castillo"}
+        return response, {
+            "auditory_weight": auditory_weight,
+            "visual_weight": visual_weight,
+        }
