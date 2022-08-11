@@ -313,4 +313,5 @@ class Kording2007(SKNMSIMethodABC):
         }
 
 
-# TODO implement kde plot for p_common_cause for this model only: sns.kdeplot(res.e_.p_common_cause)
+# TODO implement kde plot for p_common_cause for this model only:
+# sns.kdeplot(res.e_.p_common_cause)

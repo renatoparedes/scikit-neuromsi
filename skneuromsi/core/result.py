@@ -32,35 +32,7 @@ from .constants import (
 )
 from .plot import ResultPlotter
 from .stats import ResultStatsAccessor
-
-# =============================================================================
-# CLASS EXTRA
-# =============================================================================
-
-
-class _Extra(Mapping):
-    def __init__(self, d):
-        self._data = dict(d)
-
-    def __getitem__(self, d):
-        return self._data[d]
-
-    def __getattr__(self, d):
-        return self._data[d]
-
-    def __iter__(self):
-        return iter(self._data)
-
-    def __len__(self):
-        return len(self._data)
-
-    def __repr__(self):
-        content = ", ".join(self._data.keys())
-        return f"extra({content})"
-
-    def __dir__(self):
-        return super().__dir__() + list(self._data.keys())
-
+from ..utils import Bunch
 
 # =============================================================================
 # CLASS RESULT
@@ -79,7 +51,7 @@ class NDResult:
         )
         self._time_res = time_res
         self._position_res = position_res
-        self._extra = _Extra(extra)
+        self._extra = Bunch("extra", extra)
 
     # PROPERTIES ==============================================================
 

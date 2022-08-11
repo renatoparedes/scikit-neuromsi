@@ -20,6 +20,7 @@
 # =============================================================================
 
 from .accabc import AccessorABC
+from .bunch import Bunch
 
 
-__all__ = ["AccessorABC"]
+__all__ = ["AccessorABC", "Bunch"]

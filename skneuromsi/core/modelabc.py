@@ -385,6 +385,9 @@ class SKNMSIRunConfig:
             response_aliased = {
                 output_alias_map.get(k, k): v for k, v in response.items()
             }
+            extra_aliased = {
+                output_alias_map.get(k, k): v for k, v in extra.items()
+            }
             return self._result_cls(
                 mname=self._model_name,
                 mtype=self._model_type,
@@ -392,7 +395,7 @@ class SKNMSIRunConfig:
                 nddata=response_aliased,
                 time_res=time_res,
                 position_res=position_res,
-                extra=extra,
+                extra=extra_aliased,
             )
 
         wrapper.__signature__ = signature_with_alias
