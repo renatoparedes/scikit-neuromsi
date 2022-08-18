@@ -116,10 +116,10 @@ def test_cuppini2014_synapses(weight):
 
 
 @pytest.mark.parametrize(
-    "excitation_loc, inhibition_loc", [(90, 20), (30, 70), (110, 50)]
+    "excitation_position, inhibition_position", [(90, 20), (30, 70), (110, 50)]
 )
 @pytest.mark.model
-def test_cuppini2014_lateral_synapses(excitation_loc, inhibition_loc):
+def test_cuppini2014_lateral_synapse(excitation_position, inhibition_position):
     # Fix scale evaluation: maybe fit gaussian.
     model = Cuppini2014()
     exc = np.zeros((180, 180))
@@ -131,12 +131,28 @@ def test_cuppini2014_lateral_synapses(excitation_loc, inhibition_loc):
             exc[neuron_i, neuron_j] = model.lateral_synapse(distance, 2, 3)
             inh[neuron_i, neuron_j] = model.lateral_synapse(distance, 2, 24)
 
-    exc_loc = exc[:, excitation_loc].argmax()
-    inh_loc = inh[:, inhibition_loc].argmax()
+    exc_pos = exc[:, excitation_position].argmax()
+    inh_pos = inh[:, inhibition_position].argmax()
 
-    np.testing.assert_almost_equal(exc_loc, excitation_loc)
-    np.testing.assert_almost_equal(inh_loc, inhibition_loc)
+    np.testing.assert_almost_equal(exc_pos, excitation_position)
+    np.testing.assert_almost_equal(inh_pos, inhibition_position)
 
 
-## TODO Synapses and Temporal Filter. Then compare with paper temporal evolution.
+@pytest.mark.parametrize("lateral_location", [(90), (30), (110), (50)])
+@pytest.mark.model
+def test_cuppini2014_lateral_synapses(lateral_location):
+    model = Cuppini2014()
+    latsynapses = model.lateral_synapses(
+        excitation_loc=5,
+        inhibition_loc=2,
+        excitation_scale=3,
+        inhibition_scale=24,
+    )
+
+    lat_self = latsynapses[:, lateral_location][lateral_location]
+
+    np.testing.assert_almost_equal(lat_self, 0)
+
+
+## TODO Temporal Filter. Then compare with paper temporal evolution.
 ## TODO Include peak readout from paper.
