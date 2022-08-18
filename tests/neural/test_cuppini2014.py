@@ -107,11 +107,35 @@ def test_cuppini2014_stim_matrix_generation_double(soa, duration):
 
 
 @pytest.mark.parametrize("weight", [(0.50), (0.25), (0.75)])
+@pytest.mark.model
 def test_cuppini2014_synapses(weight):
     model = Cuppini2014()
     synapses = model.synapses(weight=weight)
 
     np.testing.assert_almost_equal(np.unique(synapses), weight)
+
+
+@pytest.mark.parametrize(
+    "excitation_loc, inhibition_loc", [(90, 20), (30, 70), (110, 50)]
+)
+@pytest.mark.model
+def test_cuppini2014_lateral_synapses(excitation_loc, inhibition_loc):
+    # Fix scale evaluation: maybe fit gaussian.
+    model = Cuppini2014()
+    exc = np.zeros((180, 180))
+    inh = np.zeros((180, 180))
+
+    for neuron_i in range(180):
+        for neuron_j in range(180):
+            distance = model.distance(neuron_i, neuron_j)
+            exc[neuron_i, neuron_j] = model.lateral_synapse(distance, 2, 3)
+            inh[neuron_i, neuron_j] = model.lateral_synapse(distance, 2, 24)
+
+    exc_loc = exc[:, excitation_loc].argmax()
+    inh_loc = inh[:, inhibition_loc].argmax()
+
+    np.testing.assert_almost_equal(exc_loc, excitation_loc)
+    np.testing.assert_almost_equal(inh_loc, inhibition_loc)
 
 
 ## TODO Synapses and Temporal Filter. Then compare with paper temporal evolution.

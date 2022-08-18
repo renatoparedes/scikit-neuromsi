@@ -189,12 +189,10 @@ class Cuppini2014(SKNMSIMethodABC):
         if np.abs(position_j - position_k) <= self.neurons / 2:
             return np.abs(position_j - position_k)
         return self.neurons - np.abs(position_j - position_k)
-    
+
     def lateral_synapse(self, distance, loc, scale):
-        return loc * np.exp(
-                    -  (np.square(distance)) / (2 * np.square(scale))
-                )
-    
+        return loc * np.exp(-(np.square(distance)) / (2 * np.square(scale)))
+
     def lateral_synapses(
         self,
         excitation_loc,
@@ -211,8 +209,12 @@ class Cuppini2014(SKNMSIMethodABC):
                 if distance == 0:
                     the_lateral_synapses[neuron_i, neuron_j] = 0
                     continue
-                e_gauss = self.lateral_synapse(distance, excitation_loc, excitation_scale)
-                i_gauss = self.lateral_synapse(distance, inhibition_loc, inhibition_scale)
+                e_gauss = self.lateral_synapse(
+                    distance, excitation_loc, excitation_scale
+                )
+                i_gauss = self.lateral_synapse(
+                    distance, inhibition_loc, inhibition_scale
+                )
                 the_lateral_synapses[neuron_i, neuron_j] = e_gauss - i_gauss
 
         return the_lateral_synapses
