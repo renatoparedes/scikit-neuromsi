@@ -189,7 +189,12 @@ class Cuppini2014(SKNMSIMethodABC):
         if np.abs(position_j - position_k) <= self.neurons / 2:
             return np.abs(position_j - position_k)
         return self.neurons - np.abs(position_j - position_k)
-
+    
+    def lateral_synapse(self, distance, loc, scale):
+        return loc * np.exp(
+                    -  (np.square(distance)) / (2 * np.square(scale))
+                )
+    
     def lateral_synapses(
         self,
         excitation_loc,
@@ -202,19 +207,14 @@ class Cuppini2014(SKNMSIMethodABC):
 
         for neuron_i in range(self.neurons):
             for neuron_j in range(self.neurons):
-                if neuron_i == neuron_j:
+                distance = self.distance(neuron_i, neuron_j)
+                if distance == 0:
                     the_lateral_synapses[neuron_i, neuron_j] = 0
                     continue
-
-                distance = self.distance(neuron_i, neuron_j)
-                e_gauss = excitation_loc * np.exp(
-                    -(np.square(distance)) / (2 * np.square(excitation_scale))
-                )
-                i_gauss = inhibition_loc * np.exp(
-                    -(np.square(distance)) / (2 * np.square(inhibition_scale))
-                )
-
+                e_gauss = self.lateral_synapse(distance, excitation_loc, excitation_scale)
+                i_gauss = self.lateral_synapse(distance, inhibition_loc, inhibition_scale)
                 the_lateral_synapses[neuron_i, neuron_j] = e_gauss - i_gauss
+
         return the_lateral_synapses
 
     def stimuli_input(self, intensity, *, scale, loc):
@@ -303,6 +303,8 @@ class Cuppini2014(SKNMSIMethodABC):
         cross_modal_latency=16,
         auditory_gain=None,
         visual_gain=None,
+        auditory_stim_n=2,
+        visual_stim_n=1,
     ):
 
         if auditory_position == None:
@@ -349,7 +351,7 @@ class Cuppini2014(SKNMSIMethodABC):
             stimuli_duration=auditory_duration,
             onset=onset,
             simulation_length=simulation_length,
-            stimuli_n=2,
+            stimuli_n=auditory_stim_n,
             soa=soa,
         )
 
@@ -358,6 +360,7 @@ class Cuppini2014(SKNMSIMethodABC):
             stimuli_duration=visual_duration,
             onset=onset,
             simulation_length=simulation_length,
+            stimuli_n=visual_stim_n,
         )
 
         # Data holders
@@ -376,6 +379,24 @@ class Cuppini2014(SKNMSIMethodABC):
             np.zeros(
                 (int(simulation_length / self._integrator.dt), self.neurons)
             ),
+            np.zeros(
+                (int(simulation_length / self._integrator.dt), self.neurons)
+            ),
+            np.zeros(
+                (int(simulation_length / self._integrator.dt), self.neurons)
+            ),
+        )
+
+        auditory_outside_inputs, visual_outside_inputs = (
+            np.zeros(
+                (int(simulation_length / self._integrator.dt), self.neurons)
+            ),
+            np.zeros(
+                (int(simulation_length / self._integrator.dt), self.neurons)
+            ),
+        )
+
+        auditory_lateral_inputs, visual_lateral_inputs = (
             np.zeros(
                 (int(simulation_length / self._integrator.dt), self.neurons)
             ),
@@ -429,9 +450,16 @@ class Cuppini2014(SKNMSIMethodABC):
                 v_gain=visual_gain,
             )
 
+            auditory_outside_inputs[i, :], visual_outside_inputs[i, :] = (
+                auditory_outside_input,
+                visual_outside_input,
+            )
+
             # Compute lateral inpunt
             la = np.sum(auditory_latsynapses * auditory_y, axis=1)
             lv = np.sum(visual_latsynapses * visual_y, axis=1)
+
+            auditory_lateral_inputs[i, :], visual_lateral_inputs[i, :] = la, lv
 
             # Compute unisensory total input
             auditory_u = la + auditory_outside_input
@@ -457,4 +485,13 @@ class Cuppini2014(SKNMSIMethodABC):
             "multi": multi_res,
         }
 
-        return response, {}
+        return response, {
+            "auditory_stimuli": auditory_stimuli,
+            "visual_stimuli": visual_stimuli,
+            "auditory_outside_input": auditory_outside_inputs,
+            "visual_outside_input": visual_outside_inputs,
+            "auditory_lateral_input": auditory_lateral_inputs,
+            "visual_lateral_input": visual_lateral_inputs,
+            "auditory_lateral_synapses": auditory_latsynapses,
+            "visual_lateral_synapses": visual_latsynapses,
+        }
