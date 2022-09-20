@@ -56,6 +56,8 @@ class Cuppini2014TemporalFilter:
         self,
         a_outside_input,
         v_outside_input,
+        auditoryfilter_input,
+        visualfilter_input,
         t,
         a_external_input,
         v_external_input,
@@ -66,20 +68,37 @@ class Cuppini2014TemporalFilter:
     ):
 
         # Auditory
-        dauditory_outside_input = (
-            a_gain / self.tau[1] * (a_external_input + a_cross_modal_input)
-            - ((2 * a_outside_input) / self.tau[1])
+
+        da_outside_input = auditoryfilter_input
+
+        dauditory_filter_input = (
+            (a_gain / self.tau[1]) * (a_external_input + a_cross_modal_input)
+            - ((2 * auditoryfilter_input) / self.tau[1])
             - a_outside_input / np.square(self.tau[1])
         )
 
         # Visual
-        dvisual_outside_input = (
-            v_gain / self.tau[2] * (v_external_input + v_cross_modal_input)
-            - ((2 * v_outside_input) / self.tau[2])
+
+        dv_outside_input = visualfilter_input
+
+        dvisual_filter_input = (
+            (v_gain / self.tau[2]) * (v_external_input + v_cross_modal_input)
+            - ((2 * visualfilter_input) / self.tau[2])
             - v_outside_input / np.square(self.tau[2])
         )
 
-        return dauditory_outside_input, dvisual_outside_input
+        # dvisual_outside_input = (
+        #    (v_gain / self.tau[2]) * (v_external_input + v_cross_modal_input)
+        #    - ((2 * v_outside_input) / self.tau[2])
+        #    - v_outside_input / np.square(self.tau[2])
+        # )
+
+        return (
+            da_outside_input,
+            dv_outside_input,
+            dauditory_filter_input,
+            dvisual_filter_input,
+        )
 
 
 class Cuppini2014(SKNMSIMethodABC):
@@ -377,6 +396,11 @@ class Cuppini2014(SKNMSIMethodABC):
             np.zeros(self.neurons),
         )
 
+        auditoryfilter_input, visualfilter_input = (
+            np.zeros(self.neurons),
+            np.zeros(self.neurons),
+        )
+
         auditory_res, visual_res, multi_res = (
             np.zeros(
                 (int(simulation_length / self._integrator.dt), self.neurons)
@@ -398,7 +422,25 @@ class Cuppini2014(SKNMSIMethodABC):
             ),
         )
 
+        auditoryfilter_inputs, visualfilter_inputs = (
+            np.zeros(
+                (int(simulation_length / self._integrator.dt), self.neurons)
+            ),
+            np.zeros(
+                (int(simulation_length / self._integrator.dt), self.neurons)
+            ),
+        )
+
         auditory_lateral_inputs, visual_lateral_inputs = (
+            np.zeros(
+                (int(simulation_length / self._integrator.dt), self.neurons)
+            ),
+            np.zeros(
+                (int(simulation_length / self._integrator.dt), self.neurons)
+            ),
+        )
+
+        auditory_total_inputs, visual_total_inputs = (
             np.zeros(
                 (int(simulation_length / self._integrator.dt), self.neurons)
             ),
@@ -424,25 +466,30 @@ class Cuppini2014(SKNMSIMethodABC):
             )
 
             # Compute external input
-            auditory_input = auditory_stimuli[i] + auditory_cm_input
-            visual_input = visual_stimuli[i] + visual_cm_input
 
-            if noise:
-                auditory_noise = -(auditory_intensity * 0.4) + (
-                    2 * auditory_intensity * 0.4
-                ) * self.random.rand(self.neurons)
-                visual_noise = -(visual_intensity * 0.4) + (
-                    2 * visual_intensity * 0.4
-                ) * self.random.rand(self.neurons)
-                auditory_input += auditory_noise
-                visual_input += visual_noise
+            # auditory_input = auditory_stimuli[i] + auditory_cm_input
+            # visual_input = visual_stimuli[i] + visual_cm_input
+
+            # if noise:
+            #    auditory_noise = -(auditory_intensity * 0.4) + (
+            #        2 * auditory_intensity * 0.4
+            #    ) * self.random.rand(self.neurons)
+            #    visual_noise = -(visual_intensity * 0.4) + (
+            #        2 * visual_intensity * 0.4
+            #    ) * self.random.rand(self.neurons)
+            #    auditory_input += auditory_noise
+            #    visual_input += visual_noise
 
             (
                 auditory_outside_input,
                 visual_outside_input,
+                auditoryfilter_input,
+                visualfilter_input,
             ) = self._temporal_filter(
                 a_outside_input=auditory_outside_input,
                 v_outside_input=visual_outside_input,
+                auditoryfilter_input=auditoryfilter_input,
+                visualfilter_input=visualfilter_input,
                 t=time,
                 a_external_input=auditory_stimuli[i],
                 v_external_input=visual_stimuli[i],
@@ -457,6 +504,11 @@ class Cuppini2014(SKNMSIMethodABC):
                 visual_outside_input,
             )
 
+            auditoryfilter_inputs[i, :], visualfilter_inputs[i, :] = (
+                auditoryfilter_input,
+                visualfilter_input,
+            )
+
             # Compute lateral inpunt
             la = np.sum(auditory_latsynapses * auditory_y, axis=1)
             lv = np.sum(visual_latsynapses * visual_y, axis=1)
@@ -466,6 +518,11 @@ class Cuppini2014(SKNMSIMethodABC):
             # Compute unisensory total input
             auditory_u = la + auditory_outside_input
             visual_u = lv + visual_outside_input
+
+            auditory_total_inputs[i, :], visual_total_inputs[i, :] = (
+                auditory_u,
+                visual_u,
+            )
 
             # Compute neurons activity
             auditory_y, visual_y = self._integrator(
@@ -494,6 +551,10 @@ class Cuppini2014(SKNMSIMethodABC):
             "visual_outside_input": visual_outside_inputs,
             "auditory_lateral_input": auditory_lateral_inputs,
             "visual_lateral_input": visual_lateral_inputs,
+            "auditory_total_input": auditory_total_inputs,
+            "visual_total_input": visual_total_inputs,
             "auditory_lateral_synapses": auditory_latsynapses,
             "visual_lateral_synapses": visual_latsynapses,
+            "auditory_filter_input": auditoryfilter_inputs,
+            "visual_filter_input": visualfilter_inputs,
         }
