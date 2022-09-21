@@ -29,7 +29,6 @@ from skneuromsi.neural import Cuppini2017
 def test_cuppini2017_run_zero(visual, auditory, multi):
     model = Cuppini2017()
     result = model.run(
-        simulation_length=100,
         auditory_position=auditory,
         visual_position=visual,
     )
@@ -73,7 +72,6 @@ def test_cuppini2017_unisensory_multisensory_integration(
 ):
     model = Cuppini2017()
     result = model.run(
-        simulation_length=100,
         auditory_position=90,
         visual_position=90,
         auditory_intensity=auditory_intensity,
