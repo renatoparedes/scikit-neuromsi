@@ -451,17 +451,17 @@ class Cuppini2014(SKNMSIMethodABC):
 
         for i in range(hist_times.size):
 
-            time = hist_times[i]
+            time = int(hist_times[i])
 
             # Compute cross-modal input
             auditory_cm_input = np.sum(
                 visual_to_auditory_synapses
-                * visual_res[i - sim_cross_modal_latency, :],
+                * visual_res[time - sim_cross_modal_latency, :],
                 axis=1,
             )
             visual_cm_input = np.sum(
                 auditory_to_visual_synapses
-                * auditory_res[i - sim_cross_modal_latency, :],
+                * auditory_res[time - sim_cross_modal_latency, :],
                 axis=1,
             )
 
@@ -509,7 +509,7 @@ class Cuppini2014(SKNMSIMethodABC):
                 visualfilter_input,
             )
 
-            # Compute lateral inpunt
+            # Compute lateral input
             la = np.sum(auditory_latsynapses * auditory_y, axis=1)
             lv = np.sum(visual_latsynapses * visual_y, axis=1)
 
