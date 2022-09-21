@@ -81,8 +81,10 @@ class Paredes2022(SKNMSIMethodABC):
         seed=None,
         mode0="auditory",
         mode1="visual",
-        time_res=0.01,
+        position_range=(0, 180),
         position_res=1,
+        time_range=(0, 100),
+        time_res=0.01,
         **integrator_kws,
     ):
         if len(tau) != 3:
@@ -90,8 +92,10 @@ class Paredes2022(SKNMSIMethodABC):
 
         self._neurons = neurons
         self._random = np.random.default_rng(seed=seed)
-        self._time_res = float(time_res)
+        self._position_range = position_range
         self._position_res = float(position_res)
+        self._time_range = time_range
+        self._time_res = float(time_res)
 
         integrator_kws.setdefault("method", "euler")
         integrator_kws.setdefault("dt", self._time_res)
@@ -125,12 +129,20 @@ class Paredes2022(SKNMSIMethodABC):
         return self._random
 
     @property
-    def position_res(self):
-        return self._position_res
+    def time_range(self):
+        return self._time_range
 
     @property
     def time_res(self):
         return self._time_res
+
+    @property
+    def position_range(self):
+        return self._position_range
+
+    @property
+    def position_res(self):
+        return self._position_res
 
     @property
     def mode0(self):
@@ -266,11 +278,13 @@ class Paredes2022(SKNMSIMethodABC):
     ):
 
         if auditory_position == None:
-            auditory_position = int(self.neurons / 2)
+            auditory_position = int(self._position_range[1] / 2)
         if visual_position == None:
-            visual_position = int(self.neurons / 2)
+            visual_position = int(self._position_range[1] / 2)
 
-        hist_times = np.arange(0, simulation_length, self._integrator.dt)
+        hist_times = np.arange(
+            self._time_range[0], self._time_range[1], self._integrator.dt
+        )
 
         # Build synapses
         auditory_latsynapses = self.lateral_synapses(
@@ -310,7 +324,7 @@ class Paredes2022(SKNMSIMethodABC):
             stimuli=point_auditory_stimuli,
             stimuli_duration=auditory_duration,
             onset=onset,
-            simulation_length=simulation_length,
+            simulation_length=self._time_range[1],
             stimuli_n=2,
             soa=soa,
         )
@@ -319,7 +333,7 @@ class Paredes2022(SKNMSIMethodABC):
             stimuli=point_visual_stimuli,
             stimuli_duration=visual_duration,
             onset=onset,
-            simulation_length=simulation_length,
+            simulation_length=self._time_range[1],
         )
 
         auditory_y, visual_y, multi_y = (
@@ -330,13 +344,13 @@ class Paredes2022(SKNMSIMethodABC):
 
         auditory_res, visual_res, multi_res = (
             np.zeros(
-                (int(simulation_length / self._integrator.dt), self.neurons)
+                (int(self._time_range[1] / self._integrator.dt), self.neurons)
             ),
             np.zeros(
-                (int(simulation_length / self._integrator.dt), self.neurons)
+                (int(self._time_range[1] / self._integrator.dt), self.neurons)
             ),
             np.zeros(
-                (int(simulation_length / self._integrator.dt), self.neurons)
+                (int(self._time_range[1] / self._integrator.dt), self.neurons)
             ),
         )
 

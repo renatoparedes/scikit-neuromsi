@@ -32,7 +32,7 @@ def test_alaisburr2004_run_zero(visual, auditory, expected):
     position_res = 0.01
     locations = np.arange(position[0], position[1], position_res)
 
-    model = AlaisBurr2004(position=position, position_res=position_res)
+    model = AlaisBurr2004(position_range=position, position_res=position_res)
     out = model.run(
         visual_position=visual,
         auditory_position=auditory,

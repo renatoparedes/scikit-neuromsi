@@ -54,16 +54,18 @@ class Kording2007(SKNMSIMethodABC):
         n=10000,
         mode0="auditory",
         mode1="visual",
-        position=(-42, 42),
-        position_res=1,
+        position_range=(-42, 43),
+        position_res=1.7142857142857142,
+        time_range=(1, 1),
         time_res=1,
     ):
 
         self._n = n
         self._mode0 = mode0
         self._mode1 = mode1
-        self._position = position
+        self._position_range = position_range
         self._position_res = float(position_res)
+        self._time_range = time_range
         self._time_res = float(time_res)
 
     # PROPERTY ================================================================
@@ -81,12 +83,20 @@ class Kording2007(SKNMSIMethodABC):
         return self._n
 
     @property
-    def position_res(self):
-        return self._position_res
+    def time_range(self):
+        return self._time_range
 
     @property
     def time_res(self):
         return self._time_res
+
+    @property
+    def position_range(self):
+        return self._position_range
+
+    @property
+    def position_res(self):
+        return self._position_res
 
     # Model methods
 
@@ -200,8 +210,8 @@ class Kording2007(SKNMSIMethodABC):
                 ) * visual_hat_ind
 
         # Prediction of location estimates
-        step = possible_locations[1]
-        edges = possible_locations[0] - step / 2
+        step = self._position_res
+        edges = possible_locations - step / 2
         edges = np.append(edges, edges[-1] + step)
 
         auditory_estimates = np.histogram(auditory_hat, edges)[0]
@@ -236,8 +246,10 @@ class Kording2007(SKNMSIMethodABC):
         strategy="averaging",
     ):
 
-        possible_locations = np.linspace(
-            self._position[0], self._position[1], 50, retstep=True
+        possible_locations = np.arange(
+            self._position_range[0],
+            self._position_range[1],
+            self._position_res,
         )
 
         visual_var = np.square(visual_sigma)
@@ -311,7 +323,3 @@ class Kording2007(SKNMSIMethodABC):
             "mean_p_common_cause": np.average(multisensory_estimate["pc"]),
             "p_common_cause": multisensory_estimate["pc"],
         }
-
-
-# TODO implement kde plot for p_common_cause for this model only:
-# sns.kdeplot(res.e_.p_common_cause)

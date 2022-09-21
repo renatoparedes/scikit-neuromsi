@@ -138,8 +138,10 @@ class Cuppini2014(SKNMSIMethodABC):
         seed=None,
         mode0="auditory",
         mode1="visual",
-        time_res=0.01,
+        position_range=(0, 180),
         position_res=1,
+        time_range=(0, 100),
+        time_res=0.01,
         **integrator_kws,
     ):
         if len(tau) != 3:
@@ -147,8 +149,10 @@ class Cuppini2014(SKNMSIMethodABC):
 
         self._neurons = neurons
         self._random = np.random.default_rng(seed=seed)
-        self._time_res = float(time_res)
+        self._position_range = position_range
         self._position_res = float(position_res)
+        self._time_range = time_range
+        self._time_res = float(time_res)
 
         integrator_kws.setdefault("method", "euler")
         integrator_kws.setdefault("dt", self._time_res)
@@ -187,12 +191,20 @@ class Cuppini2014(SKNMSIMethodABC):
         return self._random
 
     @property
-    def position_res(self):
-        return self._position_res
+    def time_range(self):
+        return self._time_range
 
     @property
     def time_res(self):
         return self._time_res
+
+    @property
+    def position_range(self):
+        return self._position_range
+
+    @property
+    def position_res(self):
+        return self._position_res
 
     @property
     def mode0(self):
@@ -274,7 +286,7 @@ class Cuppini2014(SKNMSIMethodABC):
 
             # Input after stimulation
             post_stim_time = (
-                simulation_length - onset - stimuli_duration * 2 - soa
+                self._time_range[1] - onset - stimuli_duration * 2 - soa
             )
             post_stim = np.tile(no_stim, (post_stim_time, 1))
 
@@ -283,18 +295,18 @@ class Cuppini2014(SKNMSIMethodABC):
                 (pre_stim, stim, soa_stim, stim, post_stim)
             )
             stimuli_matrix = np.repeat(
-                complete_stim, 1 / self._integrator.dt, axis=0
+                complete_stim, 1 / self._time_res, axis=0
             )
 
         else:
             # Input after stimulation
-            post_stim_time = simulation_length - onset - stimuli_duration
+            post_stim_time = self._time_range[1] - onset - stimuli_duration
             post_stim = np.tile(no_stim, (post_stim_time, 1))
 
             # Input concatenation
             complete_stim = np.vstack((pre_stim, stim, post_stim))
             stimuli_matrix = np.repeat(
-                complete_stim, 1 / self._integrator.dt, axis=0
+                complete_stim, 1 / self._time_res, axis=0
             )
 
         return stimuli_matrix
@@ -309,7 +321,6 @@ class Cuppini2014(SKNMSIMethodABC):
     def run(
         self,
         *,
-        simulation_length=100,
         soa=40,
         onset=16,
         auditory_duration=15,
@@ -329,15 +340,18 @@ class Cuppini2014(SKNMSIMethodABC):
     ):
 
         if auditory_position == None:
-            auditory_position = int(self.neurons / 2)
+            auditory_position = int(self._position_range[1] / 2)
         if visual_position == None:
-            visual_position = int(self.neurons / 2)
+            visual_position = int(self._position_range[1] / 2)
         if auditory_gain == None:
             auditory_gain = np.exp(1)
         if visual_gain == None:
             visual_gain = np.exp(1)
 
-        hist_times = np.arange(0, simulation_length, self._integrator.dt)
+        hist_times = np.arange(
+            self._time_range[0], self._time_range[1], self._integrator.dt
+        )
+
         sim_cross_modal_latency = int(
             cross_modal_latency / self._integrator.dt
         )
@@ -371,7 +385,7 @@ class Cuppini2014(SKNMSIMethodABC):
             stimuli=point_auditory_stimuli,
             stimuli_duration=auditory_duration,
             onset=onset,
-            simulation_length=simulation_length,
+            simulation_length=self._time_range[1],
             stimuli_n=auditory_stim_n,
             soa=soa,
         )
@@ -380,7 +394,7 @@ class Cuppini2014(SKNMSIMethodABC):
             stimuli=point_visual_stimuli,
             stimuli_duration=visual_duration,
             onset=onset,
-            simulation_length=simulation_length,
+            simulation_length=self._time_range[1],
             stimuli_n=visual_stim_n,
         )
 
@@ -403,49 +417,49 @@ class Cuppini2014(SKNMSIMethodABC):
 
         auditory_res, visual_res, multi_res = (
             np.zeros(
-                (int(simulation_length / self._integrator.dt), self.neurons)
+                (int(self._time_range[1] / self._integrator.dt), self.neurons)
             ),
             np.zeros(
-                (int(simulation_length / self._integrator.dt), self.neurons)
+                (int(self._time_range[1] / sself._integrator.dt), self.neurons)
             ),
             np.zeros(
-                (int(simulation_length / self._integrator.dt), self.neurons)
+                (int(self._time_range[1] / self._integrator.dt), self.neurons)
             ),
         )
 
         auditory_outside_inputs, visual_outside_inputs = (
             np.zeros(
-                (int(simulation_length / self._integrator.dt), self.neurons)
+                (int(self._time_range[1] / self._integrator.dt), self.neurons)
             ),
             np.zeros(
-                (int(simulation_length / self._integrator.dt), self.neurons)
+                (int(self._time_range[1] / self._integrator.dt), self.neurons)
             ),
         )
 
         auditoryfilter_inputs, visualfilter_inputs = (
             np.zeros(
-                (int(simulation_length / self._integrator.dt), self.neurons)
+                (int(self._time_range[1] / self._integrator.dt), self.neurons)
             ),
             np.zeros(
-                (int(simulation_length / self._integrator.dt), self.neurons)
+                (int(self._time_range[1] / self._integrator.dt), self.neurons)
             ),
         )
 
         auditory_lateral_inputs, visual_lateral_inputs = (
             np.zeros(
-                (int(simulation_length / self._integrator.dt), self.neurons)
+                (int(self._time_range[1] / self._integrator.dt), self.neurons)
             ),
             np.zeros(
-                (int(simulation_length / self._integrator.dt), self.neurons)
+                (int(self._time_range[1] / self._integrator.dt), self.neurons)
             ),
         )
 
         auditory_total_inputs, visual_total_inputs = (
             np.zeros(
-                (int(simulation_length / self._integrator.dt), self.neurons)
+                (int(self._time_range[1] / self._integrator.dt), self.neurons)
             ),
             np.zeros(
-                (int(simulation_length / self._integrator.dt), self.neurons)
+                (int(self._time_range[1] / self._integrator.dt), self.neurons)
             ),
         )
 

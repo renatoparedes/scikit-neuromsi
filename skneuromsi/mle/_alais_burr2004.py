@@ -56,15 +56,17 @@ class AlaisBurr2004(SKNMSIMethodABC):
         *,
         mode0="auditory",
         mode1="visual",
-        position=(-20, 20),
+        position_range=(-20, 20),
         position_res=0.01,
+        time_range=(1, 1),
         time_res=1,
     ):
 
         self._mode0 = mode0
         self._mode1 = mode1
-        self._position = position
+        self._position_range = position_range
         self._position_res = float(position_res)
+        self._time_range = time_range
         self._time_res = float(time_res)
 
     # PROPERTY ================================================================
@@ -78,8 +80,16 @@ class AlaisBurr2004(SKNMSIMethodABC):
         return self._mode1
 
     @property
+    def time_range(self):
+        return self._time_range
+
+    @property
     def time_res(self):
-        return 1
+        return self._time_res
+
+    @property
+    def position_range(self):
+        return self._position_range
 
     @property
     def position_res(self):
@@ -144,7 +154,9 @@ class AlaisBurr2004(SKNMSIMethodABC):
         visual_sigma=3.0,
     ):
         possible_locations = np.arange(
-            self._position[0], self._position[1], self._position_res
+            self._position_range[0],
+            self._position_range[1],
+            self._position_res,
         )
 
         #        auditory_position = int(possible_locations.size / 2) if auditory_position is None else auditory_position
