@@ -76,7 +76,7 @@ def test_cuppini2014_stim_matrix_generation_single(duration, loc, onset):
 @pytest.mark.parametrize("soa, duration", [(90, 20), (70, 30), (110, 10)])
 @pytest.mark.model
 def test_cuppini2014_stim_matrix_generation_double(soa, duration):
-    model = Cuppini2014(time_range=(0,250))
+    model = Cuppini2014(time_range=(0, 250))
     loc = 90
     onset = 16
     simulation_length = 250

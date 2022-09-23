@@ -355,6 +355,18 @@ def test_SKNMSIRunConfig_validate_init_and_run_missing_template_variable():
     err.match("Template variable/s 'p0' not found as parameter in '__init__'")
 
 
+def test_SKNMSIRunConfig_invalid_model_type():
+
+    with pytest.raises(ValueError):
+        modelabc.SKNMSIRunConfig(
+            [modelabc.ParameterAliasTemplate("foo", "${p0}_foo")],
+            [],
+            lambda **kw: {},
+            "model",
+            _model_type="Foo",
+        )
+
+
 def test_SKNMSIRunConfig_wrap_run():
 
     config = modelabc.SKNMSIRunConfig(
@@ -368,12 +380,18 @@ def test_SKNMSIRunConfig_wrap_run():
     foo_calls = []
 
     class MethodClass:
+
+        time_range = (1, 2)
+        position_range = (1, 2)
+        time_res = 1
+        position_res = 2
+
         def run(self, foo):
             """foo: zaraza foo"""
             foo_calls.append({"self": self, "foo": foo})
-            return {}
+            return {}, {}
 
-    new_run = config.wrap_run(MethodClass.run, {"p0": "x"})
+    new_run = config.wrap_run(MethodClass, {"p0": "x"})
 
     assert new_run.__doc__ == "x_foo: zaraza x_foo"
 
@@ -405,12 +423,17 @@ def test_SKNMSIRunConfig_wrap_init():
     foo_calls = []
 
     class MethodClass:
+        time_range = (1, 2)
+        position_range = (1, 2)
+        time_res = 1
+        position_res = 2
+
         def __init__(self, p0):
             pass
 
         def run(self, foo):
             foo_calls.append({"self": self, "foo": foo})
-            return {}
+            return {}, {}
 
     new_init = config.wrap_init(MethodClass.__init__)
 
@@ -456,13 +479,17 @@ def test_SKNMSIMethodABC():
         _run_output = [
             {"target": "foo", "template": "${p0}_foo"},
         ]
+        time_range = (1, 2)
+        position_range = (1, 2)
+        time_res = 1
+        position_res = 2
 
         def __init__(self, p0):
             pass
 
         def run(self, foo):
             foo_calls.append({"self": self, "foo": foo})
-            return {}
+            return {}, {}
 
     assert isinstance(Method._run_io, modelabc.SKNMSIRunConfig)
 
@@ -482,6 +509,22 @@ def test_SKNMSIMethodABC():
     err.match(r"run\(\) got an unexpected keyword argument 'foo'")
 
 
+@pytest.mark.parametrize(
+    "ignore, err_msg", modelabc.SKNMSIMethodABC._TO_REDEFINE
+)
+def test_SKNMSIMethodABC_something_is_not_redefined(ignore, err_msg):
+    content = {
+        aname: object()
+        for aname, _ in modelabc.SKNMSIMethodABC._TO_REDEFINE
+        if aname != ignore
+    }
+
+    with pytest.raises(TypeError) as err:
+        type("Foo", (modelabc.SKNMSIMethodABC,), content)
+
+    err.match(err_msg)
+
+
 def test_SKNMSIMethodABC_abstract():
     class Method(modelabc.SKNMSIMethodABC):
 
@@ -491,64 +534,3 @@ def test_SKNMSIMethodABC_abstract():
         ]
 
     assert Method._run_input == [{"target": "foo", "template": "${p0}_foo"}]
-
-
-def test_SKNMSIMethodABC_missing_run():
-    with pytest.raises(TypeError) as err:
-
-        class Method(modelabc.SKNMSIMethodABC):
-
-            _run_input = [
-                {"target": "foo", "template": "${p0}_foo"},
-            ]
-
-            _run_output = [
-                {"target": "foo", "template": "${p0}_foo"},
-            ]
-
-    err.match("'run' method must be redefined")
-
-
-def test_SKNMSIMethodABC_missing__run_input():
-    with pytest.raises(TypeError) as err:
-
-        class Method(modelabc.SKNMSIMethodABC):
-            _run_output = []
-
-            def run(self):
-                pass
-
-    err.match("Class attribute '_run_input' must be redefined")
-
-
-def test_SKNMSIMethodABC_missing__run_output():
-    with pytest.raises(TypeError) as err:
-
-        class Method(modelabc.SKNMSIMethodABC):
-            _run_input = []
-
-            def run(self):
-                pass
-
-    err.match("Class attribute '_run_output' must be redefined")
-
-
-def test_SKNMSIMethodABC_base_run_not_implemethed():
-    class Method(modelabc.SKNMSIMethodABC):
-
-        _run_input = []
-        _run_output = []
-        _model_type = "Neural"
-
-        def __init__(self):
-            pass
-
-        def run(self):
-            return super().run()
-
-    instance = Method()
-
-    with pytest.raises(NotImplementedError) as err:
-        instance.run()
-
-    err.match("Default run method has has no implentation")

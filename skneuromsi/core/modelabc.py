@@ -20,6 +20,7 @@ import string
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 
+import numpy as np
 
 from bidict import frozenbidict
 
@@ -39,7 +40,7 @@ and methods.
 # CONSTANTS
 # =============================================================================
 
-MODEL_TYPES = {"MLE", "Bayesian", "Neural"}
+MODEL_TYPES = ("MLE", "Bayesian", "Neural")
 
 
 # =============================================================================
@@ -47,7 +48,7 @@ MODEL_TYPES = {"MLE", "Bayesian", "Neural"}
 # =============================================================================
 
 
-@dataclass()
+@dataclass
 class ParameterAliasTemplate:
     """Representa la regla de como construir alias para algun parámetro.
 
@@ -115,6 +116,11 @@ class ParameterAliasTemplate:
 # =============================================================================
 @dataclass
 class SKNMSIRunConfig:
+    """Esta clase contiene toda la configuracion necesaria para utilizar alias
+    en el metodo run, ademas de crear el objeto result.
+
+    """
+
     _input: tuple
     _output: tuple
     _result_cls: result.NDResult
@@ -348,6 +354,9 @@ class SKNMSIRunConfig:
             run_method, input_alias_map
         )
 
+        time_range = np.array(model_instance.time_range, dtype=float)
+        position_range = np.array(model_instance.position_range, dtype=float)
+
         time_res = float(model_instance.time_res)
         position_res = float(model_instance.position_res)
 
@@ -393,6 +402,8 @@ class SKNMSIRunConfig:
                 mtype=self._model_type,
                 nmap=output_alias_map,
                 nddata=response_aliased,
+                time_range=time_range,
+                position_range=position_range,
                 time_res=time_res,
                 position_res=position_res,
                 extra=extra_aliased,
@@ -440,39 +451,36 @@ class SKNMSIRunConfig:
 class SKNMSIMethodABC:
     """Abstract class that allows to configure method names dynamically."""
 
-    _abstract = True
-    _model_name = None
-    _model_type = None
+    _TO_REDEFINE = [
+        # method
+        ("run", "'run' method must be redefined"),
+        # class level
+        ("_run_input", "Class attribute '_run_input' must be redefined"),
+        ("_run_output", "Class attribute '_run_output' must be redefined"),
+        ("_model_type", "Class attribute '_model_type' must be redefined"),
+        # instance level redefinition
+        ("time_range", "Attribute 'time_range' must be redefined"),
+        ("position_range", "Attribute 'position_range' must be redefined"),
+        ("time_res", "Attribute 'time_res' must be redefined"),
+        ("position_res", "Attribute 'position_res' must be redefined"),
+    ]
+
     _run_result = result.NDResult
-    _run_input = None
-    _run_output = None
-
-    time_res = None
-    position_res = None
-
-    def run(self):
-        raise NotImplementedError("Default run method has has no implentation")
 
     def __init_subclass__(cls):
+        """Solo se realizan en este metodo la validacion superfical de
+        las subclases, y se delega integramente a SKNMSIRunConfig las
+        validaciones mas profundas.
+
+        """
 
         # simple validation
         if vars(cls).get("_abstract", False):
             return
 
-        if cls.run is SKNMSIMethodABC.run:
-            raise TypeError("'run' method must be redefined")
-
-        if cls._run_input is None:
-            raise TypeError("Class attribute '_run_input' must be redefined")
-        if cls._run_output is None:
-            raise TypeError("Class attribute '_run_output' must be redefined")
-        if cls._model_type is None:
-            raise TypeError("Class attribute '_model_type' must be redefined")
-
-        if cls.time_res is None:
-            raise TypeError("Attribute 'time_res' must be redefined")
-        if cls.position_res is None:
-            raise TypeError("Attribute 'position_res' must be redefined")
+        for attr, msg in cls._TO_REDEFINE:
+            if not hasattr(cls, attr):
+                raise TypeError(msg)
 
         # config creation
         config = SKNMSIRunConfig.from_method_class(cls)

@@ -12,8 +12,8 @@
 # IMPORTS
 # =============================================================================
 
+import dataclasses as dc
 import functools
-from collections.abc import Mapping
 from typing import Iterable
 
 import numpy as np
@@ -41,7 +41,17 @@ from ..utils import Bunch
 
 class NDResult:
     def __init__(
-        self, *, mname, mtype, nmap, nddata, time_res, position_res, extra
+        self,
+        *,
+        mname,
+        mtype,
+        nmap,
+        nddata,
+        time_range,
+        position_range,
+        time_res,
+        position_res,
+        extra,
     ):
         self._mname = mname
         self._mtype = mtype
@@ -51,13 +61,11 @@ class NDResult:
         )
         self._time_res = time_res
         self._position_res = position_res
+        self._time_res = time_res
+        self._position_res = position_res
         self._extra = Bunch("extra", extra)
 
     # PROPERTIES ==============================================================
-
-    @property
-    def mname(self):
-        return self._mname
 
     @property
     def mtype(self):
@@ -70,6 +78,14 @@ class NDResult:
     @property
     def nmap_(self):
         return self._nmap.copy()
+
+    @property
+    def time_range(self):
+        return self._time_range
+
+    @property
+    def position_range(self):
+        return self._position_range
 
     @property
     def time_res(self):
@@ -243,8 +259,12 @@ def modes_to_xarray(nddata):
         # here we add the
         modes.append(nd_mode_coords.reshape(final_shape))
 
+    data = (
+        np.concatenate(modes) if modes else np.array([], ndmin=len(DIMENSIONS))
+    )
+
     xa = xr.DataArray(
-        np.concatenate(modes),
+        data,
         coords=coords,
         dims=DIMENSIONS,
         name=XA_NAME,
