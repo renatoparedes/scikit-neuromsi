@@ -192,7 +192,8 @@ class AlaisBurr2004(SKNMSIMethodABC):
             "visual": visual_estimate,
             "multi": multisensory_estimate,
         }
-        return response, {
+        extra = {
             "auditory_weight": auditory_weight,
             "visual_weight": visual_weight,
         }
+        return response, extra

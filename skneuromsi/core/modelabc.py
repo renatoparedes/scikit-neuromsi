@@ -338,8 +338,9 @@ class SKNMSIRunConfig:
         la configuracion y los mapea a los "targets".
 
         """
-        # extraemos el run del modelo
+        # extraemos el run y el calculate_causes del modelo
         run_method = model_instance.run
+        calculate_causes_method = model_instance.calculate_causes
 
         # creamos el mapeo de alias y target en un diccionario bidireccional
         # para el input y el output
@@ -389,6 +390,7 @@ class SKNMSIRunConfig:
                 for k, v in bound_params.kwargs.items()
             }
             response, extra = run_method(*target_args, **target_kwargs)
+            causes = calculate_causes_method(**response, **extra)
 
             # now we rename the output
             response_aliased = {
@@ -406,6 +408,7 @@ class SKNMSIRunConfig:
                 position_range=position_range,
                 time_res=time_res,
                 position_res=position_res,
+                causes=causes,
                 extra=extra_aliased,
             )
 
@@ -491,3 +494,6 @@ class SKNMSIMethodABC:
         # teardown
         cls.__init__ = config.wrap_init(cls.__init__)
         cls._run_io = config
+
+    def calculate_causes(self, **kwargs):
+        return None

@@ -85,6 +85,22 @@ class ResultPlotter(AccessorABC):
 
         return xr.combine_nested(completed, dim)
 
+    def _scale_xtickslabels(self, *, limits, ticks, single_value):
+
+        ll, tl = np.sort(limits)
+        ticks_array = np.asarray(ticks, dtype=float)
+
+        tmin, tmax = np.min(ticks_array), np.max(ticks_array)
+        new_ticks = np.interp(ticks_array, (tmin, tmax), (ll, tl))
+        labels = np.array([f"{t:.2f}" for t in new_ticks])
+
+        if single_value:
+            mask = np.ones_like(labels, dtype=bool)
+            mask[len(mask) // 2] = False
+            labels[mask] = ""
+
+        return labels
+
     # API======================================================================
 
     def line_positions(self, time=None, **kwargs):
@@ -94,7 +110,7 @@ class ResultPlotter(AccessorABC):
 
         axes = self._resolve_axis(kwargs.pop("ax", None))
         has_single_position = len(self._result.positions_) == 1
-        position_res = self._result.position_res
+        position_range = self._result.position_range
 
         xa = self._result.to_xarray()
 
@@ -118,7 +134,11 @@ class ResultPlotter(AccessorABC):
 
             # rescale the ticks by resolution
             ticks = ax.get_xticks()
-            labels = [float(t) * position_res for t in ticks]
+            labels = self._scale_xtickslabels(
+                limits=position_range,
+                ticks=ticks,
+                single_value=has_single_position,
+            )
             ax.set_xticks(ticks)  # without this a warning will be raised
             ax.set_xticklabels(labels)
 
@@ -137,7 +157,7 @@ class ResultPlotter(AccessorABC):
 
         axes = self._resolve_axis(kwargs.pop("ax", None))
         has_single_time = len(self._result.times_) == 1
-        time_res = self._result.time_res
+        time_range = self._result.time_range
 
         xa = self._result.to_xarray()
 
@@ -163,7 +183,9 @@ class ResultPlotter(AccessorABC):
 
             # rescale the ticks by resolution
             ticks = ax.get_xticks()
-            labels = [float(t) * time_res for t in ticks]
+            labels = self._scale_xtickslabels(
+                limits=time_range, ticks=ticks, single_value=has_single_time
+            )
             ax.set_xticks(ticks)  # without this a warning will be raised
             ax.set_xticklabels(labels)
 

@@ -388,19 +388,22 @@ def test_SKNMSIRunConfig_wrap_run():
 
         def run(self, foo):
             """foo: zaraza foo"""
-            foo_calls.append({"self": self, "foo": foo})
+            foo_calls.append({"foo": foo})
             return {}, {}
 
-    new_run = config.wrap_run(MethodClass, {"p0": "x"})
+        def calculate_causes(self, **kwargs):
+            return None
+
+    new_run = config.wrap_run(MethodClass(), {"p0": "x"})
 
     assert new_run.__doc__ == "x_foo: zaraza x_foo"
 
-    new_run(self=None, x_foo="zaraza")
+    new_run(x_foo="zaraza")
 
-    assert foo_calls == [{"self": None, "foo": "zaraza"}]
+    assert foo_calls == [{"foo": "zaraza"}]
 
     with pytest.raises(TypeError) as err:
-        new_run(self=None)
+        new_run()
 
     err.match("missing a required argument: 'x_foo'")
 
@@ -434,6 +437,9 @@ def test_SKNMSIRunConfig_wrap_init():
         def run(self, foo):
             foo_calls.append({"self": self, "foo": foo})
             return {}, {}
+
+        def calculate_causes(self, **kwargs):
+            return None
 
     new_init = config.wrap_init(MethodClass.__init__)
 

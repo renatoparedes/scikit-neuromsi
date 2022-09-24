@@ -51,6 +51,7 @@ class NDResult:
         position_range,
         time_res,
         position_res,
+        causes,
         extra,
     ):
         self._mname = mname
@@ -66,6 +67,7 @@ class NDResult:
         self._time_res = time_res
         self._position_res = position_res
         self._extra = Bunch("extra", extra)
+        self._causes = causes
 
     # PROPERTIES ==============================================================
 
@@ -108,6 +110,10 @@ class NDResult:
     e_ = extra_
 
     @property
+    def causes_(self):
+        return self._causes
+
+    @property
     def modes_(self):
         return self._nddata[D_MODES].to_numpy()
 
@@ -133,11 +139,12 @@ class NDResult:
         mname = self.mname
         modes = self.modes_
         _, times, pos, pos_coords = self._nddata.shape
+        causes = bool(self.causes_)
 
         return (
-            f"{cls_name}({mname}, modes={modes!s}, "
+            f"<{cls_name} '{mname}', modes={modes!s}, "
             f"times={times}, positions={pos}, "
-            f"positions_coordinates={pos_coords})"
+            f"positions_coordinates={pos_coords}, causes={causes}>"
         )
 
     def to_xarray(self):
