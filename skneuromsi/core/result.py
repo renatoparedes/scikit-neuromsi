@@ -59,6 +59,8 @@ class NDResult:
         self._nddata = (
             modes_to_xarray(nddata) if isinstance(nddata, dict) else nddata
         )
+        self._time_range = time_range
+        self._position_range = position_range
         self._time_res = time_res
         self._position_res = position_res
         self._time_res = time_res
@@ -66,6 +68,10 @@ class NDResult:
         self._extra = Bunch("extra", extra)
 
     # PROPERTIES ==============================================================
+
+    @property
+    def mname(self):
+        return self._mname
 
     @property
     def mtype(self):
