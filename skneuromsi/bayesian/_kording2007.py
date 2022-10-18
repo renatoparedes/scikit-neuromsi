@@ -319,7 +319,14 @@ class Kording2007(SKNMSIMethodABC):
             "multi": multisensory_estimate["multi"],
         }
 
-        return response, {
+        extra = {
             "mean_p_common_cause": np.average(multisensory_estimate["pc"]),
             "p_common_cause": multisensory_estimate["pc"],
         }
+
+        return response, extra
+
+    def calculate_causes(self, p_common_cause, mean_p_common_cause, **kwargs):
+        if mean_p_common_cause > 0.5:
+            return 1
+        return 2

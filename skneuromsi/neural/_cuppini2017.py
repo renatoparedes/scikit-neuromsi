@@ -15,6 +15,8 @@ import brainpy as bp
 
 import numpy as np
 
+from scipy.signal import find_peaks
+
 from ..core import SKNMSIMethodABC
 
 
@@ -341,4 +343,12 @@ class Cuppini2017(SKNMSIMethodABC):
             "visual": visual_res,
             "multi": multi_res,
         }
-        return response, {}
+
+        extra = {}
+
+        return response, extra
+
+    def calculate_causes(self, multi, **kwargs):
+        peaks_idx, _ = find_peaks(multi[-1, :], prominence=0.30, height=0.15)
+        peaks = np.size(peaks_idx)
+        return peaks
