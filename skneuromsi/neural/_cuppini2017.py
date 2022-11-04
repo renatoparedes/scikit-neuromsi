@@ -280,6 +280,13 @@ class Cuppini2017(SKNMSIMethodABC):
             ),
         )
 
+        auditory_noise = -(auditory_intensity * 0.4) + (
+            2 * auditory_intensity * 0.4
+        ) * np.random.rand(self.neurons)
+        visual_noise = -(visual_intensity * 0.4) + (
+            2 * visual_intensity * 0.4
+        ) * np.random.rand(self.neurons)
+
         for i in range(hist_times.size):
 
             time = hist_times[i]
@@ -300,12 +307,6 @@ class Cuppini2017(SKNMSIMethodABC):
             ) + np.sum(visual_to_multi_synapses * visual_y, axis=1)
 
             if noise:
-                auditory_noise = -(auditory_intensity * 0.4) + (
-                    2 * auditory_intensity * 0.4
-                ) * self.random.rand(self.neurons)
-                visual_noise = -(visual_intensity * 0.4) + (
-                    2 * visual_intensity * 0.4
-                ) * self.random.rand(self.neurons)
                 auditory_input += auditory_noise
                 visual_input += visual_noise
 
@@ -349,6 +350,6 @@ class Cuppini2017(SKNMSIMethodABC):
         return response, extra
 
     def calculate_causes(self, multi, **kwargs):
-        peaks_idx, _ = find_peaks(multi[-1, :], prominence=0.30, height=0.15)
+        peaks_idx, _ = find_peaks(multi[-1, :], prominence=0.15, height=0.15)
         peaks = np.size(peaks_idx)
         return peaks
