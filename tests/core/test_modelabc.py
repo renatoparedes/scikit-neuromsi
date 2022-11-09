@@ -515,14 +515,10 @@ def test_SKNMSIMethodABC():
     err.match(r"run\(\) got an unexpected keyword argument 'foo'")
 
 
-@pytest.mark.parametrize(
-    "ignore, err_msg", modelabc.SKNMSIMethodABC._TO_REDEFINE
-)
+@pytest.mark.parametrize("ignore, err_msg", modelabc.TO_REDEFINE)
 def test_SKNMSIMethodABC_something_is_not_redefined(ignore, err_msg):
     content = {
-        aname: object()
-        for aname, _ in modelabc.SKNMSIMethodABC._TO_REDEFINE
-        if aname != ignore
+        aname: object() for aname, _ in modelabc.TO_REDEFINE if aname != ignore
     }
 
     with pytest.raises(TypeError) as err:

@@ -219,8 +219,7 @@ class SKNMSIRunConfig:
         return frozenset(template_variables)
 
     def make_run_input_alias_map(self, context):
-        """Crea un diccionario bidireccional que mapea los alias con los \
-        targets.
+        """Crea un bidict que mapea los alias con los targets.
 
         El contexto es la configurar que provee el usuario a traves de los
         parametros de init.
@@ -450,30 +449,36 @@ class SKNMSIRunConfig:
 # BASES
 # =============================================================================
 
+# THE REAL METHOD BASE ========================================================
+
+# ALL SKNMSIMethodABC subclasses must redefine this attributes and methods
+TO_REDEFINE = [
+    #
+    # method
+    ("run", "'run' method must be redefined"),
+    #
+    # class level
+    ("_run_input", "Class attribute '_run_input' must be redefined"),
+    ("_run_output", "Class attribute '_run_output' must be redefined"),
+    ("_model_type", "Class attribute '_model_type' must be redefined"),
+    #
+    # instance level redefinition
+    ("time_range", "Attribute 'time_range' must be redefined"),
+    ("position_range", "Attribute 'position_range' must be redefined"),
+    ("time_res", "Attribute 'time_res' must be redefined"),
+    ("position_res", "Attribute 'position_res' must be redefined"),
+]
+
 
 class SKNMSIMethodABC:
     """Abstract class that allows to configure method names dynamically."""
-
-    _TO_REDEFINE = [
-        # method
-        ("run", "'run' method must be redefined"),
-        # class level
-        ("_run_input", "Class attribute '_run_input' must be redefined"),
-        ("_run_output", "Class attribute '_run_output' must be redefined"),
-        ("_model_type", "Class attribute '_model_type' must be redefined"),
-        # instance level redefinition
-        ("time_range", "Attribute 'time_range' must be redefined"),
-        ("position_range", "Attribute 'position_range' must be redefined"),
-        ("time_res", "Attribute 'time_res' must be redefined"),
-        ("position_res", "Attribute 'position_res' must be redefined"),
-    ]
 
     _run_result = result.NDResult
 
     def __init_subclass__(cls):
         """Solo se realizan en este metodo la validacion superfical de
         las subclases, y se delega integramente a SKNMSIRunConfig las
-        validaciones mas profundas.
+        validaciones propias de la configuracuión.
 
         """
 
@@ -481,7 +486,7 @@ class SKNMSIMethodABC:
         if vars(cls).get("_abstract", False):
             return
 
-        for attr, msg in cls._TO_REDEFINE:
+        for attr, msg in TO_REDEFINE:
             if not hasattr(cls, attr):
                 raise TypeError(msg)
 
