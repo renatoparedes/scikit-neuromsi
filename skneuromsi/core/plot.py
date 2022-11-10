@@ -21,15 +21,15 @@
 
 from collections.abc import Iterable
 
+import matplotlib.pyplot as plt
+
 import numpy as np
 
 import seaborn as sns
 
-import matplotlib.pyplot as plt
-from skneuromsi.core.constants import D_MODES, D_POSITIONS, D_TIMES, XA_NAME
-
 import xarray as xr
 
+from .constants import D_MODES, D_POSITIONS, D_TIMES, XA_NAME
 from ..utils import AccessorABC
 
 

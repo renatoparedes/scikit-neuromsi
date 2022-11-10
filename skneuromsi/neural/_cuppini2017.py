@@ -220,10 +220,17 @@ class Cuppini2017(SKNMSIMethodABC):
         noise=False,
     ):
 
-        if auditory_position == None:
-            auditory_position = int(self._position_range[1] / 2)
-        if visual_position == None:
-            visual_position = int(self._position_range[1] / 2)
+        auditory_position = (
+            int(self._position_range[1] / 2)
+            if auditory_position is None
+            else auditory_position
+        )
+
+        visual_position = (
+            int(self._position_range[1] / 2)
+            if visual_position is None
+            else visual_position
+        )
 
         hist_times = np.arange(
             self._time_range[0], self._time_range[1], self._time_res
@@ -262,23 +269,13 @@ class Cuppini2017(SKNMSIMethodABC):
         )
 
         # Data holders
-        auditory_y, visual_y, multi_y = (
-            np.zeros(self.neurons),
-            np.zeros(self.neurons),
-            np.zeros(self.neurons),
-        )
+        y_z = np.zeros(self.neurons)
+        auditory_y, visual_y, multi_y = y_z[:], y_z[:], y_z[:]
 
-        auditory_res, visual_res, multi_res = (
-            np.zeros(
-                (int(self._time_range[1] / self._integrator.dt), self.neurons)
-            ),
-            np.zeros(
-                (int(self._time_range[1] / self._integrator.dt), self.neurons)
-            ),
-            np.zeros(
-                (int(self._time_range[1] / self._integrator.dt), self.neurons)
-            ),
+        res_z = np.zeros(
+            (int(self._time_range[1] / self._integrator.dt), self.neurons)
         )
+        auditory_res, visual_res, multi_res = res_z[:], res_z[:], res_z[:]
 
         auditory_noise = -(auditory_intensity * 0.4) + (
             2 * auditory_intensity * 0.4

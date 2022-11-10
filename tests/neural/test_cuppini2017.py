@@ -58,7 +58,7 @@ def test_cuppini2017_run_zero(visual, auditory, multi):
 #     np.testing.assert_almost_equal(v_loc, visual_read, 1)
 
 
-# TODO Get numbers from paper/matlab
+# TODO: Get numbers from paper/matlab
 
 
 @pytest.mark.parametrize(

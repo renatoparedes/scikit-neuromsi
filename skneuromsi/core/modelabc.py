@@ -20,9 +20,10 @@ import string
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 
-import numpy as np
 
 from bidict import frozenbidict
+
+import numpy as np
 
 from . import result
 

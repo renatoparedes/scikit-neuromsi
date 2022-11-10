@@ -21,9 +21,9 @@
 
 import pandas as pd
 
+from .constants import DIMENSIONS
 from ..utils import AccessorABC
 
-from .constants import DIMENSIONS
 
 # =============================================================================
 # STATS ACCESSOR
@@ -70,7 +70,7 @@ class ResultStatsAccessor(AccessorABC):
         xa = self._to_xarray(modes, times, positions, coordinates)
         return float(xa.std().to_numpy())
 
-    def min(self, *, modes=None, times=None, positions=None, coordinates=None):
+    def min(self, *, modes=None, times=None, positions=None, coordinates=None):  # noqa
         xa = self._to_xarray(modes, times, positions, coordinates)
         return float(xa.min().to_numpy())
 
@@ -90,7 +90,7 @@ class ResultStatsAccessor(AccessorABC):
 
         return pd.Series(data, name="min")
 
-    def max(self, *, modes=None, times=None, positions=None, coordinates=None):
+    def max(self, *, modes=None, times=None, positions=None, coordinates=None):  # noqa
         xa = self._to_xarray(modes, times, positions, coordinates)
         return float(xa.max().to_numpy())
 

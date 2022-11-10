@@ -277,10 +277,17 @@ class Paredes2022(SKNMSIMethodABC):
         lateral_inhibition=4,
     ):
 
-        if auditory_position == None:
-            auditory_position = int(self._position_range[1] / 2)
-        if visual_position == None:
-            visual_position = int(self._position_range[1] / 2)
+        auditory_position = (
+            int(self._position_range[1] / 2)
+            if auditory_position is None
+            else auditory_position
+        )
+
+        visual_position = (
+            int(self._position_range[1] / 2)
+            if visual_position is None
+            else visual_position
+        )
 
         hist_times = np.arange(
             self._time_range[0], self._time_range[1], self._integrator.dt
@@ -336,23 +343,15 @@ class Paredes2022(SKNMSIMethodABC):
             simulation_length=self._time_range[1],
         )
 
-        auditory_y, visual_y, multi_y = (
-            np.zeros(self.neurons),
-            np.zeros(self.neurons),
-            np.zeros(self.neurons),
-        )
+        z_1d = np.zeros(self.neurons)
+        auditory_y, visual_y, multi_y = z_1d[:], z_1d[:], z_1d[:]
 
-        auditory_res, visual_res, multi_res = (
-            np.zeros(
-                (int(self._time_range[1] / self._integrator.dt), self.neurons)
-            ),
-            np.zeros(
-                (int(self._time_range[1] / self._integrator.dt), self.neurons)
-            ),
-            np.zeros(
-                (int(self._time_range[1] / self._integrator.dt), self.neurons)
-            ),
+        z_2d = np.zeros(
+            (int(self._time_range[1] / self._integrator.dt), self.neurons)
         )
+        auditory_res, visual_res, multi_res = z_2d[:], z_2d[:], z_2d[:]
+
+        del z_1d, z_2d
 
         for i in range(hist_times.size):
 

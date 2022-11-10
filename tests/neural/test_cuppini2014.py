@@ -27,9 +27,9 @@ from skneuromsi.neural import Cuppini2014
     "loc, intensity, scale", [(90, 10, 6), (70, 20, 7), (110, 30, 6)]
 )
 @pytest.mark.model
-def test_cuppini2014_stim_generation(
-    loc, intensity, scale
-):  # TODO Include values far from centre. Fix scale evaluation: maybe fit gaussian.
+def test_cuppini2014_stim_generation(loc, intensity, scale):
+    # TODO: Include values far from centre.
+    # TODO: Fix scale evaluation: maybe fit gaussian.
     model = Cuppini2014()
     stim = model.stimuli_input(intensity=intensity, scale=scale, loc=loc)
     stim_loc = stim.argmax()
@@ -154,5 +154,5 @@ def test_cuppini2014_lateral_synapses(lateral_location):
     np.testing.assert_almost_equal(lat_self, 0)
 
 
-## TODO Temporal Filter. Then compare with paper temporal evolution.
-## TODO Include peak readout from paper.
+# TODO Temporal Filter. Then compare with paper temporal evolution.
+# TODO Include peak readout from paper.

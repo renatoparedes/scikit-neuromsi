@@ -339,14 +339,18 @@ class Cuppini2014(SKNMSIMethodABC):
         visual_stim_n=1,
     ):
 
-        if auditory_position == None:
-            auditory_position = int(self._position_range[1] / 2)
-        if visual_position == None:
-            visual_position = int(self._position_range[1] / 2)
-        if auditory_gain == None:
-            auditory_gain = np.exp(1)
-        if visual_gain == None:
-            visual_gain = np.exp(1)
+        auditory_position = (
+            int(self._position_range[1] / 2)
+            if auditory_position is None
+            else auditory_position
+        )
+        visual_position = (
+            int(self._position_range[1] / 2)
+            if visual_position is None
+            else visual_position
+        )
+        auditory_gain = np.exp(1) if auditory_gain is None else auditory_gain
+        visual_gain = np.exp(1) if visual_gain is None else visual_gain
 
         hist_times = np.arange(
             self._time_range[0], self._time_range[1], self._integrator.dt
@@ -399,69 +403,23 @@ class Cuppini2014(SKNMSIMethodABC):
         )
 
         # Data holders
+        z_1d = np.zeros(self.neurons)
+        auditory_y, visual_y = z_1d[:], z_1d[:]
+        auditory_outside_input, visual_outside_input = z_1d[:], z_1d[:]
+        auditoryfilter_input, visualfilter_input = z_1d[:], z_1d[:]
 
-        auditory_y, visual_y = (
-            np.zeros(self.neurons),
-            np.zeros(self.neurons),
+        # template for the next holders
+        z_2d = np.zeros(
+            (int(self._time_range[1] / self._integrator.dt), self.neurons)
         )
 
-        auditory_outside_input, visual_outside_input = (
-            np.zeros(self.neurons),
-            np.zeros(self.neurons),
-        )
+        auditory_res, visual_res, multi_res = z_2d[:], z_2d[:], z_2d[:]
+        auditory_outside_inputs, visual_outside_inputs = z_2d[:], z_2d[:]
+        auditoryfilter_inputs, visualfilter_inputs = z_2d[:], z_2d[:]
+        auditory_lateral_inputs, visual_lateral_inputs = z_2d[:], z_2d[:]
+        auditory_total_inputs, visual_total_inputs = z_2d[:], z_2d[:]
 
-        auditoryfilter_input, visualfilter_input = (
-            np.zeros(self.neurons),
-            np.zeros(self.neurons),
-        )
-
-        auditory_res, visual_res, multi_res = (
-            np.zeros(
-                (int(self._time_range[1] / self._integrator.dt), self.neurons)
-            ),
-            np.zeros(
-                (int(self._time_range[1] / sself._integrator.dt), self.neurons)
-            ),
-            np.zeros(
-                (int(self._time_range[1] / self._integrator.dt), self.neurons)
-            ),
-        )
-
-        auditory_outside_inputs, visual_outside_inputs = (
-            np.zeros(
-                (int(self._time_range[1] / self._integrator.dt), self.neurons)
-            ),
-            np.zeros(
-                (int(self._time_range[1] / self._integrator.dt), self.neurons)
-            ),
-        )
-
-        auditoryfilter_inputs, visualfilter_inputs = (
-            np.zeros(
-                (int(self._time_range[1] / self._integrator.dt), self.neurons)
-            ),
-            np.zeros(
-                (int(self._time_range[1] / self._integrator.dt), self.neurons)
-            ),
-        )
-
-        auditory_lateral_inputs, visual_lateral_inputs = (
-            np.zeros(
-                (int(self._time_range[1] / self._integrator.dt), self.neurons)
-            ),
-            np.zeros(
-                (int(self._time_range[1] / self._integrator.dt), self.neurons)
-            ),
-        )
-
-        auditory_total_inputs, visual_total_inputs = (
-            np.zeros(
-                (int(self._time_range[1] / self._integrator.dt), self.neurons)
-            ),
-            np.zeros(
-                (int(self._time_range[1] / self._integrator.dt), self.neurons)
-            ),
-        )
+        del z_1d, z_2d
 
         for i in range(hist_times.size):
 

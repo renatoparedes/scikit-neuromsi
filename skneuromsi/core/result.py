@@ -12,7 +12,6 @@
 # IMPORTS
 # =============================================================================
 
-import dataclasses as dc
 import functools
 from typing import Iterable
 
@@ -23,11 +22,11 @@ import pandas as pd
 import xarray as xr
 
 from .constants import (
+    DIMENSIONS,
     D_MODES,
-    D_TIMES,
     D_POSITIONS,
     D_POSITIONS_COORDINATES,
-    DIMENSIONS,
+    D_TIMES,
     XA_NAME,
 )
 from .plot import ResultPlotter
