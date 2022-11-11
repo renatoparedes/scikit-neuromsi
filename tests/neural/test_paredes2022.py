@@ -8,8 +8,12 @@
 # Full Text:
 #     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
 
-from ._alais_burr2004 import AlaisBurr2004
+# =============================================================================
+# IMPORTS
+# =============================================================================
 
-__all__ = [
-    "AlaisBurr2004",
-]
+# import numpy as np
+
+# import pytest
+
+# from skneuromsi.neural import Paredes2022

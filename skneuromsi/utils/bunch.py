@@ -8,7 +8,7 @@
 # Full Text:
 #     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
 
-# This code was ripped of from scikit-criteria on 10-August-2022.
+# This code was ripped of from scikit-criteria on 10-nov-2022.
 # https://github.com/quatrope/scikit-criteria/blob/ec63c/skcriteria/utils/bunch.py
 # Util this point the copyright is
 # License: BSD-3 (https://tldrlegal.com/license/bsd-3-clause-license-(revised))
@@ -28,6 +28,8 @@
 # =============================================================================
 
 from collections.abc import Mapping
+import copy
+
 
 # =============================================================================
 # DOC INHERITANCE
@@ -72,9 +74,31 @@ class Bunch(Mapping):
     def __getattr__(self, a):
         """x.__getattr__(y) <==> x.y."""
         try:
-            return self[a]
+            return self._data[a]
         except KeyError:
             raise AttributeError(a)
+
+    def __copy__(self):
+        """x.__copy__() <==> copy.copy(x)."""
+        cls = type(self)
+        return cls(str(self._name), data=self._data)
+
+    def __deepcopy__(self, memo):
+        """x.__deepcopy__() <==> copy.copy(x)."""
+        # extract the class
+        cls = type(self)
+
+        # make the copy but without the data
+        clone = cls(name=str(self._name), data=None)
+
+        # store in the memo that clone is copy of self
+        # https://docs.python.org/3/library/copy.html
+        memo[id(self)] = clone
+
+        # now we copy the data
+        clone._data = copy.deepcopy(self._data, memo)
+
+        return clone
 
     def __iter__(self):
         """x.__iter__() <==> iter(x)."""
@@ -87,7 +111,7 @@ class Bunch(Mapping):
     def __repr__(self):
         """x.__repr__() <==> repr(x)."""
         content = repr(set(self._data)) if self._data else "{}"
-        return f"{self._name}({content})"
+        return f"<{self._name} {content}>"
 
     def __dir__(self):
         """x.__dir__() <==> dir(x)."""
