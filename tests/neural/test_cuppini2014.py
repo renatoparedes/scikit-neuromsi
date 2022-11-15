@@ -34,7 +34,7 @@ def test_cuppini2014_stim_generation(loc, intensity, scale):
     stim = model.stimuli_input(intensity=intensity, scale=scale, loc=loc)
     stim_loc = stim.argmax()
     stim_intensity = stim.max()
-    stim_scale = stim.std()
+    # stim_scale = stim.std()
 
     np.testing.assert_almost_equal(loc, stim_loc)
     np.testing.assert_almost_equal(intensity, stim_intensity)

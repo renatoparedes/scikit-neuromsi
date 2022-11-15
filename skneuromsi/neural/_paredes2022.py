@@ -353,6 +353,13 @@ class Paredes2022(SKNMSIMethodABC):
 
         del z_1d, z_2d
 
+        auditory_noise = -(auditory_intensity * 0.4) + (
+            2 * auditory_intensity * 0.4
+        ) * self.random.random(self.neurons)
+        visual_noise = -(visual_intensity * 0.4) + (
+            2 * visual_intensity * 0.4
+        ) * self.random.random(self.neurons)
+
         for i in range(hist_times.size):
 
             time = hist_times[i]
@@ -387,12 +394,6 @@ class Paredes2022(SKNMSIMethodABC):
             ) + np.sum(visual_to_multi_synapses * visual_y, axis=1)
 
             if noise:
-                auditory_noise = -(auditory_intensity * 0.4) + (
-                    2 * auditory_intensity * 0.4
-                ) * self.random.rand(self.neurons)
-                visual_noise = -(visual_intensity * 0.4) + (
-                    2 * visual_intensity * 0.4
-                ) * self.random.rand(self.neurons)
                 auditory_input += auditory_noise
                 visual_input += visual_noise
 

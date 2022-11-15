@@ -279,10 +279,10 @@ class Cuppini2017(SKNMSIMethodABC):
 
         auditory_noise = -(auditory_intensity * 0.4) + (
             2 * auditory_intensity * 0.4
-        ) * np.random.rand(self.neurons)
+        ) * self.random.random(self.neurons)
         visual_noise = -(visual_intensity * 0.4) + (
             2 * visual_intensity * 0.4
-        ) * np.random.rand(self.neurons)
+        ) * self.random.random(self.neurons)
 
         for i in range(hist_times.size):
 

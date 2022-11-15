@@ -58,6 +58,7 @@ class Kording2007(SKNMSIMethodABC):
         position_res=1.7142857142857142,
         time_range=(1, 1),
         time_res=1,
+        seed=None,
     ):
 
         self._n = n
@@ -67,6 +68,7 @@ class Kording2007(SKNMSIMethodABC):
         self._position_res = float(position_res)
         self._time_range = time_range
         self._time_res = float(time_res)
+        self._random = np.random.default_rng(seed=seed)
 
     # PROPERTY ================================================================
 
@@ -98,12 +100,16 @@ class Kording2007(SKNMSIMethodABC):
     def position_res(self):
         return self._position_res
 
+    @property
+    def random(self):
+        return self._random
+
     # Model methods
 
     def input_computation(self, unisensory_position, unisensory_var):
-        return unisensory_position + np.sqrt(unisensory_var) * np.random.randn(
-            self.n
-        )
+        return unisensory_position + np.sqrt(
+            unisensory_var
+        ) * self.random.standard_normal(self.n)
 
     def unisensory_estimator(
         self,
@@ -201,7 +207,7 @@ class Kording2007(SKNMSIMethodABC):
                 ) * visual_hat_ind
             # Model Matching
             elif strategy == "matching":
-                match = 1 - np.random.rand(n)
+                match = 1 - self.random.random(n)
                 auditory_hat = (pc > match) * multisensory_hat + (
                     pc <= match
                 ) * auditory_hat_ind
