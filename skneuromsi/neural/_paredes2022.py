@@ -13,6 +13,8 @@ from dataclasses import dataclass
 
 import brainpy as bp
 
+import copy
+
 import numpy as np
 
 from ..core import SKNMSIMethodABC
@@ -344,12 +346,20 @@ class Paredes2022(SKNMSIMethodABC):
         )
 
         z_1d = np.zeros(self.neurons)
-        auditory_y, visual_y, multi_y = z_1d[:], z_1d[:], z_1d[:]
+        auditory_y, visual_y, multi_y = (
+            copy.deepcopy(z_1d),
+            copy.deepcopy(z_1d),
+            copy.deepcopy(z_1d),
+        )
 
         z_2d = np.zeros(
             (int(self._time_range[1] / self._integrator.dt), self.neurons)
         )
-        auditory_res, visual_res, multi_res = z_2d[:], z_2d[:], z_2d[:]
+        auditory_res, visual_res, multi_res = (
+            copy.deepcopy(z_2d),
+            copy.deepcopy(z_2d),
+            copy.deepcopy(z_2d),
+        )
 
         del z_1d, z_2d
 

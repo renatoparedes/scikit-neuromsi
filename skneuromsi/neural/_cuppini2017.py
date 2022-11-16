@@ -13,6 +13,8 @@ from dataclasses import dataclass
 
 import brainpy as bp
 
+import copy
+
 import numpy as np
 
 from scipy.signal import find_peaks
@@ -270,12 +272,20 @@ class Cuppini2017(SKNMSIMethodABC):
 
         # Data holders
         y_z = np.zeros(self.neurons)
-        auditory_y, visual_y, multi_y = y_z[:], y_z[:], y_z[:]
+        auditory_y, visual_y, multi_y = (
+            copy.deepcopy(y_z),
+            copy.deepcopy(y_z),
+            copy.deepcopy(y_z),
+        )
 
         res_z = np.zeros(
             (int(self._time_range[1] / self._integrator.dt), self.neurons)
         )
-        auditory_res, visual_res, multi_res = res_z[:], res_z[:], res_z[:]
+        auditory_res, visual_res, multi_res = (
+            copy.deepcopy(res_z),
+            copy.deepcopy(res_z),
+            copy.deepcopy(res_z),
+        )
 
         auditory_noise = -(auditory_intensity * 0.4) + (
             2 * auditory_intensity * 0.4
