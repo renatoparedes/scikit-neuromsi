@@ -48,6 +48,75 @@ class Paredes2022Integrator:
         return dy_a, dy_v, dy_m
 
 
+@dataclass
+class Paredes2022TemporalFilter:
+    tau: tuple
+    name: str = "Paredes2022TemporalFilter"
+
+    @property
+    def __name__(self):
+        return self.name
+
+    def __call__(
+        self,
+        a_outside_input,
+        v_outside_input,
+        m_outside_input,
+        auditoryfilter_input,
+        visualfilter_input,
+        multisensoryfilter_input,
+        t,
+        a_external_input,
+        v_external_input,
+        m_external_input,
+        a_cross_modal_input,
+        v_cross_modal_input,
+        a_feedback_input,
+        v_feedback_input,
+        a_gain,
+        v_gain,
+        m_gain,
+    ):
+
+        # Auditory
+        da_outside_input = auditoryfilter_input
+
+        dauditory_filter_input = (
+            (a_gain / self.tau[0])
+            * (a_external_input + a_cross_modal_input + a_feedback_input)
+            - ((2 * auditoryfilter_input) / self.tau[0])
+            - a_outside_input / np.square(self.tau[0])
+        )
+
+        # Visual
+        dv_outside_input = visualfilter_input
+
+        dvisual_filter_input = (
+            (v_gain / self.tau[1])
+            * (v_external_input + v_cross_modal_input + v_feedback_input)
+            - ((2 * visualfilter_input) / self.tau[1])
+            - v_outside_input / np.square(self.tau[1])
+        )
+
+        # Multisensory
+        dm_outside_input = multisensoryfilter_input
+
+        dmultisensory_filter_input = (
+            (m_gain / self.tau[2]) * (m_external_input)
+            - ((2 * multisensoryfilter_input) / self.tau[2])
+            - m_outside_input / np.square(self.tau[2])
+        )
+
+        return (
+            da_outside_input,
+            dv_outside_input,
+            dm_outside_input,
+            dauditory_filter_input,
+            dvisual_filter_input,
+            dmultisensory_filter_input,
+        )
+
+
 class Paredes2022(SKNMSIMethodABC):
     """Zaraza.
 
@@ -85,7 +154,7 @@ class Paredes2022(SKNMSIMethodABC):
         mode1="visual",
         position_range=(0, 180),
         position_res=1,
-        time_range=(0, 100),
+        time_range=(0, 200),
         time_res=0.01,
         **integrator_kws,
     ):
@@ -104,6 +173,11 @@ class Paredes2022(SKNMSIMethodABC):
 
         integrator_model = Paredes2022Integrator(tau=tau, s=s, theta=theta)
         self._integrator = bp.odeint(f=integrator_model, **integrator_kws)
+
+        temporal_filter_model = Paredes2022TemporalFilter(tau=tau)
+        self._temporal_filter = bp.odeint(
+            f=temporal_filter_model, **integrator_kws
+        )
 
         self._mode0 = mode0
         self._mode1 = mode1
@@ -265,18 +339,22 @@ class Paredes2022(SKNMSIMethodABC):
     def run(
         self,
         *,
-        simulation_length=100,
         soa=50,
         onset=16,
         auditory_duration=7,
         visual_duration=12,
         auditory_position=None,
         visual_position=None,
-        auditory_intensity=28,
-        visual_intensity=27,
+        auditory_intensity=2,
+        visual_intensity=1,
         noise=False,
-        lateral_excitation=5,
-        lateral_inhibition=4,
+        lateral_excitation=2,
+        lateral_inhibition=1.8,
+        cross_modal_latency=16,
+        feed_latency=95,
+        auditory_gain=None,
+        visual_gain=None,
+        multisensory_gain=None,
     ):
 
         auditory_position = (
@@ -291,22 +369,34 @@ class Paredes2022(SKNMSIMethodABC):
             else visual_position
         )
 
+        auditory_gain = np.exp(1) if auditory_gain is None else auditory_gain
+        visual_gain = np.exp(1) if visual_gain is None else visual_gain
+        multisensory_gain = (
+            np.exp(1) if multisensory_gain is None else multisensory_gain
+        )
+
         hist_times = np.arange(
             self._time_range[0], self._time_range[1], self._integrator.dt
         )
+
+        sim_cross_modal_latency = int(
+            cross_modal_latency / self._integrator.dt
+        )
+
+        sim_feed_latency = int(feed_latency / self._integrator.dt)
 
         # Build synapses
         auditory_latsynapses = self.lateral_synapses(
             excitation_loc=lateral_excitation,
             inhibition_loc=lateral_inhibition,
             excitation_scale=3,
-            inhibition_scale=120,
+            inhibition_scale=24,
         )
         visual_latsynapses = self.lateral_synapses(
             excitation_loc=lateral_excitation,
             inhibition_loc=lateral_inhibition,
             excitation_scale=3,
-            inhibition_scale=120,
+            inhibition_scale=24,
         )
         multi_latsynapses = self.lateral_synapses(
             excitation_loc=3,
@@ -314,12 +404,12 @@ class Paredes2022(SKNMSIMethodABC):
             excitation_scale=2,
             inhibition_scale=10,
         )
-        auditory_to_visual_synapses = self.synapses(weight=1.4, sigma=5)
-        visual_to_auditory_synapses = self.synapses(weight=1.4, sigma=5)
-        auditory_to_multi_synapses = self.synapses(weight=22.5, sigma=0.5)
-        visual_to_multi_synapses = self.synapses(weight=22.5, sigma=0.5)
-        multi_to_auditory_synapses = self.synapses(weight=13.5, sigma=0.5)
-        multi_to_visual_synapses = self.synapses(weight=13.5, sigma=0.5)
+        auditory_to_visual_synapses = self.synapses(weight=0.35, sigma=5)
+        visual_to_auditory_synapses = self.synapses(weight=0.35, sigma=5)
+        auditory_to_multi_synapses = self.synapses(weight=6, sigma=0.5)  # 22.5
+        visual_to_multi_synapses = self.synapses(weight=6, sigma=0.5)
+        multi_to_auditory_synapses = self.synapses(weight=3, sigma=0.5)  # 13.5
+        multi_to_visual_synapses = self.synapses(weight=3, sigma=0.5)
 
         # Generate Stimuli
         point_auditory_stimuli = self.stimuli_input(
@@ -345,8 +435,19 @@ class Paredes2022(SKNMSIMethodABC):
             simulation_length=self._time_range[1],
         )
 
+        # Data holders
         z_1d = np.zeros(self.neurons)
         auditory_y, visual_y, multi_y = (
+            copy.deepcopy(z_1d),
+            copy.deepcopy(z_1d),
+            copy.deepcopy(z_1d),
+        )
+        (
+            auditory_outside_input,
+            visual_outside_input,
+            multisensory_outside_input,
+        ) = (copy.deepcopy(z_1d), copy.deepcopy(z_1d), copy.deepcopy(z_1d))
+        auditoryfilter_input, visualfilter_input, multisensoryfilter_input = (
             copy.deepcopy(z_1d),
             copy.deepcopy(z_1d),
             copy.deepcopy(z_1d),
@@ -361,6 +462,28 @@ class Paredes2022(SKNMSIMethodABC):
             copy.deepcopy(z_2d),
         )
 
+        (
+            auditory_outside_inputs,
+            visual_outside_inputs,
+            multisensory_outside_inputs,
+        ) = (copy.deepcopy(z_2d), copy.deepcopy(z_2d), copy.deepcopy(z_2d))
+        (
+            auditoryfilter_inputs,
+            visualfilter_inputs,
+            multisensoryfilter_inputs,
+        ) = (copy.deepcopy(z_2d), copy.deepcopy(z_2d), copy.deepcopy(z_2d))
+
+        (
+            auditory_lateral_inputs,
+            visual_lateral_inputs,
+            multisensory_lateral_inputs,
+        ) = (copy.deepcopy(z_2d), copy.deepcopy(z_2d), copy.deepcopy(z_2d))
+        (
+            auditory_total_inputs,
+            visual_total_inputs,
+            multisensory_total_inputs,
+        ) = (copy.deepcopy(z_2d), copy.deepcopy(z_2d), copy.deepcopy(z_2d))
+
         del z_1d, z_2d
 
         auditory_noise = -(auditory_intensity * 0.4) + (
@@ -372,52 +495,121 @@ class Paredes2022(SKNMSIMethodABC):
 
         for i in range(hist_times.size):
 
-            time = hist_times[i]
+            time = int(hist_times[i])
 
             # Compute cross-modal input
             auditory_cm_input = np.sum(
-                visual_to_auditory_synapses * visual_y, axis=1
+                visual_to_auditory_synapses
+                * visual_res[time - sim_cross_modal_latency, :],
+                axis=1,
             )
             visual_cm_input = np.sum(
-                auditory_to_visual_synapses * auditory_y, axis=1
+                auditory_to_visual_synapses
+                * auditory_res[time - sim_cross_modal_latency, :],
+                axis=1,
             )
 
             # Compute feedback input
             auditory_feedback_input = np.sum(
-                multi_to_auditory_synapses * multi_y, axis=1
+                multi_to_auditory_synapses
+                * multi_res[time - sim_feed_latency, :],
+                axis=1,
             )
             visual_feedback_input = np.sum(
-                multi_to_visual_synapses * multi_y, axis=1
+                multi_to_visual_synapses
+                * multi_res[time - sim_feed_latency, :],
+                axis=1,
             )
 
-            # Compute external input
-            auditory_input = (
-                auditory_stimuli[i]
-                + auditory_cm_input
-                + auditory_feedback_input
-            )
-            visual_input = (
-                visual_stimuli[i] + visual_cm_input + visual_feedback_input
-            )
+            # Compute feedforward input
             multi_input = np.sum(
-                auditory_to_multi_synapses * auditory_y, axis=1
-            ) + np.sum(visual_to_multi_synapses * visual_y, axis=1)
+                auditory_to_multi_synapses
+                * auditory_res[time - sim_feed_latency, :],
+                axis=1,
+            ) + np.sum(
+                visual_to_multi_synapses
+                * visual_res[time - sim_feed_latency, :],
+                axis=1,
+            )
 
-            if noise:
-                auditory_input += auditory_noise
-                visual_input += visual_noise
+            (
+                auditory_outside_input,
+                visual_outside_input,
+                multisensory_outside_input,
+                auditoryfilter_input,
+                visualfilter_input,
+                multisensoryfilter_input,
+            ) = self._temporal_filter(
+                a_outside_input=auditory_outside_input,
+                v_outside_input=visual_outside_input,
+                m_outside_input=multisensory_outside_input,
+                auditoryfilter_input=auditoryfilter_input,
+                visualfilter_input=visualfilter_input,
+                multisensoryfilter_input=multisensoryfilter_input,
+                t=time,
+                a_external_input=auditory_stimuli[i],
+                v_external_input=visual_stimuli[i],
+                m_external_input=multi_input,
+                a_cross_modal_input=auditory_cm_input,
+                v_cross_modal_input=visual_cm_input,
+                a_feedback_input=auditory_feedback_input,
+                v_feedback_input=visual_feedback_input,
+                a_gain=auditory_gain,
+                v_gain=visual_gain,
+                m_gain=multisensory_gain,
+            )
+
+            (
+                auditory_outside_inputs[i, :],
+                visual_outside_inputs[i, :],
+                multisensory_outside_inputs[i, :],
+            ) = (
+                auditory_outside_input,
+                visual_outside_input,
+                multisensory_outside_input,
+            )
+
+            (
+                auditoryfilter_inputs[i, :],
+                visualfilter_inputs[i, :],
+                multisensoryfilter_inputs[i, :],
+            ) = (
+                auditoryfilter_input,
+                visualfilter_input,
+                multisensoryfilter_input,
+            )
+
+            # if noise:
+            #    auditory_input += auditory_noise
+            #    visual_input += visual_noise
 
             # Compute lateral inpunt
             la = np.sum(auditory_latsynapses * auditory_y, axis=1)
             lv = np.sum(visual_latsynapses * visual_y, axis=1)
             lm = np.sum(multi_latsynapses * multi_y, axis=1)
 
+            (
+                auditory_lateral_inputs[i, :],
+                visual_lateral_inputs[i, :],
+                multisensory_lateral_inputs[i, :],
+            ) = (la, lv, lm)
+
             # Compute unisensory total input
-            auditory_u = la + auditory_input
-            visual_u = lv + visual_input
+            auditory_u = la + auditory_outside_input
+            visual_u = lv + visual_outside_input
 
             # Compute multisensory total input
-            u_m = lm + multi_input
+            u_m = lm + multisensory_outside_input
+
+            (
+                auditory_total_inputs[i, :],
+                visual_total_inputs[i, :],
+                multisensory_total_inputs[i, :],
+            ) = (
+                auditory_u,
+                visual_u,
+                u_m,
+            )
 
             # Compute neurons activity
             auditory_y, visual_y, multi_y = self._integrator(
