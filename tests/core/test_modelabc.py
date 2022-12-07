@@ -497,7 +497,7 @@ def test_SKNMSIMethodABC():
             foo_calls.append({"self": self, "foo": foo})
             return {}, {}
 
-    assert isinstance(Method._run_io, modelabc.SKNMSIRunConfig)
+    assert isinstance(Method._run_config, modelabc.SKNMSIRunConfig)
 
     instance = Method(p0="x")
     instance.run(x_foo="zaraza")

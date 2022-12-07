@@ -499,7 +499,7 @@ class SKNMSIMethodABC:
 
         # teardown
         cls.__init__ = config.wrap_init(cls.__init__)
-        cls._run_io = config
+        cls._run_config = config
 
     def calculate_causes(self, **kwargs):
         return None
