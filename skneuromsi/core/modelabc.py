@@ -470,11 +470,13 @@ TO_REDEFINE = [
     ("position_res", "Attribute 'position_res' must be redefined"),
 ]
 
+REDEFINE_WITH_DEFAULT = [
+    ("_run_result", result.NDResult),
+]
+
 
 class SKNMSIMethodABC:
     """Abstract class that allows to configure method names dynamically."""
-
-    _run_result = result.NDResult
 
     def __init_subclass__(cls):
         """Solo se realizan en este metodo la validacion superfical de
@@ -487,9 +489,15 @@ class SKNMSIMethodABC:
         if vars(cls).get("_abstract", False):
             return
 
+        # validate redefinitions
         for attr, msg in TO_REDEFINE:
             if not hasattr(cls, attr):
                 raise TypeError(msg)
+
+        # redefine with default
+        for attr, default in REDEFINE_WITH_DEFAULT:
+            if not hasattr(cls, attr):
+                setattr(cls, attr, default)
 
         # config creation
         config = SKNMSIRunConfig.from_method_class(cls)
@@ -498,6 +506,10 @@ class SKNMSIMethodABC:
         config.validate_init_and_run(cls)
 
         # teardown
+        for attr, _ in TO_REDEFINE + REDEFINE_WITH_DEFAULT:
+            if attr.startswith("_"):
+                delattr(cls, attr)
+
         cls.__init__ = config.wrap_init(cls.__init__)
         cls._run_config = config
 
