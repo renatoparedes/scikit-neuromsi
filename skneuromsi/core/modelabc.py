@@ -468,6 +468,7 @@ TO_REDEFINE = [
     ("position_range", "Attribute 'position_range' must be redefined"),
     ("time_res", "Attribute 'time_res' must be redefined"),
     ("position_res", "Attribute 'position_res' must be redefined"),
+    ("set_random", "Method 'set_random' must be redefined")
 ]
 
 REDEFINE_WITH_DEFAULT = [
