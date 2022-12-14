@@ -150,7 +150,6 @@ class Cuppini2014(SKNMSIMethodABC):
             raise ValueError()
 
         self._neurons = neurons
-        self._random = np.random.default_rng(seed=seed)
         self._position_range = position_range
         self._position_res = float(position_res)
         self._time_range = time_range
@@ -169,6 +168,8 @@ class Cuppini2014(SKNMSIMethodABC):
 
         self._mode0 = mode0
         self._mode1 = mode1
+
+        self.set_random(np.random.default_rng(seed=seed))
 
     # PROPERTY ================================================================
 
@@ -320,6 +321,9 @@ class Cuppini2014(SKNMSIMethodABC):
         return the_synapses
 
     # Model run
+    def set_random(self, rng):
+        self._random = rng
+        
     def run(
         self,
         *,
