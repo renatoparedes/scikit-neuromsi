@@ -145,6 +145,9 @@ class AlaisBurr2004(SKNMSIMethodABC):
         return multisensory_estimate
 
     # Model run
+    def set_random(self):
+        pass
+
     def run(
         self,
         *,

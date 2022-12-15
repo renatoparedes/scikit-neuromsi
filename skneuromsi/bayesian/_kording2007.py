@@ -68,7 +68,7 @@ class Kording2007(SKNMSIMethodABC):
         self._position_res = float(position_res)
         self._time_range = time_range
         self._time_res = float(time_res)
-        self._random = np.random.default_rng(seed=seed)
+        self.set_random(np.random.default_rng(seed=seed))
 
     # PROPERTY ================================================================
 
@@ -238,6 +238,9 @@ class Kording2007(SKNMSIMethodABC):
         }
 
         return res
+
+    def set_random(self, rng):
+        self._random = rng
 
     def run(
         self,
