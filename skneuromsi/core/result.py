@@ -51,6 +51,7 @@ class NDResult:
         time_res,
         position_res,
         causes,
+        run_params,
         extra,
     ):
         self._mname = mname
@@ -65,6 +66,7 @@ class NDResult:
         self._position_res = position_res
         self._time_res = time_res
         self._position_res = position_res
+        self._run_params = Bunch("run_params", run_params)
         self._extra = Bunch("extra", extra)
         self._causes = causes
 
@@ -101,6 +103,12 @@ class NDResult:
     @property
     def position_res(self):
         return self._position_res
+
+    @property
+    def run_params(self):
+        return self._run_params
+
+    rp = run_params
 
     @property
     def extra_(self):

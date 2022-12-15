@@ -381,6 +381,7 @@ class SKNMSIRunConfig:
             # asi asignamos los valores de manera correcta a los nombres
             # de parametros adecuados
             bound_params = signature_with_alias.bind(*args, **kwargs)
+            bound_params.apply_defaults()
 
             # ahora separamos los args de los kwargs y cambiamos los
             # alias a los targets correspondientes.
@@ -399,6 +400,7 @@ class SKNMSIRunConfig:
             extra_aliased = {
                 output_alias_map.get(k, k): v for k, v in extra.items()
             }
+
             return self._result_cls(
                 mname=self._model_name,
                 mtype=self._model_type,
@@ -409,6 +411,7 @@ class SKNMSIRunConfig:
                 time_res=time_res,
                 position_res=position_res,
                 causes=causes,
+                run_params=dict(bound_params.arguments),
                 extra=extra_aliased,
             )
 

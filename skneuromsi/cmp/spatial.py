@@ -30,6 +30,8 @@ import pandas as pd
 
 from tqdm.auto import tqdm
 
+from .ndcollection import NDResultCollection
+
 # =============================================================================
 # CONSTANTS
 # =============================================================================
@@ -43,7 +45,8 @@ DEFAULT_RANGE = 90 + np.arange(0, 20, 2)
 # =============================================================================
 
 
-class UnityReport:
+
+class SpatialDisparity:
     def __init__(
         self,
         model,
@@ -51,7 +54,7 @@ class UnityReport:
         range=None,
         repeat=100,
         n_jobs=1,
-        target_rx=re.compile(r".*_position$"),
+        target_rx=r".*_position$",
         seed=None,
         progress_cls=tqdm,
     ):
@@ -62,6 +65,7 @@ class UnityReport:
         self._repeat = int(repeat)
         self._n_jobs = int(n_jobs)
         self._target_rx = re.compile(target_rx)
+        self._seed = seed
         self._random = np.random.default_rng(seed)
         self._progress_cls = progress_cls
 
@@ -102,6 +106,14 @@ class UnityReport:
     def run_params_targets_(self):
         return self._run_params_targets
 
+    @property
+    def seed(self):
+        return self._seed
+
+    @property
+    def random_(self):
+        return self._random
+
     def _run_kwargs_combinations(self, run_kws):
         iinfo = np.iinfo(int)
 
@@ -128,16 +140,10 @@ class UnityReport:
         return combs_gen(), combs_size
 
     def _run_report(self, run_kws, seed):
-
         model = self._model
         model.set_random(np.random.default_rng(seed))
-
         response = model.run(**run_kws)
-        row = {
-            k: v for k, v in run_kws.items() if k in self._run_params_targets
-        }
-        row["causes"] = response.causes_
-        return row
+        return response
 
     def run(self, **run_kws):
         forbidden = self._run_params_targets.intersection(run_kws)
@@ -163,4 +169,6 @@ class UnityReport:
             responses = P(drun(rkw, rkw_seed) for rkw, rkw_seed in rkw_combs)
 
         responses.insert(0, first_response)
-        return pd.DataFrame(responses)
+
+
+        return NDResultCollection(responses, name=type(self).__name__)
