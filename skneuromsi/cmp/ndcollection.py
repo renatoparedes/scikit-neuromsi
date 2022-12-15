@@ -32,6 +32,7 @@ from ..core import NDResult
 
 class NDResultCollection:
     def __init__(self, ndresults, name=None):
+
         self._name = str(name)
         self._ndresults = tuple(ndresults)
 
