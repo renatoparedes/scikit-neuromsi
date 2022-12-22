@@ -120,7 +120,7 @@ class NDResultCollection:
         for attr in attributes:
             values = cdf[("Attributes", attr)]
             attr_ctab = pd.crosstab(values, cdf["", "Causes"])
-            attr_unity = attr_ctab[1] / attr_ctab.sum(axis="columns")
+            attr_unity = attr_ctab.get(1, 0) / attr_ctab.sum(axis="columns")
             columns[attr] = attr_unity
 
         the_report = pd.DataFrame.from_dict(columns)
