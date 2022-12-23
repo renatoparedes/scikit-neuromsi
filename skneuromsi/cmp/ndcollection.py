@@ -28,21 +28,36 @@ import pandas as pd
 import seaborn as sns
 
 from ..core import NDResult
+from ..utils import AccessorABC
 
 # =============================================================================
 # PLOTTER
 # =============================================================================
 
 
-class NDResultCollectionPlotter:
+class NDResultCollectionPlotter(AccessorABC):
+
+    _default_kind = "unity_report"
+
     def __init__(self, ndcollection):
         self._nd_collection = ndcollection
 
-    def unity_report(self, ax=None, **kws):
-        the_report = self._nd_collection.unity_report()
+    def n_report(self, n, *, attribute=None, ax=None, **kws):
+        the_report = self._nd_collection.n_report(n, attribute=attribute)
         ax = sns.lineplot(data=the_report, ax=ax, **kws)
-        ax.set_title("Unity Report")
-        ax.set_ylabel("causes=1 (Proportion)")
+        ax.set_ylabel(f"Proportion of {n} causes")
+        return ax
+
+    def unity_report(self, *, attribute=None, ax=None, **kws):
+        the_report = self._nd_collection.unity_report(attribute=attribute)
+        ax = sns.lineplot(data=the_report, ax=ax, **kws)
+        ax.set_ylabel("Proportion of unit causes")
+        return ax
+
+    def mean_report(self, *, attribute=None, ax=None, **kws):
+        the_report = self._nd_collection.mean_report(attribute=attribute)
+        ax = sns.lineplot(data=the_report, ax=ax, **kws)
+        ax.set_ylabel("Mean of causes")
         return ax
 
 
@@ -73,32 +88,45 @@ class NDResultCollection:
         length = len(self._ndresults)
         return f"<{cls_name} name={name!r}, len={length}>"
 
+    def __getitem__(self, slice):
+        return self._ndresults.__getitem__(slice)
+
+    def __len__(self):
+        return len(self._ndresults)
+
     def disparity_matrix(self):
         df = pd.DataFrame(r.rp for r in self._ndresults)
         df.index.name = "Iteration"
         df.columns.name = "Attributes"
         return df
 
-    def which_attrs_change(self):
+    def changing_attributes(self):
         dm = self.disparity_matrix()
         uniques = dm.apply(np.unique)
         changes = uniques.apply(len) != 1
         changes.name = "Changes"
         return changes
 
-    def changing_attrs(self):
-        wpc = self.which_attrs_change()
-        return wpc[wpc].index.to_numpy()
+    def _get_attribute_by(self, attribute):
+        if attribute is None:
+            wpc = self.changing_attributes()
+            candidates = wpc[wpc].index.to_numpy()
+            candidates_len = len(candidates)
+            if candidates_len != 1:
+                raise ValueError(
+                    "The value of attribute is ambiguous since it has "
+                    f"{candidates_len} candidates: {candidates}"
+                )
+            attribute = candidates[0]
+        return attribute
 
-    def causes_by_attr(self, attributes=None):
-        attributes = (
-            self.changing_attrs() if attributes is None else attributes
-        )
+    def causes_by_attribute(self, *, attribute=None):
+        attribute = self._get_attribute_by(attribute)
 
         columns = defaultdict(list)
         for ndres in self._ndresults:
-            for attr in attributes:
-                columns[("Attributes", attr)].append(ndres.rp[attr])
+
+            columns[("Attributes", attribute)].append(ndres.rp[attribute])
             columns[("", "Causes")].append(ndres.causes_)
 
         cdf = pd.DataFrame.from_dict(columns)
@@ -111,29 +139,33 @@ class NDResultCollection:
 
         return cdf
 
-    def unity_report(self, attributes=None):
-        attributes = (
-            self.changing_attrs() if attributes is None else attributes
-        )
-        cdf = self.causes_by_attr(attributes)
-        columns = {}
-        for attr in attributes:
-            values = cdf[("Attributes", attr)]
-            attr_ctab = pd.crosstab(values, cdf["", "Causes"])
-            attr_unity = attr_ctab.get(1, 0) / attr_ctab.sum(axis="columns")
-            columns[attr] = attr_unity
+    def n_report(self, n, *, attribute=None):
+        attribute = self._get_attribute_by(attribute)
+        cdf = self.causes_by_attribute(attribute=attribute)
 
-        the_report = pd.DataFrame.from_dict(columns)
+        values = cdf[("Attributes", attribute)]
+        crosstab = pd.crosstab(values, cdf["", "Causes"])
+        n_ity = crosstab.get(n, 0) / crosstab.sum(axis="columns")
+
+        the_report = pd.DataFrame(n_ity, columns=[attribute])
         the_report.index.name = "Disparity"
         the_report.columns.name = "Attributes"
 
         return the_report
 
-    def mean_report(self, attributes=None):
-        attributes = (
-            self.changing_attrs() if attributes is None else attributes
-        )
-        cdf = self.causes_by_attr(attributes)
-        columns = {}
-        for attr in attributes:
-            pass
+    def unity_report(self, *, attribute=None):
+        return self.n_report(1, attribute=attribute)
+
+    def mean_report(self, *, attribute=None):
+        attribute = self._get_attribute_by(attribute)
+        cdf = self.causes_by_attribute(attribute=attribute)
+
+        groups = cdf.groupby(("Attributes", attribute))
+        report = groups.mean()
+
+        report.index.name = "Disparity"
+
+        report.columns = [attribute]
+        report.columns.name = "Attributes"
+
+        return report

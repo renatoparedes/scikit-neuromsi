@@ -45,41 +45,37 @@ DEFAULT_RANGE = 90 + np.arange(0, 20, 2)
 # =============================================================================
 
 
-
 class SpatialDisparity:
     def __init__(
         self,
         model,
+        target,
         *,
         range=None,
         repeat=100,
         n_jobs=1,
-        target_rx=r".*_position$",
         seed=None,
         progress_cls=tqdm,
     ):
+        if repeat < 1:
+            raise ValueError("'repeat must be >= 1'")
+
         self._model = model
         self._range = (
             DEFAULT_RANGE.copy() if range is None else np.asarray(range)
         )
         self._repeat = int(repeat)
         self._n_jobs = int(n_jobs)
-        self._target_rx = re.compile(target_rx)
+        self._target = str(target)
         self._seed = seed
         self._random = np.random.default_rng(seed)
         self._progress_cls = progress_cls
 
         run_signature = inspect.signature(model.run)
-        self._run_params_targets = frozenset(
-            param
-            for param in run_signature.parameters
-            if self._target_rx.match(param)
-        )
-        if not self._run_params_targets:
+        if self._target not in run_signature.parameters:
             mdl_name = type(model).__name__
             raise TypeError(
-                f"Model '{mdl_name}.run()' has no parameters that "
-                f"match the regex {self._target_rx.pattern!r}"
+                f"Model '{mdl_name}.run()' has no '{self._target}' parameter"
             )
 
     @property
@@ -99,12 +95,8 @@ class SpatialDisparity:
         return self._n_jobs
 
     @property
-    def target_rx(self):
-        return self._target_rx
-
-    @property
-    def run_params_targets_(self):
-        return self._run_params_targets
+    def target(self):
+        return self._target
 
     @property
     def seed(self):
@@ -119,13 +111,10 @@ class SpatialDisparity:
 
         def combs_gen():
             # combine all targets with all possible values
-            tgt_x_range = it.chain(
-                it.product([tgt], self._range)
-                for tgt in self._run_params_targets
-            )
-            for tgt_comb in it.product(*tgt_x_range):
+            tgt_x_range = it.product([self._target], self._range)
+            for tgt_comb in tgt_x_range:
                 # the combination as dict
-                comb_as_kws = dict(tgt_comb)
+                comb_as_kws = dict([tgt_comb])
                 comb_as_kws.update(run_kws)
 
                 # repeat the combination the number of times
@@ -133,9 +122,7 @@ class SpatialDisparity:
                     seed = self._random.integers(low=0, high=iinfo.max)
                     yield comb_as_kws.copy(), seed
 
-        combs_size = (
-            (len(self._run_params_targets) * len(self._range))
-        ) * self._repeat
+        combs_size = len(self._range) * self._repeat
 
         return combs_gen(), combs_size
 
@@ -146,10 +133,9 @@ class SpatialDisparity:
         return response
 
     def run(self, **run_kws):
-        forbidden = self._run_params_targets.intersection(run_kws)
-        if forbidden:
+        if self._target in run_kws:
             raise TypeError(
-                f"The parameter/s {set(forbidden)} "
+                f"The parameter '{self._target}' "
                 f"are under control of {type(self)!r} instance"
             )
 
@@ -169,6 +155,5 @@ class SpatialDisparity:
             responses = P(drun(rkw, rkw_seed) for rkw, rkw_seed in rkw_combs)
 
         responses.insert(0, first_response)
-
 
         return NDResultCollection(responses, name=type(self).__name__)
