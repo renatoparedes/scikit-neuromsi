@@ -130,6 +130,7 @@ class NDResultCollection:
             attribute = candidates[0]
         return attribute
 
+    # CAUSES ==================================================================
     def causes_by_attribute(self, *, attribute=None):
         attribute = self._get_attribute_by(attribute)
 
