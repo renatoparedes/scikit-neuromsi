@@ -42,21 +42,31 @@ class NDResultCollectionPlotter(AccessorABC):
     def __init__(self, ndcollection):
         self._nd_collection = ndcollection
 
+    def _line_report(self, report, ax, kws):
+        attribute = report.columns[0]
+        x = report.index
+        y = report[attribute]
+
+        kws.setdefault("label", attribute)
+        ax = sns.lineplot(x=x, y=y, ax=ax, **kws)
+
+        return ax
+
     def n_report(self, n, *, attribute=None, ax=None, **kws):
         the_report = self._nd_collection.n_report(n, attribute=attribute)
-        ax = sns.lineplot(data=the_report, ax=ax, **kws)
+        ax = self._line_report(the_report, ax, kws)
         ax.set_ylabel(f"Proportion of {n} causes")
         return ax
 
     def unity_report(self, *, attribute=None, ax=None, **kws):
         the_report = self._nd_collection.unity_report(attribute=attribute)
-        ax = sns.lineplot(data=the_report, ax=ax, **kws)
+        ax = self._line_report(the_report, ax, kws)
         ax.set_ylabel("Proportion of unit causes")
         return ax
 
     def mean_report(self, *, attribute=None, ax=None, **kws):
         the_report = self._nd_collection.mean_report(attribute=attribute)
-        ax = sns.lineplot(data=the_report, ax=ax, **kws)
+        ax = self._line_report(the_report, ax, kws)
         ax.set_ylabel("Mean of causes")
         return ax
 
@@ -138,6 +148,10 @@ class NDResultCollection:
         cdf = cdf[np.sort(cdf.columns)[::-1]]
 
         return cdf
+
+    def unique_causes(self, *, attribute=None):
+        cba = self.causes_by_attribute()
+        return cba[("", "Causes")].unique()
 
     def n_report(self, n, *, attribute=None):
         attribute = self._get_attribute_by(attribute)

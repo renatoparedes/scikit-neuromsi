@@ -30,6 +30,8 @@ import pandas as pd
 
 from tqdm.auto import tqdm
 
+import xarray as xa
+
 from .ndcollection import NDResultCollection
 
 # =============================================================================
@@ -156,4 +158,8 @@ class SpatialDisparity:
 
         responses.insert(0, first_response)
 
-        return NDResultCollection(responses, name=type(self).__name__)
+        result = NDResultCollection(responses, name=type(self).__name__)
+        
+        del responses
+        
+        return result
