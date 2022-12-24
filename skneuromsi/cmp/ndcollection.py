@@ -163,7 +163,7 @@ class NDResultCollection:
 
         the_report = pd.DataFrame(n_ity, columns=[attribute])
         the_report.index.name = "Disparity"
-        the_report.columns.name = "Attributes"
+        the_report.columns.name = "Causes"
 
         return the_report
 
@@ -180,6 +180,23 @@ class NDResultCollection:
         report.index.name = "Disparity"
 
         report.columns = [attribute]
-        report.columns.name = "Attributes"
+        report.columns.name = "Causes"
+
+        return report
+
+    def describe_causes(self, *, attribute=None):
+        attribute = self._get_attribute_by(attribute)
+        cdf = self.causes_by_attribute(attribute=attribute)
+
+        groups = cdf.groupby(("Attributes", attribute))
+        report = groups.describe()
+
+        report.index.name = "Disparity"
+
+        columns = report.columns
+        report.columns = pd.MultiIndex.from_product(
+            [[attribute], columns.levels[-1]], names=["Causes", None]
+        )
+        report.columns.name = "Causes"
 
         return report
