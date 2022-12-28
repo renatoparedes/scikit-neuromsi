@@ -469,20 +469,19 @@ class SKNMSIRunConfig:
 # ALL SKNMSIMethodABC subclasses must redefine this attributes and methods
 TO_REDEFINE = [
     #
-    # method
-    ("run", "'run' method must be redefined"),
-    #
     # class level
-    ("_run_input", "Class attribute '_run_input' must be redefined"),
-    ("_run_output", "Class attribute '_run_output' must be redefined"),
-    ("_model_type", "Class attribute '_model_type' must be redefined"),
+    ("_run_input", "Class attribute"),
+    ("_run_output", "Class attribute"),
+    ("_model_type", "Class attribute"),
     #
     # instance level redefinition
-    ("time_range", "Attribute 'time_range' must be redefined"),
-    ("position_range", "Attribute 'position_range' must be redefined"),
-    ("time_res", "Attribute 'time_res' must be redefined"),
-    ("position_res", "Attribute 'position_res' must be redefined"),
-    ("set_random", "Method 'set_random' must be redefined"),
+    ("time_range", "Attribute"),
+    ("position_range", "Attribute"),
+    ("time_res", "Attribute"),
+    ("position_res", "Attribute"),
+    ("run", "Method"),
+    ("set_random", "Method"),
+    ("calculate_perceived_positions", "Method"),
 ]
 
 REDEFINE_WITH_DEFAULT = [
@@ -505,8 +504,9 @@ class SKNMSIMethodABC:
             return
 
         # validate redefinitions
-        for attr, msg in TO_REDEFINE:
+        for attr, attr_type in TO_REDEFINE:
             if not hasattr(cls, attr):
+                msg = f"{attr_type} '{attr}' must be redefined"
                 raise TypeError(msg)
 
         # redefine with default
