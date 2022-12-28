@@ -151,7 +151,7 @@ class NDResultCollection:
         return cdf
 
     def unique_causes(self, *, attribute=None):
-        cba = self.causes_by_attribute()
+        cba = self.causes_by_attribute(attribute=attribute)
         return cba[("", "Causes")].unique()
 
     def n_report(self, n, *, attribute=None):

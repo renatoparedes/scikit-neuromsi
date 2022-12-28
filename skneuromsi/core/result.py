@@ -51,6 +51,7 @@ class NDResult:
         time_res,
         position_res,
         causes,
+        perceived_positions,
         run_params,
         extra,
     ):
@@ -69,6 +70,9 @@ class NDResult:
         self._run_params = Bunch("run_params", run_params)
         self._extra = Bunch("extra", extra)
         self._causes = causes
+        self._perceived_positions = Bunch(
+            "perceived_positions", perceived_positions
+        )
 
     # PROPERTIES ==============================================================
 
@@ -137,6 +141,12 @@ class NDResult:
         return self._nddata[D_POSITIONS_COORDINATES].to_numpy()
 
     pcoords_ = positions_coordinates_
+
+    @property
+    def perceived_positions_(self):
+        return self._perceived_positions
+
+    perpos_ = perceived_positions_
 
     # UTILS ===================================================================
 

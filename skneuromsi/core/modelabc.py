@@ -338,9 +338,12 @@ class SKNMSIRunConfig:
         la configuracion y los mapea a los "targets".
 
         """
-        # extraemos el run y el calculate_causes del modelo
+        # extraemos el run, calculate_causes y calculate_perceived_positions
         run_method = model_instance.run
         calculate_causes_method = model_instance.calculate_causes
+        calculate_perceived_positions_method = (
+            model_instance.calculate_perceived_positions
+        )
 
         # creamos el mapeo de alias y target en un diccionario bidireccional
         # para el input y el output
@@ -392,6 +395,9 @@ class SKNMSIRunConfig:
             }
             response, extra = run_method(*target_args, **target_kwargs)
             causes = calculate_causes_method(**response, **extra)
+            perceived_positions = calculate_perceived_positions_method(
+                **response, **extra
+            )
 
             # now we rename the output
             response_aliased = {
@@ -399,6 +405,10 @@ class SKNMSIRunConfig:
             }
             extra_aliased = {
                 output_alias_map.get(k, k): v for k, v in extra.items()
+            }
+            perceived_positions_aliased = {
+                output_alias_map.get(k, k): v
+                for k, v in perceived_positions.items()
             }
 
             return self._result_cls(
@@ -411,6 +421,7 @@ class SKNMSIRunConfig:
                 time_res=time_res,
                 position_res=position_res,
                 causes=causes,
+                perceived_positions=perceived_positions_aliased,
                 run_params=dict(bound_params.arguments),
                 extra=extra_aliased,
             )
@@ -471,7 +482,7 @@ TO_REDEFINE = [
     ("position_range", "Attribute 'position_range' must be redefined"),
     ("time_res", "Attribute 'time_res' must be redefined"),
     ("position_res", "Attribute 'position_res' must be redefined"),
-    ("set_random", "Method 'set_random' must be redefined")
+    ("set_random", "Method 'set_random' must be redefined"),
 ]
 
 REDEFINE_WITH_DEFAULT = [
@@ -519,3 +530,6 @@ class SKNMSIMethodABC:
 
     def calculate_causes(self, **kwargs):
         return None
+
+    def calculate_perceived_positions(self, **kwargs):
+        return {}
