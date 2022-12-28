@@ -364,3 +364,14 @@ class Cuppini2017(SKNMSIMethodABC):
         peaks_idx, _ = find_peaks(multi[-1, :], prominence=0.15, height=0.15)
         peaks = np.size(peaks_idx)
         return peaks
+
+    def calculate_perceived_positions(self, auditory, visual, multi, **kwargs):
+        a = auditory[-1, :].argmax()
+        v = visual[-1, :].argmax()
+        m = multi[-1, :].argmax()
+
+        return {
+            "perceived_auditory_position": a,
+            "perceived_visual_position": v,
+            "perceived_multi_position": m,
+        }

@@ -323,7 +323,7 @@ class Cuppini2014(SKNMSIMethodABC):
     # Model run
     def set_random(self, rng):
         self._random = rng
-        
+
     def run(
         self,
         *,
@@ -551,4 +551,14 @@ class Cuppini2014(SKNMSIMethodABC):
             "visual_lateral_synapses": visual_latsynapses,
             "auditory_filter_input": auditoryfilter_inputs,
             "visual_filter_input": visualfilter_inputs,
+        }
+
+    def calculate_perceived_positions(self, auditory, visual, multi, **kwargs):
+        a = auditory[-1, :].argmax()
+        v = visual[-1, :].argmax()
+        m = multi[-1, :].argmax()
+
+        return {
+            "perceived_auditory_position": a,
+            "perceived_visual_position": v,
         }

@@ -159,7 +159,7 @@ class SpatialDisparity:
         responses.insert(0, first_response)
 
         result = NDResultCollection(responses, name=type(self).__name__)
-        
+
         del responses
-        
+
         return result

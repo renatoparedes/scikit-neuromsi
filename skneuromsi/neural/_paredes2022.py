@@ -638,3 +638,14 @@ class Paredes2022(SKNMSIMethodABC):
             "multi": multi_res,
         }
         return response, {}
+
+    def calculate_perceived_positions(self, auditory, visual, multi, **kwargs):
+        a = auditory[-1, :].argmax()
+        v = visual[-1, :].argmax()
+        m = multi[-1, :].argmax()
+
+        return {
+            "perceived_auditory_position": a,
+            "perceived_visual_position": v,
+            "perceived_multi_position": m,
+        }
