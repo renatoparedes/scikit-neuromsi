@@ -445,7 +445,7 @@ class Cuppini2014(SKNMSIMethodABC):
 
         for i in range(hist_times.size):
 
-            time = int(hist_times[i])
+            time = int(hist_times[i] / self._integrator.dt)
 
             # Compute cross-modal input
             auditory_cm_input = np.sum(
