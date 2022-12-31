@@ -149,7 +149,7 @@ class Paredes2022(SKNMSIMethodABC):
         tau=(15, 25, 5),
         tau_neurons=1,
         s=2,
-        theta=20,
+        theta=16,
         seed=None,
         mode0="auditory",
         mode1="visual",
@@ -362,16 +362,18 @@ class Paredes2022(SKNMSIMethodABC):
         visual_duration=12,
         auditory_position=None,
         visual_position=None,
-        auditory_intensity=2,
-        visual_intensity=1,
+        auditory_intensity=1.5,
+        visual_intensity=1.1,
         noise=False,
         lateral_excitation=2,
-        lateral_inhibition=1.4,
+        lateral_inhibition=1.8,
         cross_modal_latency=16,
         feed_latency=95,
         auditory_gain=None,
         visual_gain=None,
         multisensory_gain=None,
+        auditory_stim_n=2,
+        visual_stim_n=1,
     ):
 
         auditory_position = (
@@ -421,12 +423,12 @@ class Paredes2022(SKNMSIMethodABC):
             excitation_scale=3,
             inhibition_scale=24,
         )
-        auditory_to_visual_synapses = self.synapses(weight=0.15, sigma=5)
-        visual_to_auditory_synapses = self.synapses(weight=0.15, sigma=5)
-        auditory_to_multi_synapses = self.synapses(weight=0.9, sigma=0.5)  #
-        visual_to_multi_synapses = self.synapses(weight=0.9, sigma=0.5)  #
-        multi_to_auditory_synapses = self.synapses(weight=0.45, sigma=0.5)  #
-        multi_to_visual_synapses = self.synapses(weight=0.45, sigma=0.5)
+        auditory_to_visual_synapses = self.synapses(weight=0.075, sigma=5)
+        visual_to_auditory_synapses = self.synapses(weight=0.075, sigma=5)
+        auditory_to_multi_synapses = self.synapses(weight=0.6, sigma=0.5)
+        visual_to_multi_synapses = self.synapses(weight=0.6, sigma=0.5)
+        multi_to_auditory_synapses = self.synapses(weight=0.05, sigma=0.5)
+        multi_to_visual_synapses = self.synapses(weight=0.05, sigma=0.5)
 
         # Generate Stimuli
         point_auditory_stimuli = self.stimuli_input(
@@ -441,7 +443,7 @@ class Paredes2022(SKNMSIMethodABC):
             stimuli_duration=auditory_duration,
             onset=onset,
             simulation_length=self._time_range[1],
-            stimuli_n=2,
+            stimuli_n=auditory_stim_n,
             soa=soa,
         )
 
@@ -450,6 +452,7 @@ class Paredes2022(SKNMSIMethodABC):
             stimuli_duration=visual_duration,
             onset=onset,
             simulation_length=self._time_range[1],
+            stimuli_n=visual_stim_n,
         )
 
         # Data holders
