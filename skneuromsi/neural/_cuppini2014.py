@@ -322,12 +322,6 @@ class Cuppini2014(SKNMSIMethodABC):
             return time - latency
         return 0
 
-    # def compute_lateral_input(self, lateral_synapses, neural_activity):
-    #    Li = np.zeros(self.neurons)
-    #    for i in range(self.neurons):
-    #        Li[i] = np.sum(np.multiply(lateral_synapses[i,:], neural_activity))
-    #    return Li
-
     def run(
         self,
         *,
@@ -507,12 +501,8 @@ class Cuppini2014(SKNMSIMethodABC):
             )
 
             # Compute lateral input
-            la = np.sum(
-                auditory_latsynapses * auditory_y, axis=1
-            )  # self.compute_lateral_input(auditory_latsynapses, auditory_y) #np.sum(auditory_latsynapses * auditory_y, axis=1)
-            lv = np.sum(
-                visual_latsynapses * visual_y, axis=1
-            )  # self.compute_lateral_input(visual_latsynapses, visual_y) #np.sum(visual_latsynapses * visual_y, axis=1)
+            la = np.sum(auditory_latsynapses.T * auditory_y, axis=1)
+            lv = np.sum(visual_latsynapses.T * visual_y, axis=1)
 
             auditory_lateral_inputs[i, :], visual_lateral_inputs[i, :] = la, lv
 

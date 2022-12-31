@@ -149,7 +149,7 @@ class Paredes2022(SKNMSIMethodABC):
         tau=(15, 25, 5),
         tau_neurons=1,
         s=2,
-        theta=16,
+        theta=20,
         seed=None,
         mode0="auditory",
         mode1="visual",
@@ -287,9 +287,14 @@ class Paredes2022(SKNMSIMethodABC):
         soa=None,
     ):
         # TODO expand for more than 2 stimuli and for different stimuli
+        no_stim = np.zeros(self.neurons)
+
+        if stimuli_n == 0:
+            stim = np.tile(no_stim, (self._time_range[1], 1))
+            stimuli_matrix = np.repeat(stim, 1 / self._time_res, axis=0)
+            return stimuli_matrix
 
         # Input before onset
-        no_stim = np.zeros(self.neurons)
         pre_stim = np.tile(no_stim, (onset, 1))
 
         # Input during stimulus delivery
@@ -361,7 +366,7 @@ class Paredes2022(SKNMSIMethodABC):
         visual_intensity=1,
         noise=False,
         lateral_excitation=2,
-        lateral_inhibition=1.8,
+        lateral_inhibition=1.4,
         cross_modal_latency=16,
         feed_latency=95,
         auditory_gain=None,
@@ -416,12 +421,10 @@ class Paredes2022(SKNMSIMethodABC):
             excitation_scale=3,
             inhibition_scale=24,
         )
-        auditory_to_visual_synapses = self.synapses(
-            weight=0.35, sigma=5
-        )  # Maybe weight 1.4
-        visual_to_auditory_synapses = self.synapses(weight=0.35, sigma=5)
-        auditory_to_multi_synapses = self.synapses(weight=0.90, sigma=0.5)  #
-        visual_to_multi_synapses = self.synapses(weight=0.90, sigma=0.5)  # 6
+        auditory_to_visual_synapses = self.synapses(weight=0.15, sigma=5)
+        visual_to_auditory_synapses = self.synapses(weight=0.15, sigma=5)
+        auditory_to_multi_synapses = self.synapses(weight=0.9, sigma=0.5)  #
+        visual_to_multi_synapses = self.synapses(weight=0.9, sigma=0.5)  #
         multi_to_auditory_synapses = self.synapses(weight=0.45, sigma=0.5)  #
         multi_to_visual_synapses = self.synapses(weight=0.45, sigma=0.5)
 
@@ -517,12 +520,12 @@ class Paredes2022(SKNMSIMethodABC):
             )
 
             auditory_cm_input = np.sum(
-                visual_to_auditory_synapses
+                visual_to_auditory_synapses.T
                 * visual_res[computed_cross_latency, :],
                 axis=1,
             )
             visual_cm_input = np.sum(
-                auditory_to_visual_synapses
+                auditory_to_visual_synapses.T
                 * auditory_res[computed_cross_latency, :],
                 axis=1,
             )
@@ -533,22 +536,23 @@ class Paredes2022(SKNMSIMethodABC):
             )
 
             auditory_feedback_input = np.sum(
-                multi_to_auditory_synapses
+                multi_to_auditory_synapses.T
                 * multi_res[computed_feed_latency, :],
                 axis=1,
             )
             visual_feedback_input = np.sum(
-                multi_to_visual_synapses * multi_res[computed_feed_latency, :],
+                multi_to_visual_synapses.T
+                * multi_res[computed_feed_latency, :],
                 axis=1,
             )
 
             # Compute feedforward input
             multi_input = np.sum(
-                auditory_to_multi_synapses
+                auditory_to_multi_synapses.T
                 * auditory_res[computed_feed_latency, :],
                 axis=1,
             ) + np.sum(
-                visual_to_multi_synapses
+                visual_to_multi_synapses.T
                 * visual_res[computed_feed_latency, :],
                 axis=1,
             )
@@ -605,9 +609,9 @@ class Paredes2022(SKNMSIMethodABC):
             #    visual_input += visual_noise
 
             # Compute lateral inpunt
-            la = np.sum(auditory_latsynapses * auditory_y, axis=1)
-            lv = np.sum(visual_latsynapses * visual_y, axis=1)
-            lm = np.sum(multi_latsynapses * multi_y, axis=1)
+            la = np.sum(auditory_latsynapses.T * auditory_y, axis=1)
+            lv = np.sum(visual_latsynapses.T * visual_y, axis=1)
+            lm = np.sum(multi_latsynapses.T * multi_y, axis=1)
 
             (
                 auditory_lateral_inputs[i, :],
@@ -654,7 +658,11 @@ class Paredes2022(SKNMSIMethodABC):
             "visual": visual_res,
             "multi": multi_res,
         }
-        return response, {"multi_total_input": multisensory_total_inputs}
+        return response, {
+            "auditory_total_input": auditory_total_inputs,
+            "visual_total_input": visual_total_inputs,
+            "multi_total_input": multisensory_total_inputs,
+        }
 
     def calculate_perceived_positions(self, auditory, visual, multi, **kwargs):
         a = auditory[-1, :].argmax()
