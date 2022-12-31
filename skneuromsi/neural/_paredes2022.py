@@ -512,43 +512,44 @@ class Paredes2022(SKNMSIMethodABC):
             time = int(hist_times[i] / self._integrator.dt)
 
             # Compute cross-modal input
+            computed_cross_latency = self.compute_latency(
+                time, sim_cross_modal_latency
+            )
+
             auditory_cm_input = np.sum(
                 visual_to_auditory_synapses
-                * visual_res[
-                    self.compute_latency(time, sim_cross_modal_latency), :
-                ],
+                * visual_res[computed_cross_latency, :],
                 axis=1,
             )
             visual_cm_input = np.sum(
                 auditory_to_visual_synapses
-                * auditory_res[
-                    self.compute_latency(time, sim_cross_modal_latency), :
-                ],
+                * auditory_res[computed_cross_latency, :],
                 axis=1,
             )
 
             # Compute feedback input
+            computed_feed_latency = self.compute_latency(
+                time, sim_feed_latency
+            )
+
             auditory_feedback_input = np.sum(
                 multi_to_auditory_synapses
-                * multi_res[self.compute_latency(time, sim_feed_latency), :],
+                * multi_res[computed_feed_latency, :],
                 axis=1,
             )
             visual_feedback_input = np.sum(
-                multi_to_visual_synapses
-                * multi_res[self.compute_latency(time, sim_feed_latency), :],
+                multi_to_visual_synapses * multi_res[computed_feed_latency, :],
                 axis=1,
             )
 
             # Compute feedforward input
             multi_input = np.sum(
                 auditory_to_multi_synapses
-                * auditory_res[
-                    self.compute_latency(time, sim_feed_latency), :
-                ],
+                * auditory_res[computed_feed_latency, :],
                 axis=1,
             ) + np.sum(
                 visual_to_multi_synapses
-                * visual_res[self.compute_latency(time, sim_feed_latency), :],
+                * visual_res[computed_feed_latency, :],
                 axis=1,
             )
 
@@ -665,3 +666,6 @@ class Paredes2022(SKNMSIMethodABC):
             "perceived_visual_position": v,
             "perceived_multi_position": m,
         }
+
+
+# TODO Fix cross modal input (sum in columns) and lateral input
