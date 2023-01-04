@@ -17,6 +17,8 @@ import copy
 
 import numpy as np
 
+from scipy.signal import find_peaks
+
 from ..core import SKNMSIMethodABC
 
 
@@ -136,6 +138,8 @@ class Paredes2022(SKNMSIMethodABC):
         {"target": "visual_intensity", "template": "${mode1}_intensity"},
         {"target": "auditory_duration", "template": "${mode0}_duration"},
         {"target": "visual_duration", "template": "${mode1}_duration"},
+        {"target": "auditory_onset", "template": "${mode0}_onset"},
+        {"target": "visual_onset", "template": "${mode1}_onset"},
     ]
     _run_output = [
         {"target": "auditory", "template": "${mode0}"},
@@ -357,7 +361,8 @@ class Paredes2022(SKNMSIMethodABC):
         self,
         *,
         soa=50,
-        onset=16,
+        auditory_onset=16,
+        visual_onset=16,
         auditory_duration=7,
         visual_duration=12,
         auditory_position=None,
@@ -425,10 +430,10 @@ class Paredes2022(SKNMSIMethodABC):
         )
         auditory_to_visual_synapses = self.synapses(weight=0.075, sigma=5)
         visual_to_auditory_synapses = self.synapses(weight=0.075, sigma=5)
-        auditory_to_multi_synapses = self.synapses(weight=0.6, sigma=0.5)
-        visual_to_multi_synapses = self.synapses(weight=0.6, sigma=0.5)
-        multi_to_auditory_synapses = self.synapses(weight=0.05, sigma=0.5)
-        multi_to_visual_synapses = self.synapses(weight=0.05, sigma=0.5)
+        auditory_to_multi_synapses = self.synapses(weight=1.4, sigma=0.5)
+        visual_to_multi_synapses = self.synapses(weight=1.4, sigma=0.5)
+        multi_to_auditory_synapses = self.synapses(weight=0.000, sigma=0.5)
+        multi_to_visual_synapses = self.synapses(weight=0.000, sigma=0.5)
 
         # Generate Stimuli
         point_auditory_stimuli = self.stimuli_input(
@@ -441,7 +446,7 @@ class Paredes2022(SKNMSIMethodABC):
         auditory_stimuli = self.create_unimodal_stimuli_matrix(
             stimuli=point_auditory_stimuli,
             stimuli_duration=auditory_duration,
-            onset=onset,
+            onset=auditory_onset,
             simulation_length=self._time_range[1],
             stimuli_n=auditory_stim_n,
             soa=soa,
@@ -450,7 +455,7 @@ class Paredes2022(SKNMSIMethodABC):
         visual_stimuli = self.create_unimodal_stimuli_matrix(
             stimuli=point_visual_stimuli,
             stimuli_duration=visual_duration,
-            onset=onset,
+            onset=visual_onset,
             simulation_length=self._time_range[1],
             stimuli_n=visual_stim_n,
         )
@@ -678,5 +683,18 @@ class Paredes2022(SKNMSIMethodABC):
             "perceived_multi_position": m,
         }
 
+    def calculate_causes(
+        self, multi, **kwargs
+    ):  # TODO Include causes for space and time
 
-# TODO Fix cross modal input (sum in columns) and lateral input
+        # if dimension == "space":
+        #    peaks_idx, _ = find_peaks(multi[-1, :], prominence=0.30, height=0.40)
+        #    peaks = np.size(peaks_idx)
+        #    return peaks
+
+        position = int(self._position_range[1] / 2)
+        peaks_idx, _ = find_peaks(
+            multi[:, position], prominence=0.30, height=0.40
+        )
+        peaks = np.size(peaks_idx)
+        return peaks
