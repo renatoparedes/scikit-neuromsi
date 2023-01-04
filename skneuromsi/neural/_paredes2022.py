@@ -290,6 +290,9 @@ class Paredes2022(SKNMSIMethodABC):
         stimuli_n=1,
         soa=None,
     ):
+        if soa is not None:
+            soa = int(soa)
+
         # TODO expand for more than 2 stimuli and for different stimuli
         no_stim = np.zeros(self.neurons)
 
