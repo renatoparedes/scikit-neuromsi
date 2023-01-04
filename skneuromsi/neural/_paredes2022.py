@@ -432,8 +432,8 @@ class Paredes2022(SKNMSIMethodABC):
         visual_to_auditory_synapses = self.synapses(weight=0.075, sigma=5)
         auditory_to_multi_synapses = self.synapses(weight=1.4, sigma=0.5)
         visual_to_multi_synapses = self.synapses(weight=1.4, sigma=0.5)
-        multi_to_auditory_synapses = self.synapses(weight=0.000, sigma=0.5)
-        multi_to_visual_synapses = self.synapses(weight=0.000, sigma=0.5)
+        multi_to_auditory_synapses = self.synapses(weight=0.10, sigma=0.5)
+        multi_to_visual_synapses = self.synapses(weight=0.10, sigma=0.5)
 
         # Generate Stimuli
         point_auditory_stimuli = self.stimuli_input(
