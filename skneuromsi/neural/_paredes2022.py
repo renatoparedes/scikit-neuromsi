@@ -78,14 +78,25 @@ class Paredes2022TemporalFilter:
         a_gain,
         v_gain,
         m_gain,
+        a_noise,
+        v_noise,
+        include_noise,
     ):
+
+        if not include_noise:
+            a_noise, v_noise = 0, 0
 
         # Auditory
         da_outside_input = auditoryfilter_input
 
         dauditory_filter_input = (
             (a_gain / self.tau[0])
-            * (a_external_input + a_cross_modal_input + a_feedback_input)
+            * (
+                a_external_input
+                + a_cross_modal_input
+                + a_feedback_input
+                + a_noise
+            )
             - ((2 * auditoryfilter_input) / self.tau[0])
             - a_outside_input / np.square(self.tau[0])
         )
@@ -95,7 +106,12 @@ class Paredes2022TemporalFilter:
 
         dvisual_filter_input = (
             (v_gain / self.tau[1])
-            * (v_external_input + v_cross_modal_input + v_feedback_input)
+            * (
+                v_external_input
+                + v_cross_modal_input
+                + v_feedback_input
+                + v_noise
+            )
             - ((2 * visualfilter_input) / self.tau[1])
             - v_outside_input / np.square(self.tau[1])
         )
@@ -373,6 +389,7 @@ class Paredes2022(SKNMSIMethodABC):
         auditory_intensity=1.5,
         visual_intensity=1.1,
         noise=False,
+        noise_level=0.07,
         lateral_excitation=2,
         lateral_inhibition=1.8,
         cross_modal_latency=16,
@@ -514,11 +531,12 @@ class Paredes2022(SKNMSIMethodABC):
 
         del z_1d, z_2d
 
-        auditory_noise = -(auditory_intensity * 0.4) + (
-            2 * auditory_intensity * 0.4
+        # Input noise
+        auditory_noise = -(auditory_intensity * noise_level) + (
+            2 * auditory_intensity * noise_level
         ) * self.random.random(self.neurons)
-        visual_noise = -(visual_intensity * 0.4) + (
-            2 * visual_intensity * 0.4
+        visual_noise = -(visual_intensity * noise_level) + (
+            2 * visual_intensity * noise_level
         ) * self.random.random(self.neurons)
 
         for i in range(hist_times.size):
@@ -593,6 +611,9 @@ class Paredes2022(SKNMSIMethodABC):
                 a_gain=auditory_gain,
                 v_gain=visual_gain,
                 m_gain=multisensory_gain,
+                a_noise=auditory_noise,
+                v_noise=visual_noise,
+                include_noise=noise,
             )
 
             (
