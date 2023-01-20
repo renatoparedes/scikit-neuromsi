@@ -392,6 +392,7 @@ class Paredes2022(SKNMSIMethodABC):
         noise_level=0.07,
         lateral_excitation=2,
         lateral_inhibition=1.8,
+        cross_modal_weight=0.075,
         cross_modal_latency=16,
         feed_latency=95,
         auditory_gain=None,
@@ -448,8 +449,12 @@ class Paredes2022(SKNMSIMethodABC):
             excitation_scale=3,
             inhibition_scale=24,
         )
-        auditory_to_visual_synapses = self.synapses(weight=0.075, sigma=5)
-        visual_to_auditory_synapses = self.synapses(weight=0.075, sigma=5)
+        auditory_to_visual_synapses = self.synapses(
+            weight=cross_modal_weight, sigma=5
+        )
+        visual_to_auditory_synapses = self.synapses(
+            weight=cross_modal_weight, sigma=5
+        )
         auditory_to_multi_synapses = self.synapses(weight=1.4, sigma=0.5)
         visual_to_multi_synapses = self.synapses(weight=1.4, sigma=0.5)
         multi_to_auditory_synapses = self.synapses(weight=0.10, sigma=0.5)
@@ -531,17 +536,17 @@ class Paredes2022(SKNMSIMethodABC):
 
         del z_1d, z_2d
 
-        # Input noise
-        auditory_noise = -(auditory_intensity * noise_level) + (
-            2 * auditory_intensity * noise_level
-        ) * self.random.random(self.neurons)
-        visual_noise = -(visual_intensity * noise_level) + (
-            2 * visual_intensity * noise_level
-        ) * self.random.random(self.neurons)
-
         for i in range(hist_times.size):
 
             time = int(hist_times[i] / self._integrator.dt)
+
+            # Input noise
+            auditory_noise = -(auditory_intensity * noise_level) + (
+                2 * auditory_intensity * noise_level
+            ) * self.random.random(self.neurons)
+            visual_noise = -(visual_intensity * noise_level) + (
+                2 * visual_intensity * noise_level
+            ) * self.random.random(self.neurons)
 
             # Compute cross-modal input
             computed_cross_latency = self.compute_latency(
@@ -635,10 +640,6 @@ class Paredes2022(SKNMSIMethodABC):
                 visualfilter_input,
                 multisensoryfilter_input,
             )
-
-            # if noise:
-            #    auditory_input += auditory_noise
-            #    visual_input += visual_noise
 
             # Compute lateral inpunt
             la = np.sum(auditory_latsynapses.T * auditory_y, axis=1)
