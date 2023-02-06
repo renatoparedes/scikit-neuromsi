@@ -326,11 +326,14 @@ class Paredes2022(SKNMSIMethodABC):
         # If two stimuli are delivered
         if stimuli_n == 2:
             # Input during onset asyncrhony
-            soa_stim = np.tile(no_stim, (soa, 1))
+            soa_stim = np.tile(no_stim, (soa - stimuli_duration, 1))
 
             # Input after stimulation
             post_stim_time = (
-                simulation_length - onset - stimuli_duration * 2 - soa
+                simulation_length
+                - onset
+                - stimuli_duration * 2
+                - (soa - stimuli_duration)
             )
             post_stim = np.tile(no_stim, (post_stim_time, 1))
 
@@ -719,7 +722,7 @@ class Paredes2022(SKNMSIMethodABC):
 
         position = int(self._position_range[1] / 2)
         peaks_idx, _ = find_peaks(
-            multi[:, position], prominence=0.30, height=0.40
+            multi[:, position], prominence=0.15, height=0.40
         )
         peaks = np.size(peaks_idx)
         return peaks
