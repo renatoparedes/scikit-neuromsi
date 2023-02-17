@@ -106,7 +106,9 @@ class Kording2007(SKNMSIMethodABC):
 
     # Model methods
 
-    def input_computation(self, unisensory_position, unisensory_var):
+    def input_computation(self, unisensory_position, unisensory_var, noise):
+        if noise is False:
+            return unisensory_position + np.sqrt(unisensory_var)
         return unisensory_position + np.sqrt(
             unisensory_var
         ) * self.random.standard_normal(self.n)
@@ -253,6 +255,7 @@ class Kording2007(SKNMSIMethodABC):
         prior_sigma=20.0,
         prior_mu=0,
         strategy="averaging",
+        noise=True,
     ):
 
         possible_locations = np.arange(
@@ -283,9 +286,11 @@ class Kording2007(SKNMSIMethodABC):
         visual_var_hat = 1 / (1 / visual_var + 1 / prior_var)
 
         auditory_input = self.input_computation(
-            auditory_position, auditory_var
+            auditory_position, auditory_var, noise=noise
         )
-        visual_input = self.input_computation(visual_position, visual_var)
+        visual_input = self.input_computation(
+            visual_position, visual_var, noise=noise
+        )
 
         auditory_estimate = self.unisensory_estimator(
             auditory_var,
