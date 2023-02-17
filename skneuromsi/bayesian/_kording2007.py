@@ -51,7 +51,7 @@ class Kording2007(SKNMSIMethodABC):
     def __init__(
         self,
         *,
-        n=10000,
+        n=1,
         mode0="auditory",
         mode1="visual",
         position_range=(-42, 43),
@@ -335,8 +335,8 @@ class Kording2007(SKNMSIMethodABC):
 
         return response, extra
 
-    def calculate_causes(self, p_common_cause, mean_p_common_cause, **kwargs):
-        if mean_p_common_cause > 0.5:
+    def calculate_causes(self, p_common_cause, **kwargs):
+        if p_common_cause > 0.5:
             return 1
         return 2
 
