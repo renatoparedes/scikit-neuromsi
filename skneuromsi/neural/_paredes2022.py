@@ -345,6 +345,58 @@ class Paredes2022(SKNMSIMethodABC):
                 complete_stim, 1 / self._integrator.dt, axis=0
             )
 
+        elif stimuli_n == 3:
+            # Input during onset asyncrhony
+            soa_stim = np.tile(no_stim, (soa - stimuli_duration, 1))
+
+            # Input after stimulation
+            post_stim_time = (
+                simulation_length
+                - onset
+                - stimuli_duration * 3
+                - (soa - stimuli_duration) * 2
+            )
+            post_stim = np.tile(no_stim, (post_stim_time, 1))
+
+            # Input concatenation
+            complete_stim = np.vstack(
+                (pre_stim, stim, soa_stim, stim, soa_stim, stim, post_stim)
+            )
+            stimuli_matrix = np.repeat(
+                complete_stim, 1 / self._integrator.dt, axis=0
+            )
+
+        elif stimuli_n == 4:
+            # Input during onset asyncrhony
+            soa_stim = np.tile(no_stim, (soa - stimuli_duration, 1))
+
+            # Input after stimulation
+            post_stim_time = (
+                simulation_length
+                - onset
+                - stimuli_duration * 4
+                - (soa - stimuli_duration) * 3
+            )
+            post_stim = np.tile(no_stim, (post_stim_time, 1))
+
+            # Input concatenation
+            complete_stim = np.vstack(
+                (
+                    pre_stim,
+                    stim,
+                    soa_stim,
+                    stim,
+                    soa_stim,
+                    stim,
+                    soa_stim,
+                    stim,
+                    post_stim,
+                )
+            )
+            stimuli_matrix = np.repeat(
+                complete_stim, 1 / self._integrator.dt, axis=0
+            )
+
         else:
             # Input after stimulation
             post_stim_time = simulation_length - onset - stimuli_duration
@@ -398,6 +450,8 @@ class Paredes2022(SKNMSIMethodABC):
         cross_modal_weight=0.075,
         cross_modal_latency=16,
         feed_latency=95,
+        feedback_weight=0.10,
+        feedforward_weight=1.4,
         auditory_gain=None,
         visual_gain=None,
         multisensory_gain=None,
@@ -458,10 +512,18 @@ class Paredes2022(SKNMSIMethodABC):
         visual_to_auditory_synapses = self.synapses(
             weight=cross_modal_weight, sigma=5
         )
-        auditory_to_multi_synapses = self.synapses(weight=1.4, sigma=0.5)
-        visual_to_multi_synapses = self.synapses(weight=1.4, sigma=0.5)
-        multi_to_auditory_synapses = self.synapses(weight=0.10, sigma=0.5)
-        multi_to_visual_synapses = self.synapses(weight=0.10, sigma=0.5)
+        auditory_to_multi_synapses = self.synapses(
+            weight=feedforward_weight, sigma=0.5
+        )
+        visual_to_multi_synapses = self.synapses(
+            weight=feedforward_weight, sigma=0.5
+        )
+        multi_to_auditory_synapses = self.synapses(
+            weight=feedback_weight, sigma=0.5
+        )
+        multi_to_visual_synapses = self.synapses(
+            weight=feedback_weight, sigma=0.5
+        )
 
         # Generate Stimuli
         point_auditory_stimuli = self.stimuli_input(
