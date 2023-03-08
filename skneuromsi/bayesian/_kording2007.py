@@ -51,7 +51,7 @@ class Kording2007(SKNMSIMethodABC):
     def __init__(
         self,
         *,
-        n=10000,
+        n=1,
         mode0="auditory",
         mode1="visual",
         position_range=(-42, 43),
@@ -106,7 +106,9 @@ class Kording2007(SKNMSIMethodABC):
 
     # Model methods
 
-    def input_computation(self, unisensory_position, unisensory_var):
+    def input_computation(self, unisensory_position, unisensory_var, noise):
+        if noise is False:
+            return unisensory_position + np.sqrt(unisensory_var)
         return unisensory_position + np.sqrt(
             unisensory_var
         ) * self.random.standard_normal(self.n)
@@ -253,6 +255,7 @@ class Kording2007(SKNMSIMethodABC):
         prior_sigma=20.0,
         prior_mu=0,
         strategy="averaging",
+        noise=True,
     ):
 
         possible_locations = np.arange(
@@ -283,9 +286,11 @@ class Kording2007(SKNMSIMethodABC):
         visual_var_hat = 1 / (1 / visual_var + 1 / prior_var)
 
         auditory_input = self.input_computation(
-            auditory_position, auditory_var
+            auditory_position, auditory_var, noise=noise
         )
-        visual_input = self.input_computation(visual_position, visual_var)
+        visual_input = self.input_computation(
+            visual_position, visual_var, noise=noise
+        )
 
         auditory_estimate = self.unisensory_estimator(
             auditory_var,
@@ -335,7 +340,18 @@ class Kording2007(SKNMSIMethodABC):
 
         return response, extra
 
-    def calculate_causes(self, p_common_cause, mean_p_common_cause, **kwargs):
-        if mean_p_common_cause > 0.5:
+    def calculate_causes(self, p_common_cause, **kwargs):
+        if p_common_cause > 0.5:
             return 1
         return 2
+
+    def calculate_perceived_positions(self, auditory, visual, multi, **kwargs):
+        a = auditory.argmax()
+        v = visual.argmax()
+        m = multi.argmax()
+
+        return {
+            "perceived_auditory_position": a,
+            "perceived_visual_position": v,
+            "perceived_multi_position": m,
+        }

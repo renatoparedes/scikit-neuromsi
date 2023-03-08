@@ -89,12 +89,6 @@ class Cuppini2014TemporalFilter:
             - v_outside_input / np.square(self.tau[2])
         )
 
-        # dvisual_outside_input = (
-        #    (v_gain / self.tau[2]) * (v_external_input + v_cross_modal_input)
-        #    - ((2 * v_outside_input) / self.tau[2])
-        #    - v_outside_input / np.square(self.tau[2])
-        # )
-
         return (
             da_outside_input,
             dv_outside_input,
@@ -269,14 +263,19 @@ class Cuppini2014(SKNMSIMethodABC):
         stimuli,
         stimuli_duration,
         onset,
-        simulation_length,
         stimuli_n=1,
         soa=None,
     ):
         # TODO expand for more than 2 stimuli and for different stimuli
 
-        # Input before onset
         no_stim = np.zeros(self.neurons)
+
+        if stimuli_n == 0:
+            stim = np.tile(no_stim, (self._time_range[1], 1))
+            stimuli_matrix = np.repeat(stim, 1 / self._time_res, axis=0)
+            return stimuli_matrix
+
+        # Input before onset
         pre_stim = np.tile(no_stim, (onset, 1))
 
         # Input during stimulus delivery
@@ -314,22 +313,21 @@ class Cuppini2014(SKNMSIMethodABC):
 
         return stimuli_matrix
 
-    def synapses(self, weight):
-
-        the_synapses = np.ones((self.neurons, self.neurons)) * weight
-
-        return the_synapses
-
     # Model run
     def set_random(self, rng):
         self._random = rng
-        
+
+    def compute_latency(self, time, latency):
+        if time - latency >= 0:
+            return time - latency
+        return 0
+
     def run(
         self,
         *,
-        soa=40,
-        onset=16,
-        auditory_duration=15,
+        soa=56,
+        onset=25,
+        auditory_duration=10,
         visual_duration=20,
         auditory_position=None,
         visual_position=None,
@@ -380,8 +378,7 @@ class Cuppini2014(SKNMSIMethodABC):
             inhibition_scale=24,
         )
 
-        auditory_to_visual_synapses = self.synapses(weight=0.35)
-        visual_to_auditory_synapses = self.synapses(weight=0.35)
+        cross_modal_synapses_weight = 0.35
 
         # Generate Stimuli
         point_auditory_stimuli = self.stimuli_input(
@@ -395,7 +392,6 @@ class Cuppini2014(SKNMSIMethodABC):
             stimuli=point_auditory_stimuli,
             stimuli_duration=auditory_duration,
             onset=onset,
-            simulation_length=self._time_range[1],
             stimuli_n=auditory_stim_n,
             soa=soa,
         )
@@ -404,7 +400,6 @@ class Cuppini2014(SKNMSIMethodABC):
             stimuli=point_visual_stimuli,
             stimuli_duration=visual_duration,
             onset=onset,
-            simulation_length=self._time_range[1],
             stimuli_n=visual_stim_n,
         )
 
@@ -445,18 +440,20 @@ class Cuppini2014(SKNMSIMethodABC):
 
         for i in range(hist_times.size):
 
-            time = int(hist_times[i])
+            time = int(hist_times[i] / self._integrator.dt)
 
             # Compute cross-modal input
-            auditory_cm_input = np.sum(
-                visual_to_auditory_synapses
-                * visual_res[time - sim_cross_modal_latency, :],
-                axis=1,
+            computed_cross_latency = self.compute_latency(
+                time, sim_cross_modal_latency
             )
-            visual_cm_input = np.sum(
-                auditory_to_visual_synapses
-                * auditory_res[time - sim_cross_modal_latency, :],
-                axis=1,
+
+            auditory_cm_input = (
+                cross_modal_synapses_weight
+                * visual_res[computed_cross_latency, :]
+            )
+            visual_cm_input = (
+                cross_modal_synapses_weight
+                * auditory_res[computed_cross_latency, :]
             )
 
             # Compute external input
@@ -504,8 +501,8 @@ class Cuppini2014(SKNMSIMethodABC):
             )
 
             # Compute lateral input
-            la = np.sum(auditory_latsynapses * auditory_y, axis=1)
-            lv = np.sum(visual_latsynapses * visual_y, axis=1)
+            la = np.sum(auditory_latsynapses.T * auditory_y, axis=1)
+            lv = np.sum(visual_latsynapses.T * visual_y, axis=1)
 
             auditory_lateral_inputs[i, :], visual_lateral_inputs[i, :] = la, lv
 
@@ -551,4 +548,14 @@ class Cuppini2014(SKNMSIMethodABC):
             "visual_lateral_synapses": visual_latsynapses,
             "auditory_filter_input": auditoryfilter_inputs,
             "visual_filter_input": visualfilter_inputs,
+        }
+
+    def calculate_perceived_positions(self, auditory, visual, multi, **kwargs):
+        a = auditory[-1, :].argmax()
+        v = visual[-1, :].argmax()
+        m = multi[-1, :].argmax()
+
+        return {
+            "perceived_auditory_position": a,
+            "perceived_visual_position": v,
         }

@@ -221,6 +221,8 @@ class Cuppini2017(SKNMSIMethodABC):
         *,
         auditory_position=None,
         visual_position=None,
+        auditory_sigma=32,
+        visual_sigma=4,
         auditory_intensity=28,
         visual_intensity=27,
         noise=False,
@@ -268,10 +270,12 @@ class Cuppini2017(SKNMSIMethodABC):
 
         # Generate Stimuli
         auditory_stimuli = self.stimuli_input(
-            intensity=auditory_intensity, scale=32, loc=auditory_position
+            intensity=auditory_intensity,
+            scale=auditory_sigma,
+            loc=auditory_position,
         )
         visual_stimuli = self.stimuli_input(
-            intensity=visual_intensity, scale=4, loc=visual_position
+            intensity=visual_intensity, scale=visual_sigma, loc=visual_position
         )
 
         # Data holders

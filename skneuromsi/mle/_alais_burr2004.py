@@ -208,3 +208,14 @@ class AlaisBurr2004(SKNMSIMethodABC):
             "visual_weight": visual_weight,
         }
         return response, extra
+
+    def calculate_perceived_positions(self, auditory, visual, multi, **kwargs):
+        a = auditory.argmax()
+        v = visual.argmax()
+        m = multi.argmax()
+
+        return {
+            "perceived_auditory_position": a,
+            "perceived_visual_position": v,
+            "perceived_multi_position": m,
+        }

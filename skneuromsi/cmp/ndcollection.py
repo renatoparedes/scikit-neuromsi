@@ -164,7 +164,7 @@ class NDResultCollection(Sequence):
                 run_params=self._run_params_arr[idx],
                 extra=self._extra_arr[idx],
                 causes=self._causes_arr[idx],
-                nddata=self._result_storage[idx].copy(),
+                nddata=self._result_storage[idx],
             )
             items.append(item)
 

@@ -17,6 +17,8 @@ import copy
 
 import numpy as np
 
+from scipy.signal import find_peaks
+
 from ..core import SKNMSIMethodABC
 
 
@@ -37,13 +39,13 @@ class Paredes2022Integrator:
     def __call__(self, y_a, y_v, y_m, t, u_a, u_v, u_m):
 
         # Auditory
-        dy_a = (-y_a + self.sigmoid(u_a)) * (1 / self.tau[0])
+        dy_a = (-y_a + self.sigmoid(u_a)) * (1 / self.tau)
 
         # Visual
-        dy_v = (-y_v + self.sigmoid(u_v)) * (1 / self.tau[1])
+        dy_v = (-y_v + self.sigmoid(u_v)) * (1 / self.tau)
 
         # Multisensory
-        dy_m = (-y_m + self.sigmoid(u_m)) * (1 / self.tau[2])
+        dy_m = (-y_m + self.sigmoid(u_m)) * (1 / self.tau)
 
         return dy_a, dy_v, dy_m
 
@@ -76,14 +78,25 @@ class Paredes2022TemporalFilter:
         a_gain,
         v_gain,
         m_gain,
+        a_noise,
+        v_noise,
+        include_noise,
     ):
+
+        if not include_noise:
+            a_noise, v_noise = 0, 0
 
         # Auditory
         da_outside_input = auditoryfilter_input
 
         dauditory_filter_input = (
             (a_gain / self.tau[0])
-            * (a_external_input + a_cross_modal_input + a_feedback_input)
+            * (
+                a_external_input
+                + a_cross_modal_input
+                + a_feedback_input
+                + a_noise
+            )
             - ((2 * auditoryfilter_input) / self.tau[0])
             - a_outside_input / np.square(self.tau[0])
         )
@@ -93,7 +106,12 @@ class Paredes2022TemporalFilter:
 
         dvisual_filter_input = (
             (v_gain / self.tau[1])
-            * (v_external_input + v_cross_modal_input + v_feedback_input)
+            * (
+                v_external_input
+                + v_cross_modal_input
+                + v_feedback_input
+                + v_noise
+            )
             - ((2 * visualfilter_input) / self.tau[1])
             - v_outside_input / np.square(self.tau[1])
         )
@@ -136,6 +154,8 @@ class Paredes2022(SKNMSIMethodABC):
         {"target": "visual_intensity", "template": "${mode1}_intensity"},
         {"target": "auditory_duration", "template": "${mode0}_duration"},
         {"target": "visual_duration", "template": "${mode1}_duration"},
+        {"target": "auditory_onset", "template": "${mode0}_onset"},
+        {"target": "visual_onset", "template": "${mode1}_onset"},
     ]
     _run_output = [
         {"target": "auditory", "template": "${mode0}"},
@@ -146,13 +166,14 @@ class Paredes2022(SKNMSIMethodABC):
         self,
         *,
         neurons=90,
-        tau=(3, 15, 1),
-        s=0.3,
-        theta=20,
+        tau=(15, 25, 5),
+        tau_neurons=1,
+        s=2,
+        theta=16,
         seed=None,
         mode0="auditory",
         mode1="visual",
-        position_range=(0, 180),
+        position_range=(0, 90),
         position_res=1,
         time_range=(0, 200),
         time_res=0.01,
@@ -170,7 +191,9 @@ class Paredes2022(SKNMSIMethodABC):
         integrator_kws.setdefault("method", "euler")
         integrator_kws.setdefault("dt", self._time_res)
 
-        integrator_model = Paredes2022Integrator(tau=tau, s=s, theta=theta)
+        integrator_model = Paredes2022Integrator(
+            tau=tau_neurons, s=s, theta=theta
+        )
         self._integrator = bp.odeint(f=integrator_model, **integrator_kws)
 
         temporal_filter_model = Paredes2022TemporalFilter(tau=tau)
@@ -283,10 +306,18 @@ class Paredes2022(SKNMSIMethodABC):
         stimuli_n=1,
         soa=None,
     ):
+        if soa is not None:
+            soa = int(soa)
+
         # TODO expand for more than 2 stimuli and for different stimuli
+        no_stim = np.zeros(self.neurons)
+
+        if stimuli_n == 0:
+            stim = np.tile(no_stim, (self._time_range[1], 1))
+            stimuli_matrix = np.repeat(stim, 1 / self._time_res, axis=0)
+            return stimuli_matrix
 
         # Input before onset
-        no_stim = np.zeros(self.neurons)
         pre_stim = np.tile(no_stim, (onset, 1))
 
         # Input during stimulus delivery
@@ -295,17 +326,72 @@ class Paredes2022(SKNMSIMethodABC):
         # If two stimuli are delivered
         if stimuli_n == 2:
             # Input during onset asyncrhony
-            soa_stim = np.tile(no_stim, (soa, 1))
+            soa_stim = np.tile(no_stim, (soa - stimuli_duration, 1))
 
             # Input after stimulation
             post_stim_time = (
-                simulation_length - onset - stimuli_duration * 2 - soa
+                simulation_length
+                - onset
+                - stimuli_duration * 2
+                - (soa - stimuli_duration)
             )
             post_stim = np.tile(no_stim, (post_stim_time, 1))
 
             # Input concatenation
             complete_stim = np.vstack(
                 (pre_stim, stim, soa_stim, stim, post_stim)
+            )
+            stimuli_matrix = np.repeat(
+                complete_stim, 1 / self._integrator.dt, axis=0
+            )
+
+        elif stimuli_n == 3:
+            # Input during onset asyncrhony
+            soa_stim = np.tile(no_stim, (soa - stimuli_duration, 1))
+
+            # Input after stimulation
+            post_stim_time = (
+                simulation_length
+                - onset
+                - stimuli_duration * 3
+                - (soa - stimuli_duration) * 2
+            )
+            post_stim = np.tile(no_stim, (post_stim_time, 1))
+
+            # Input concatenation
+            complete_stim = np.vstack(
+                (pre_stim, stim, soa_stim, stim, soa_stim, stim, post_stim)
+            )
+            stimuli_matrix = np.repeat(
+                complete_stim, 1 / self._integrator.dt, axis=0
+            )
+
+        elif stimuli_n == 4:
+            # Input during onset asyncrhony
+            soa_stim = np.tile(no_stim, (soa - stimuli_duration, 1))
+
+            # Input after stimulation
+            post_stim_time = (
+                simulation_length
+                - onset
+                - stimuli_duration * 4
+                - (soa - stimuli_duration) * 3
+            )
+            post_stim = np.tile(no_stim, (post_stim_time, 1))
+
+            # Input concatenation
+            complete_stim = np.vstack(
+                (
+                    pre_stim,
+                    stim,
+                    soa_stim,
+                    stim,
+                    soa_stim,
+                    stim,
+                    soa_stim,
+                    stim,
+                    post_stim,
+                )
             )
             stimuli_matrix = np.repeat(
                 complete_stim, 1 / self._integrator.dt, axis=0
@@ -340,25 +426,37 @@ class Paredes2022(SKNMSIMethodABC):
     def set_random(self, rng):
         self._random = rng
 
+    def compute_latency(self, time, latency):
+        if time - latency >= 0:
+            return time - latency
+        return 0
+
     def run(
         self,
         *,
         soa=50,
-        onset=16,
+        auditory_onset=16,
+        visual_onset=16,
         auditory_duration=7,
         visual_duration=12,
         auditory_position=None,
         visual_position=None,
-        auditory_intensity=2,
-        visual_intensity=1,
+        auditory_intensity=1.5,
+        visual_intensity=1.1,
         noise=False,
+        noise_level=0.07,
         lateral_excitation=2,
         lateral_inhibition=1.8,
+        cross_modal_weight=0.075,
         cross_modal_latency=16,
         feed_latency=95,
+        feedback_weight=0.10,
+        feedforward_weight=1.4,
         auditory_gain=None,
         visual_gain=None,
         multisensory_gain=None,
+        auditory_stim_n=2,
+        visual_stim_n=1,
     ):
 
         auditory_position = (
@@ -403,17 +501,29 @@ class Paredes2022(SKNMSIMethodABC):
             inhibition_scale=24,
         )
         multi_latsynapses = self.lateral_synapses(
-            excitation_loc=3,
-            inhibition_loc=2.6,
-            excitation_scale=2,
-            inhibition_scale=10,
+            excitation_loc=lateral_excitation,
+            inhibition_loc=lateral_inhibition,
+            excitation_scale=3,
+            inhibition_scale=24,
         )
-        auditory_to_visual_synapses = self.synapses(weight=0.35, sigma=5)
-        visual_to_auditory_synapses = self.synapses(weight=0.35, sigma=5)
-        auditory_to_multi_synapses = self.synapses(weight=6, sigma=0.5)  # 22.5
-        visual_to_multi_synapses = self.synapses(weight=6, sigma=0.5)
-        multi_to_auditory_synapses = self.synapses(weight=3, sigma=0.5)  # 13.5
-        multi_to_visual_synapses = self.synapses(weight=3, sigma=0.5)
+        auditory_to_visual_synapses = self.synapses(
+            weight=cross_modal_weight, sigma=5
+        )
+        visual_to_auditory_synapses = self.synapses(
+            weight=cross_modal_weight, sigma=5
+        )
+        auditory_to_multi_synapses = self.synapses(
+            weight=feedforward_weight, sigma=0.5
+        )
+        visual_to_multi_synapses = self.synapses(
+            weight=feedforward_weight, sigma=0.5
+        )
+        multi_to_auditory_synapses = self.synapses(
+            weight=feedback_weight, sigma=0.5
+        )
+        multi_to_visual_synapses = self.synapses(
+            weight=feedback_weight, sigma=0.5
+        )
 
         # Generate Stimuli
         point_auditory_stimuli = self.stimuli_input(
@@ -426,17 +536,18 @@ class Paredes2022(SKNMSIMethodABC):
         auditory_stimuli = self.create_unimodal_stimuli_matrix(
             stimuli=point_auditory_stimuli,
             stimuli_duration=auditory_duration,
-            onset=onset,
+            onset=auditory_onset,
             simulation_length=self._time_range[1],
-            stimuli_n=2,
+            stimuli_n=auditory_stim_n,
             soa=soa,
         )
 
         visual_stimuli = self.create_unimodal_stimuli_matrix(
             stimuli=point_visual_stimuli,
             stimuli_duration=visual_duration,
-            onset=onset,
+            onset=visual_onset,
             simulation_length=self._time_range[1],
+            stimuli_n=visual_stim_n,
         )
 
         # Data holders
@@ -490,49 +601,58 @@ class Paredes2022(SKNMSIMethodABC):
 
         del z_1d, z_2d
 
-        auditory_noise = -(auditory_intensity * 0.4) + (
-            2 * auditory_intensity * 0.4
-        ) * self.random.random(self.neurons)
-        visual_noise = -(visual_intensity * 0.4) + (
-            2 * visual_intensity * 0.4
-        ) * self.random.random(self.neurons)
-
         for i in range(hist_times.size):
 
-            time = int(hist_times[i])
+            time = int(hist_times[i] / self._integrator.dt)
+
+            # Input noise
+            auditory_noise = -(auditory_intensity * noise_level) + (
+                2 * auditory_intensity * noise_level
+            ) * self.random.random(self.neurons)
+            visual_noise = -(visual_intensity * noise_level) + (
+                2 * visual_intensity * noise_level
+            ) * self.random.random(self.neurons)
 
             # Compute cross-modal input
+            computed_cross_latency = self.compute_latency(
+                time, sim_cross_modal_latency
+            )
+
             auditory_cm_input = np.sum(
-                visual_to_auditory_synapses
-                * visual_res[time - sim_cross_modal_latency, :],
+                visual_to_auditory_synapses.T
+                * visual_res[computed_cross_latency, :],
                 axis=1,
             )
             visual_cm_input = np.sum(
-                auditory_to_visual_synapses
-                * auditory_res[time - sim_cross_modal_latency, :],
+                auditory_to_visual_synapses.T
+                * auditory_res[computed_cross_latency, :],
                 axis=1,
             )
 
             # Compute feedback input
+            computed_feed_latency = self.compute_latency(
+                time, sim_feed_latency
+            )
+
             auditory_feedback_input = np.sum(
-                multi_to_auditory_synapses
-                * multi_res[time - sim_feed_latency, :],
+                multi_to_auditory_synapses.T
+                * multi_res[computed_feed_latency, :],
                 axis=1,
             )
             visual_feedback_input = np.sum(
-                multi_to_visual_synapses
-                * multi_res[time - sim_feed_latency, :],
+                multi_to_visual_synapses.T
+                * multi_res[computed_feed_latency, :],
                 axis=1,
             )
 
             # Compute feedforward input
             multi_input = np.sum(
-                auditory_to_multi_synapses
-                * auditory_res[time - sim_feed_latency, :],
+                auditory_to_multi_synapses.T
+                * auditory_res[computed_feed_latency, :],
                 axis=1,
             ) + np.sum(
-                visual_to_multi_synapses
-                * visual_res[time - sim_feed_latency, :],
+                visual_to_multi_synapses.T
+                * visual_res[computed_feed_latency, :],
                 axis=1,
             )
 
@@ -561,6 +681,9 @@ class Paredes2022(SKNMSIMethodABC):
                 a_gain=auditory_gain,
                 v_gain=visual_gain,
                 m_gain=multisensory_gain,
+                a_noise=auditory_noise,
+                v_noise=visual_noise,
+                include_noise=noise,
             )
 
             (
@@ -583,14 +706,10 @@ class Paredes2022(SKNMSIMethodABC):
                 multisensoryfilter_input,
             )
 
-            # if noise:
-            #    auditory_input += auditory_noise
-            #    visual_input += visual_noise
-
             # Compute lateral inpunt
-            la = np.sum(auditory_latsynapses * auditory_y, axis=1)
-            lv = np.sum(visual_latsynapses * visual_y, axis=1)
-            lm = np.sum(multi_latsynapses * multi_y, axis=1)
+            la = np.sum(auditory_latsynapses.T * auditory_y, axis=1)
+            lv = np.sum(visual_latsynapses.T * visual_y, axis=1)
+            lm = np.sum(multi_latsynapses.T * multi_y, axis=1)
 
             (
                 auditory_lateral_inputs[i, :],
@@ -637,4 +756,35 @@ class Paredes2022(SKNMSIMethodABC):
             "visual": visual_res,
             "multi": multi_res,
         }
-        return response, {}
+        return response, {
+            "auditory_total_input": auditory_total_inputs,
+            "visual_total_input": visual_total_inputs,
+            "multi_total_input": multisensory_total_inputs,
+        }
+
+    def calculate_perceived_positions(self, auditory, visual, multi, **kwargs):
+        a = auditory[-1, :].argmax()
+        v = visual[-1, :].argmax()
+        m = multi[-1, :].argmax()
+
+        return {
+            "perceived_auditory_position": a,
+            "perceived_visual_position": v,
+            "perceived_multi_position": m,
+        }
+
+    def calculate_causes(
+        self, multi, **kwargs
+    ):  # TODO Include causes for space and time
+
+        # if dimension == "space":
+        #    peaks_idx, _ = find_peaks(multi[-1, :], prominence=0.30, height=0.40)
+        #    peaks = np.size(peaks_idx)
+        #    return peaks
+
+        position = int(self._position_range[1] / 2)
+        peaks_idx, _ = find_peaks(
+            multi[:, position], prominence=0.15, height=0.40
+        )
+        peaks = np.size(peaks_idx)
+        return peaks
