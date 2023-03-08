@@ -120,3 +120,7 @@ class Bunch(Mapping):
     def __setstate__(self, state):
         """Needed for multiprocessing environment."""
         self.__dict__ = state
+
+    def to_dict(self):
+        """Return the bunch as a pojo dict."""
+        return copy.deepcopy(self._data)

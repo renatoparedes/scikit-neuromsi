@@ -58,6 +58,7 @@ class SpatialDisparity:
         n_jobs=1,
         seed=None,
         progress_cls=tqdm,
+        result_storage=":memory:",
     ):
         if repeat < 1:
             raise ValueError("'repeat must be >= 1'")
@@ -72,6 +73,7 @@ class SpatialDisparity:
         self._seed = seed
         self._random = np.random.default_rng(seed)
         self._progress_cls = progress_cls
+        self._result_storage = result_storage
 
         run_signature = inspect.signature(model.run)
         if self._target not in run_signature.parameters:
@@ -107,6 +109,10 @@ class SpatialDisparity:
     @property
     def random_(self):
         return self._random
+
+    @property
+    def result_storage(self):
+        return self._result_storage
 
     def _run_kwargs_combinations(self, run_kws):
         iinfo = np.iinfo(int)
@@ -158,8 +164,12 @@ class SpatialDisparity:
 
         responses.insert(0, first_response)
 
-        result = NDResultCollection(responses, name=type(self).__name__)
-        
+        result = NDResultCollection(
+            responses,
+            name=type(self).__name__,
+            result_storage=self._result_storage,
+        )
+
         del responses
-        
+
         return result

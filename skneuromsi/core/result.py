@@ -51,7 +51,6 @@ class NDResult:
         time_res,
         position_res,
         causes,
-        perceived_positions,
         run_params,
         extra,
     ):
@@ -59,7 +58,7 @@ class NDResult:
         self._mtype = mtype
         self._nmap = dict(nmap)
         self._nddata = (
-            modes_to_xarray(nddata) if isinstance(nddata, dict) else nddata
+            modes_to_data_array(nddata) if isinstance(nddata, dict) else nddata
         )
         self._time_range = time_range
         self._position_range = position_range
@@ -70,9 +69,6 @@ class NDResult:
         self._run_params = Bunch("run_params", run_params)
         self._extra = Bunch("extra", extra)
         self._causes = causes
-        self._perceived_positions = Bunch(
-            "perceived_positions", perceived_positions
-        )
 
     # PROPERTIES ==============================================================
 
@@ -142,11 +138,6 @@ class NDResult:
 
     pcoords_ = positions_coordinates_
 
-    @property
-    def perceived_positions_(self):
-        return self._perceived_positions
-
-    perpos_ = perceived_positions_
 
     # UTILS ===================================================================
 
@@ -243,7 +234,7 @@ class NDResult:
 # =============================================================================
 
 
-def modes_to_xarray(nddata):
+def modes_to_data_array(nddata):
     modes, coords = [], None
 
     # we iterate over each mode
