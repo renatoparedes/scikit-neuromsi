@@ -138,7 +138,6 @@ class NDResult:
 
     pcoords_ = positions_coordinates_
 
-
     # UTILS ===================================================================
 
     def __repr__(self):

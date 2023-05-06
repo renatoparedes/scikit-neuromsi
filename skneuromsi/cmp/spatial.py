@@ -20,7 +20,10 @@
 
 import inspect
 import itertools as it
-import re
+import shutil
+import atexit
+import tempfile
+import pathlib
 
 import joblib
 
@@ -32,7 +35,8 @@ from tqdm.auto import tqdm
 
 import xarray as xa
 
-from .ndcollection import NDResultCollection
+from .ndcollection import ndresult_collection
+from .storages import coerce_storage_path, storage
 
 # =============================================================================
 # CONSTANTS
@@ -58,7 +62,7 @@ class SpatialDisparity:
         n_jobs=1,
         seed=None,
         progress_cls=tqdm,
-        result_storage=":memory:",
+        result_storage=None,
     ):
         if repeat < 1:
             raise ValueError("'repeat must be >= 1'")
@@ -73,7 +77,9 @@ class SpatialDisparity:
         self._seed = seed
         self._random = np.random.default_rng(seed)
         self._progress_cls = progress_cls
-        self._result_storage = result_storage
+        self._result_storage = coerce_storage_path(
+            result_storage, f"_{type(self).__name__}"
+        )
 
         run_signature = inspect.signature(model.run)
         if self._target not in run_signature.parameters:
@@ -120,6 +126,7 @@ class SpatialDisparity:
         def combs_gen():
             # combine all targets with all possible values
             tgt_x_range = it.product([self._target], self._range)
+            current_iteration = 0
             for tgt_comb in tgt_x_range:
                 # the combination as dict
                 comb_as_kws = dict([tgt_comb])
@@ -128,17 +135,17 @@ class SpatialDisparity:
                 # repeat the combination the number of times
                 for _ in range(self._repeat):
                     seed = self._random.integers(low=0, high=iinfo.max)
-                    yield comb_as_kws.copy(), seed
+                    yield current_iteration, comb_as_kws.copy(), seed
+                    current_iteration += 1
 
         combs_size = len(self._range) * self._repeat
 
         return combs_gen(), combs_size
 
-    def _run_report(self, run_kws, seed):
+    def _run_report(self, idx, run_kws, seed, results):
         model = self._model
         model.set_random(np.random.default_rng(seed))
-        response = model.run(**run_kws)
-        return response
+        results[idx] = model.run(**run_kws)
 
     def run(self, **run_kws):
         if self._target in run_kws:
@@ -148,28 +155,36 @@ class SpatialDisparity:
             )
 
         # get all the configurations
-        rkw_combs, rkws_comb_len = self._run_kwargs_combinations(run_kws)
+        rkw_combs, runs_total = self._run_kwargs_combinations(run_kws)
+
+        # if we need to add a progress bar we extract the iterable from it
         if self._progress_cls:
             rkw_combs = iter(
-                self._progress_cls(iterable=rkw_combs, total=rkws_comb_len)
+                self._progress_cls(iterable=rkw_combs, total=runs_total)
             )
-        # we execute the first iteration synchronous so if some configuration
-        # fails we can catch it here
-        rkw, rkw_seed = next(rkw_combs)
-        first_response = self._run_report(rkw, rkw_seed)
 
-        with joblib.Parallel(n_jobs=self._n_jobs) as P:
-            drun = joblib.delayed(self._run_report)
-            responses = P(drun(rkw, rkw_seed) for rkw, rkw_seed in rkw_combs)
+        # memmap
+        with storage("directory", size=runs_total, dir=self._result_storage) as results:
 
-        responses.insert(0, first_response)
+            # execute the first iteration synchronous so if some configuration
+            # fails we can catch it here
+            cit, rkw, rkw_seed = next(rkw_combs)
+            self._run_report(cit, rkw, rkw_seed, results)
 
-        result = NDResultCollection(
-            responses,
-            name=type(self).__name__,
-            result_storage=self._result_storage,
-        )
+            with joblib.Parallel(n_jobs=self._n_jobs) as Parallel:
+                drun = joblib.delayed(self._run_report)
+                Parallel(
+                    drun(cit, rkw, rkw_seed, results)
+                    for cit, rkw, rkw_seed in rkw_combs
+                )
 
-        del responses
+        import ipdb;        ipdb.set_trace()
+        a = 1
 
-        return result
+        # result = ndresult_collection(
+        #     responses,
+        #     name=type(self).__name__,
+        #     result_storage_type=self._result_storage,
+        # )
+
+        # return result

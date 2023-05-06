@@ -18,7 +18,6 @@
 # IMPORTS
 # =============================================================================
 
-import abc
 import functools
 from collections import defaultdict
 from collections.abc import Sequence
@@ -29,9 +28,6 @@ import pandas as pd
 
 import seaborn as sns
 
-import xarray as xa
-
-from .storages import make_storage
 from ..core import NDResult
 from ..utils import AccessorABC
 
@@ -82,54 +78,42 @@ class NDResultCollectionPlotter(AccessorABC):
 
 
 class NDResultCollection(Sequence):
-    def __init__(self, ndresults, *, name=None, result_storage="memory"):
+    def __init__(
+        self,
+        name,
+        length,
+        result_storage_type,
+        result_storage,
+        mnames,
+        mtypes,
+        nmaps,
+        time_ranges,
+        position_ranges,
+        time_resolutions,
+        position_resolutions,
+        run_parameters,
+        extras,
+        causes,
+    ):
         self._name = str(name)
-        self._len = len(ndresults)
+        self._len = int(length)
 
         # resolve the result storage
-        self._result_storage_type = result_storage
-
-        mname_lst = []
-        mtype_lst = []
-        nmap_lst = []
-        time_range_lst = []
-        position_range_lst = []
-        time_res_lst = []
-        position_res_lst = []
-        time_res_lst = []
-        position_res_lst = []
-        run_params_lst = []
-        extra_lst = []
-        causes_lst = []
-
-        with make_storage(self._result_storage_type) as result_storage:
-            for ndres in ndresults:
-                mname_lst.append(ndres.mname)
-                mtype_lst.append(ndres.mtype)
-                nmap_lst.append(ndres.nmap_)
-                time_range_lst.append(ndres.time_range)
-                position_range_lst.append(ndres.position_range)
-                time_res_lst.append(ndres.time_res)
-                position_res_lst.append(ndres.position_res)
-                run_params_lst.append(ndres.run_params.to_dict())
-                extra_lst.append(ndres.extra_.to_dict())
-                causes_lst.append(ndres.causes_)
-                result_storage.add(ndres._nddata)
-
-        self._mname_arr = np.array(mname_lst)
-        self._mtype_arr = np.array(mtype_lst)
-        self._nmap_arr = np.array(nmap_lst)
-        self._time_range_arr = np.array(time_range_lst)
-        self._position_range_arr = np.array(position_range_lst)
-        self._time_res_arr = np.array(time_res_lst)
-        self._position_res_arr = np.array(position_res_lst)
-        self._time_res_arr = np.array(time_res_lst)
-        self._position_res_arr = np.array(position_res_lst)
-        self._run_params_arr = np.array(run_params_lst)
-        self._extra_arr = np.array(extra_lst)
-        self._causes_arr = np.array(causes_lst)
-
+        self._result_storage_type = result_storage_type
         self._result_storage = result_storage
+
+        self._mname_arr = np.asarray(mnames)
+        self._mtype_arr = np.asarray(mtypes)
+        self._nmap_arr = np.asarray(nmaps)
+        self._time_range_arr = np.asarray(time_ranges)
+        self._position_range_arr = np.asarray(position_ranges)
+        self._time_res_arr = np.asarray(time_resolutions)
+        self._position_res_arr = np.asarray(position_resolutions)
+        self._time_res_arr = np.asarray(time_resolutions)
+        self._position_res_arr = np.asarray(position_resolutions)
+        self._run_params_arr = np.asarray(run_parameters)
+        self._extra_arr = np.asarray(extras)
+        self._causes_arr = np.asarray(causes)
 
     # Because is a Sequence ==================================================
     @property
@@ -289,9 +273,64 @@ class NDResultCollection(Sequence):
         return report
 
     # BIAS ====================================================================
-    def changing_mode(self):
-        # ! darme cuenta de cual es el mode que se alterando si es None
-        return "auditory"
+    # def changing_mode(self):
+    #     # ! darme cuenta de cual es el mode que se alterando si es None
+    #     return "auditory"
 
-    def bias(self, *, mode=None):
-        mode = self.changing_mode()
+    # def bias(self, *, mode=None):
+    #     mode = self.changing_mode()
+
+
+# =============================================================================
+# FACTORY
+# =============================================================================
+
+def ndresult_collection(ndresults, *, name=None, result_storage_type="memory"):
+    length = len(ndresults)
+
+    # resolve the result storage
+    result_storage_type = result_storage_type
+
+    mnames = []
+    mtypes = []
+    nmaps = []
+    time_ranges = []
+    position_ranges = []
+    time_resolutions = []
+    position_resolutions = []
+    run_parameters = []
+    extras = []
+    causes = []
+
+    with make_storage(result_storage_type) as result_storage:
+        for ndres in ndresults:
+            mnames.append(ndres.mname)
+            mtypes.append(ndres.mtype)
+            nmaps.append(ndres.nmap_)
+            time_ranges.append(ndres.time_range)
+            position_ranges.append(ndres.position_range)
+            time_resolutions.append(ndres.time_res)
+            position_resolutions.append(ndres.position_res)
+            run_parameters.append(ndres.run_params.to_dict())
+            extras.append(ndres.extra_.to_dict())
+            causes.append(ndres.causes_)
+            result_storage.append(ndres._nddata)
+
+    col = NDResultCollection(
+        name=name,
+        length=length,
+        result_storage_type=result_storage_type,
+        result_storage=result_storage,
+        mnames=mnames,
+        mtypes=mtypes,
+        nmaps=nmaps,
+        time_ranges=time_ranges,
+        position_ranges=position_ranges,
+        time_resolutions=time_resolutions,
+        position_resolutions=position_resolutions,
+        run_parameters=run_parameters,
+        extras=extras,
+        causes=causes,
+    )
+
+    return col

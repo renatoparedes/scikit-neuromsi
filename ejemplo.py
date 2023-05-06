@@ -1,5 +1,5 @@
 from skneuromsi.neural import Cuppini2017
-from skneuromsi.cmp import SpatialDisparity
+from skneuromsi.cmp import SpatialDisparity, storages
 from skneuromsi.utils import Bunch
 import pandas as pd
 import numpy as np
@@ -12,6 +12,11 @@ import xarray as xa
 
 import sys
 
+
+# sg = storages.DirectoryStorage(10, ".")
+# sg[0] = "hola"
+# import ipdb; ipdb.set_trace()
+
 tqdm.pandas()
 
 model = Cuppini2017()
@@ -22,11 +27,7 @@ rep = SpatialDisparity(
     n_jobs=-1,
     target="auditory_position",
     seed=41,
-    result_storage="disk"
 )
 
 res = rep.run(noise=True, visual_position=90)
 
-res[0]
-
-import ipdb; ipdb.set_trace()

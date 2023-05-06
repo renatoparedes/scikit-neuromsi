@@ -23,7 +23,7 @@ from ..core import SKNMSIMethodABC
 
 
 @dataclass
-class Cuppini2017Integrator:
+class Cuppini2017IntegratorFunction:
     tau: tuple
     s: float
     theta: float
@@ -101,8 +101,10 @@ class Cuppini2017(SKNMSIMethodABC):
         integrator_kws.setdefault("method", "euler")
         integrator_kws.setdefault("dt", self._time_res)
 
-        integrator_model = Cuppini2017Integrator(tau=tau, s=s, theta=theta)
-        self._integrator = bp.odeint(f=integrator_model, **integrator_kws)
+        self._integrator_function = Cuppini2017IntegratorFunction(
+            tau=tau, s=s, theta=theta
+        )
+        self._integrator_kws = integrator_kws
 
         self._mode0 = mode0
         self._mode1 = mode1
@@ -117,15 +119,15 @@ class Cuppini2017(SKNMSIMethodABC):
 
     @property
     def tau(self):
-        return self._integrator.f.tau
+        return self._integrator_function.tau
 
     @property
     def s(self):
-        return self._integrator.f.s
+        return self._integrator_function.s
 
     @property
     def theta(self):
-        return self._integrator.f.theta
+        return self._integrator_function.theta
 
     @property
     def random(self):
@@ -278,6 +280,11 @@ class Cuppini2017(SKNMSIMethodABC):
             intensity=visual_intensity, scale=visual_sigma, loc=visual_position
         )
 
+        # create the integrator
+        integrator = bp.odeint(
+            f=self._integrator_function, **self._integrator_kws
+        )
+
         # Data holders
         y_z = np.zeros(self.neurons)
         auditory_y, visual_y, multi_y = (
@@ -287,7 +294,7 @@ class Cuppini2017(SKNMSIMethodABC):
         )
 
         res_z = np.zeros(
-            (int(self._time_range[1] / self._integrator.dt), self.neurons)
+            (int(self._time_range[1] / integrator.dt), self.neurons)
         )
         auditory_res, visual_res, multi_res = (
             copy.deepcopy(res_z),
@@ -338,7 +345,7 @@ class Cuppini2017(SKNMSIMethodABC):
             u_m = lm + multi_input
 
             # Compute neurons activity
-            auditory_y, visual_y, multi_y = self._integrator(
+            auditory_y, visual_y, multi_y = integrator(
                 y_a=auditory_y,
                 y_v=visual_y,
                 y_m=multi_y,

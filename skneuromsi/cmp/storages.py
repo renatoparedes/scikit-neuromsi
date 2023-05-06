@@ -3,66 +3,58 @@ import atexit
 import contextlib
 import shutil
 import tempfile
-from collections.abc import Sequence
+from collections import Counter
+from collections.abc import MutableSequence
+import functools
+import pathlib
+import os
+
+import numpy as np
 
 import joblib
 
 
 # =============================================================================
+# COERCION
+# =============================================================================
+
+_DEFAULT_STORAGE_DIR = tempfile.mkdtemp(prefix="skneuromsi_")
+atexit.register(shutil.rmtree, _DEFAULT_STORAGE_DIR)
+
+
+def coerce_storage_path(candidate, suffix):
+    if candidate is None:
+        candidate = tempfile.mkdtemp(dir=_DEFAULT_STORAGE_DIR, suffix=suffix)
+    return str(candidate)
+
+
+# =============================================================================
 # ABC CLASS
 # =============================================================================
-class ResultsStorageABC(Sequence):
-    @abc.abstractmethod
-    def add(self, nddata):
-        ...
-
+class StorageABC(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def lock(self):
         ...
 
-
-# =============================================================================
-# NO STORAGE
-# =============================================================================
-class NoStorage(ResultsStorageABC):
-    def __init__(self, conf):
-        ...
-
-    def add(self, idx):
-        ...
-
-    def lock(self):
-        ...
-
-    def __len__(self):
-        return 0
-
+    @abc.abstractmethod
     def __getitem__(self, idx):
-        raise IndexError(f"{type(self)} never has elements")
+        ...
 
+    @abc.abstractmethod
+    def __setitem__(self, idx, v):
+        ...
 
-# =============================================================================
-# IN MEMORY
-# =============================================================================
-
-
-class InMemoryResultsStorage(ResultsStorageABC):
-    def __init__(self, conf):
-        self._nddatas_lst = []
-
-    def add(self, nddata):
-        self._nddatas_lst.append(nddata)
-
-    def lock(self):
-        self._nddatas = tuple(self._nddatas_lst)
-        del self._nddatas_lst
-
+    @abc.abstractmethod
     def __len__(self):
-        return len(self._nddatas)
+        ...
 
-    def __getitem__(self, idx):
-        nddata = self._nddatas[idx]
-        return nddata
+    def __delitem__(self, idx):
+        del self[idx]
+
+    def __repr__(self):
+        repr_list = [("X" if e else "-") for e in self]
+        repr_str = "[" + " ".join(repr_list) + "]"
+        return repr_str
 
 
 # =============================================================================
@@ -70,44 +62,73 @@ class InMemoryResultsStorage(ResultsStorageABC):
 # =============================================================================
 
 
-class InDiskResultsStorage(ResultsStorageABC):
-    def __init__(self, conf):
-        self._dir = tempfile.mkdtemp(suffix="_skneuromsi")
-        self._idx_to_filename = []
-        atexit.register(shutil.rmtree, self._dir)
+class DirectoryStorage(StorageABC):
+    def __init__(self, size, dir):
+        dtype = f"S{len(dir) + 200}"
+        _, filename = tempfile.mkstemp(dir=dir, suffix="_fcache.mm")
+        self._files = np.memmap(filename, shape=size, dtype=dtype, mode="w+")
+
+    @property
+    def directory(self):
+        return os.path.dirname(self.fcache_)
+
+    @property
+    def size(self):
+        return len(self._files)
+
+    @property
+    def fcache_dtype(self):
+        return self._files.dtype
+
+    @property
+    def fcache_(self):
+        return self._files.filename
 
     def lock(self):
-        self._idx_to_filename = tuple(self._idx_to_filename)
-
-    def add(self, nddata):
-        fd, filename = tempfile.mkstemp(dir=self._dir, suffix="_nddata")
-        self._idx_to_filename.append(filename)
-        with open(fd, "wb") as fp:
-            joblib.dump(nddata, fp)
+        self._files = np.memmap(
+            self.fcache_, shape=self.size, dtype=self.fcache_dtype, mode="r"
+        )
 
     def __len__(self):
-        return len(self._idx_to_filename)
+        return self.size
+
+    def __setitem__(self, idx, nddata):
+        if idx > len(self):
+            raise IndexError(f"Index '{idx}' is out of range")
+        fd, filename = tempfile.mkstemp(
+            dir=self.directory, suffix="_nddata.jpkl"
+        )
+        with open(fd, "wb") as fp:
+            joblib.dump(nddata, fp)
+        self._files[idx] = filename.encode()
 
     def __getitem__(self, idx):
-        filename = self._idx_to_filename[idx]
-        return joblib.load(filename=filename)
+        if idx > len(self):
+            raise IndexError(f"Index '{idx}' is out of range")
+        filename = self._files[idx].decode()
+        return filename and joblib.load(filename=filename)
+
+    def __repr__(self):
+        cls_name = type(self).__name__
+        directory = self.directory
+        original_repr = super().__repr__()
+        return f"<{cls_name} {directory!r} {original_repr}>"
 
 
 # =============================================================================
 # FACTORY
 # =============================================================================
 
+
 _STORAGES = {
-    None: NoStorage,
-    "memory": InMemoryResultsStorage,
-    "disk": InDiskResultsStorage,
+    "directory": DirectoryStorage,
 }
 
 
 @contextlib.contextmanager
-def make_storage(result_storage_type):
+def storage(result_storage_type, size, **kwargs):
     cls = _STORAGES[result_storage_type]
-    stg = cls(result_storage_type)
+    stg = cls(size, **kwargs)
     try:
         yield stg
     finally:

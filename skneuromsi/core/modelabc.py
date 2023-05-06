@@ -537,13 +537,13 @@ class SKNMSIMethodABC:
         cls.__init__ = config.wrap_init(cls.__init__)
         cls._run_config = config
 
-    def __getstate__(self):
-        cls = type(self)
-        return cls._run_config.get_model_state(self)
+    # def __getstate__(self):
+    #     cls = type(self)
+    #     return cls._run_config.get_model_state(self)
 
-    def __setstate__(self, state):
-        cls = type(self)
-        cls._run_config.set_model_state(self, state)
+    # def __setstate__(self, state):
+    #     cls = type(self)
+    #     cls._run_config.set_model_state(self, state)
 
     def calculate_causes(self, **kwargs):
         return None
