@@ -30,4 +30,3 @@ rep = SpatialDisparity(
 )
 
 res = rep.run(noise=True, visual_position=90)
-

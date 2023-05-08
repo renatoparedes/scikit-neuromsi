@@ -37,6 +37,7 @@ REQUIREMENTS = [
     "seaborn",
     "xarray",
     "tqdm",
+    "methodtools",
 ]
 
 with open(PATH / "skneuromsi" / "__init__.py") as fp:
