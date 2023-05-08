@@ -89,6 +89,11 @@ class DirectoryStorage(StorageABC):
             self.fcache_, shape=self.size, dtype=self.fcache_dtype, mode="r"
         )
 
+    def get(self, idx, default=None):
+        filename = self._files[idx].decode()
+        res = joblib.load(filename=filename) if filename else default
+        return res
+
     def __len__(self):
         return self.size
 
@@ -102,11 +107,19 @@ class DirectoryStorage(StorageABC):
             joblib.dump(nddata, fp)
         self._files[idx] = filename.encode()
 
-    def __getitem__(self, idx):
-        if idx > len(self):
-            raise IndexError(f"Index '{idx}' is out of range")
-        filename = self._files[idx].decode()
-        return filename and joblib.load(filename=filename)
+    def __getitem__(self, idxs):
+        if isinstance(idxs, slice):
+            rargs = idxs.indices(len(self))
+            idxs = range(*rargs)
+        elif isinstance(idxs, (int, np.integer)):
+            if idxs >= len(self):
+                raise IndexError(f"Index '{idxs}' is out of range")
+            return self.get(idxs)
+
+        results = np.empty_like(idxs, dtype=object)
+        for idx_to_insert, idx_to_search in enumerate(idxs):
+            results[idx_to_insert] = self.get(idx_to_search)
+        return results
 
     def __repr__(self):
         cls_name = type(self).__name__

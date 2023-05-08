@@ -20,6 +20,7 @@ import string
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 
+import methodtools
 
 from bidict import frozenbidict
 
@@ -96,8 +97,8 @@ class ParameterAliasTemplate:
     def __ne__(self, other):
         return not self == other
 
+    @methodtools.lru_cache(maxsize=None)
     @property
-    @functools.lru_cache(maxsize=None)
     def template_variables(self) -> frozenset:
         """Variables del template."""
         tpl = self.template

@@ -18,9 +18,10 @@
 # IMPORTS
 # =============================================================================
 
-import functools
 from collections import defaultdict
 from collections.abc import Sequence
+
+import methodtools
 
 import numpy as np
 
@@ -28,8 +29,7 @@ import pandas as pd
 
 import seaborn as sns
 
-from ..core import NDResult
-from ..utils import AccessorABC
+from ..utils import AccessorABC, Bunch
 
 # =============================================================================
 # PLOTTER
@@ -37,7 +37,6 @@ from ..utils import AccessorABC
 
 
 class NDResultCollectionPlotter(AccessorABC):
-
     _default_kind = "unity_report"
 
     def __init__(self, ndcollection):
@@ -77,43 +76,68 @@ class NDResultCollectionPlotter(AccessorABC):
 # =============================================================================
 
 
+def _make_metadata_cache(ndresults):
+    mnames = []
+    mtypes = []
+    nmaps = []
+    time_ranges = []
+    position_ranges = []
+    time_resolutions = []
+    position_resolutions = []
+    run_parameters = []
+    extras = []
+    causes = []
+
+    for ndres in ndresults:
+        mnames.append(ndres.mname)
+        mtypes.append(ndres.mtype)
+        nmaps.append(ndres.nmap_)
+        time_ranges.append(ndres.time_range)
+        position_ranges.append(ndres.position_range)
+        time_resolutions.append(ndres.time_res)
+        position_resolutions.append(ndres.position_res)
+        run_parameters.append(ndres.run_params.to_dict())
+        extras.append(ndres.extra_.to_dict())
+        causes.append(ndres.causes_)
+
+    # all the modes are the same fo take the last one
+    modes = ndres.modes_
+
+    cache = Bunch(
+        "ndcollectrion_metadata_cache",
+        {
+            "modes": modes,
+            "mnames": np.asarray(mnames),
+            "mtypes": np.asarray(mtypes),
+            "nmaps": np.asarray(nmaps),
+            "time_ranges": np.asarray(time_ranges),
+            "position_ranges": np.asarray(position_ranges),
+            "time_resolutions": np.asarray(time_resolutions),
+            "position_resolutions": np.asarray(position_resolutions),
+            "run_parameters": np.asarray(run_parameters),
+            "extras": np.asarray(extras),
+            "causes": np.asarray(causes),
+        },
+    )
+
+    return cache
+
+
 class NDResultCollection(Sequence):
     def __init__(
         self,
+        *,
         name,
-        length,
-        result_storage_type,
-        result_storage,
-        mnames,
-        mtypes,
-        nmaps,
-        time_ranges,
-        position_ranges,
-        time_resolutions,
-        position_resolutions,
-        run_parameters,
-        extras,
-        causes,
+        results,
     ):
+        self._len = len(results)
+        if not self._len:
+            cls_name = type(self).__name__
+            raise ValueError(f"Empty {cls_name} not allowed")
+
         self._name = str(name)
-        self._len = int(length)
-
-        # resolve the result storage
-        self._result_storage_type = result_storage_type
-        self._result_storage = result_storage
-
-        self._mname_arr = np.asarray(mnames)
-        self._mtype_arr = np.asarray(mtypes)
-        self._nmap_arr = np.asarray(nmaps)
-        self._time_range_arr = np.asarray(time_ranges)
-        self._position_range_arr = np.asarray(position_ranges)
-        self._time_res_arr = np.asarray(time_resolutions)
-        self._position_res_arr = np.asarray(position_resolutions)
-        self._time_res_arr = np.asarray(time_resolutions)
-        self._position_res_arr = np.asarray(position_resolutions)
-        self._run_params_arr = np.asarray(run_parameters)
-        self._extra_arr = np.asarray(extras)
-        self._causes_arr = np.asarray(causes)
+        self._ndresults = results
+        self._metadata_cache = _make_metadata_cache(results)
 
     # Because is a Sequence ==================================================
     @property
@@ -124,59 +148,28 @@ class NDResultCollection(Sequence):
         return self._len
 
     def __getitem__(self, idxs):
-        if isinstance(idxs, slice):
-            rargs = idxs.indices(len(self))
-            idxs = range(*rargs)
-        elif isinstance(idxs, (int, np.integer)):
-            if idxs >= len(self):
-                raise IndexError(
-                    f"index {idxs} is out of bounds for "
-                    f"collection with size {len(self)}"
-                )
-            idxs = [idxs]
+        return self._ndresults.__getitem__(idxs)
 
-        items = []
-        for idx in idxs:
-            item = NDResult(
-                mname=self._mname_arr[idx],
-                mtype=self._mtype_arr[idx],
-                nmap=self._nmap_arr[idx],
-                time_range=self._time_range_arr[idx],
-                position_range=self._position_range_arr[idx],
-                time_res=self._time_res_arr[idx],
-                position_res=self._position_res_arr[idx],
-                run_params=self._run_params_arr[idx],
-                extra=self._extra_arr[idx],
-                causes=self._causes_arr[idx],
-                nddata=self._result_storage[idx],
-            )
-            items.append(item)
-
-        if len(items) == 1:
-            return items[0]
-
-        return np.array(items, dtype=object)
-
+    @methodtools.lru_cache(maxsize=None)
     @property
-    @functools.lru_cache(maxsize=None)
     def plot(self):
         return NDResultCollectionPlotter(self)
 
     @property
     def modes_(self):
-        return self[0].modes_
+        return self._metadata_cache.modes
 
     def __repr__(self):
         cls_name = type(self).__name__
         name = self.name
         length = len(self)
-        stg = self._result_storage_type
-        return f"<{cls_name} name={name!r}, len={length}, storage={stg!r}>"
+        storage = type(self._ndresults).__name__
+        return f"<{cls_name} {name!r} len={length} storage={storage}>"
 
     # CAUSES ==================================================================
 
     def disparity_matrix(self):
-        df = pd.DataFrame(list(self._run_params_arr))
+        df = pd.DataFrame(list(self._metadata_cache.run_parameters))
         df.index.name = "Iteration"
         df.columns.name = "Attributes"
         return df
@@ -203,10 +196,11 @@ class NDResultCollection(Sequence):
 
     def causes_by_attribute(self, *, attribute=None):
         attribute = self._get_attribute_by(attribute)
+        run_params = self._metadata_cache.run_parameters
+        causes = self._metadata_cache.causes
 
         columns = defaultdict(list)
-        for rp, causes in zip(self._run_params_arr, self._causes_arr):
-
+        for rp, causes in zip(run_params, causes):
             columns[("Attributes", attribute)].append(rp[attribute])
             columns[("", "Causes")].append(causes)
 
@@ -279,58 +273,3 @@ class NDResultCollection(Sequence):
 
     # def bias(self, *, mode=None):
     #     mode = self.changing_mode()
-
-
-# =============================================================================
-# FACTORY
-# =============================================================================
-
-def ndresult_collection(ndresults, *, name=None, result_storage_type="memory"):
-    length = len(ndresults)
-
-    # resolve the result storage
-    result_storage_type = result_storage_type
-
-    mnames = []
-    mtypes = []
-    nmaps = []
-    time_ranges = []
-    position_ranges = []
-    time_resolutions = []
-    position_resolutions = []
-    run_parameters = []
-    extras = []
-    causes = []
-
-    with make_storage(result_storage_type) as result_storage:
-        for ndres in ndresults:
-            mnames.append(ndres.mname)
-            mtypes.append(ndres.mtype)
-            nmaps.append(ndres.nmap_)
-            time_ranges.append(ndres.time_range)
-            position_ranges.append(ndres.position_range)
-            time_resolutions.append(ndres.time_res)
-            position_resolutions.append(ndres.position_res)
-            run_parameters.append(ndres.run_params.to_dict())
-            extras.append(ndres.extra_.to_dict())
-            causes.append(ndres.causes_)
-            result_storage.append(ndres._nddata)
-
-    col = NDResultCollection(
-        name=name,
-        length=length,
-        result_storage_type=result_storage_type,
-        result_storage=result_storage,
-        mnames=mnames,
-        mtypes=mtypes,
-        nmaps=nmaps,
-        time_ranges=time_ranges,
-        position_ranges=position_ranges,
-        time_resolutions=time_resolutions,
-        position_resolutions=position_resolutions,
-        run_parameters=run_parameters,
-        extras=extras,
-        causes=causes,
-    )
-
-    return col

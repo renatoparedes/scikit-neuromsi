@@ -12,8 +12,9 @@
 # IMPORTS
 # =============================================================================
 
-import functools
 from typing import Iterable
+
+import methodtools
 
 import numpy as np
 
@@ -159,14 +160,14 @@ class NDResult:
 
     # ACCESSORS ===============================================================
 
+    @methodtools.lru_cache(maxsize=None)
     @property
-    @functools.lru_cache(maxsize=None)
     def plot(self):
         """Plot accessor."""
         return ResultPlotter(self)
 
+    @methodtools.lru_cache(maxsize=None)
     @property
-    @functools.lru_cache(maxsize=None)
     def stats(self):
         """Stats accessor."""
         return ResultStatsAccessor(self)

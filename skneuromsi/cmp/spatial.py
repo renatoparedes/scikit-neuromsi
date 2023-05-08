@@ -20,22 +20,14 @@
 
 import inspect
 import itertools as it
-import shutil
-import atexit
-import tempfile
-import pathlib
 
 import joblib
 
 import numpy as np
 
-import pandas as pd
-
 from tqdm.auto import tqdm
 
-import xarray as xa
-
-from .ndcollection import ndresult_collection
+from .ndcollection import NDResultCollection
 from .storages import coerce_storage_path, storage
 
 # =============================================================================
@@ -164,8 +156,9 @@ class SpatialDisparity:
             )
 
         # memmap
-        with storage("directory", size=runs_total, dir=self._result_storage) as results:
-
+        with storage(
+            "directory", size=runs_total, dir=self._result_storage
+        ) as results:
             # execute the first iteration synchronous so if some configuration
             # fails we can catch it here
             cit, rkw, rkw_seed = next(rkw_combs)
@@ -178,13 +171,6 @@ class SpatialDisparity:
                     for cit, rkw, rkw_seed in rkw_combs
                 )
 
-        import ipdb;        ipdb.set_trace()
-        a = 1
+        result = NDResultCollection(name=type(self).__name__, results=results)
 
-        # result = ndresult_collection(
-        #     responses,
-        #     name=type(self).__name__,
-        #     result_storage_type=self._result_storage,
-        # )
-
-        # return result
+        return result
