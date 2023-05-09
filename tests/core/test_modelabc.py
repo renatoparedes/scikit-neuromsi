@@ -497,6 +497,9 @@ def test_SKNMSIMethodABC():
             foo_calls.append({"self": self, "foo": foo})
             return {}, {}
 
+        def set_random(self):
+            pass
+
     assert isinstance(Method._run_config, modelabc.SKNMSIRunConfig)
 
     instance = Method(p0="x")

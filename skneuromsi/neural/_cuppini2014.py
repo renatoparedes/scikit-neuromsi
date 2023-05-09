@@ -263,6 +263,7 @@ class Cuppini2014(SKNMSIMethodABC):
         stimuli,
         stimuli_duration,
         onset,
+        simulation_length,
         stimuli_n=1,
         soa=None,
     ):
@@ -271,7 +272,7 @@ class Cuppini2014(SKNMSIMethodABC):
         no_stim = np.zeros(self.neurons)
 
         if stimuli_n == 0:
-            stim = np.tile(no_stim, (self._time_range[1], 1))
+            stim = np.tile(no_stim, (simulation_length, 1))
             stimuli_matrix = np.repeat(stim, 1 / self._time_res, axis=0)
             return stimuli_matrix
 
@@ -288,7 +289,7 @@ class Cuppini2014(SKNMSIMethodABC):
 
             # Input after stimulation
             post_stim_time = (
-                self._time_range[1] - onset - stimuli_duration * 2 - soa
+                simulation_length - onset - stimuli_duration * 2 - soa
             )
             post_stim = np.tile(no_stim, (post_stim_time, 1))
 
@@ -302,7 +303,7 @@ class Cuppini2014(SKNMSIMethodABC):
 
         else:
             # Input after stimulation
-            post_stim_time = self._time_range[1] - onset - stimuli_duration
+            post_stim_time = simulation_length - onset - stimuli_duration
             post_stim = np.tile(no_stim, (post_stim_time, 1))
 
             # Input concatenation

@@ -313,7 +313,7 @@ class Paredes2022(SKNMSIMethodABC):
         no_stim = np.zeros(self.neurons)
 
         if stimuli_n == 0:
-            stim = np.tile(no_stim, (self._time_range[1], 1))
+            stim = np.tile(no_stim, (simulation_length, 1))
             stimuli_matrix = np.repeat(stim, 1 / self._time_res, axis=0)
             return stimuli_matrix
 

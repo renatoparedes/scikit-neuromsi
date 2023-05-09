@@ -341,6 +341,12 @@ class Kording2007(SKNMSIMethodABC):
         return response, extra
 
     def calculate_causes(self, p_common_cause, **kwargs):
+
+        if self.n > 1:
+            if np.average(p_common_cause) > 0.5:
+                return 1
+            return 2
+
         if p_common_cause > 0.5:
             return 1
         return 2

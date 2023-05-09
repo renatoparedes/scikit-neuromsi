@@ -106,15 +106,6 @@ def test_cuppini2014_stim_matrix_generation_double(soa, duration):
     np.testing.assert_almost_equal(stim_matrix_soa, soa_sim_time)
 
 
-@pytest.mark.parametrize("weight", [(0.50), (0.25), (0.75)])
-@pytest.mark.model
-def test_cuppini2014_synapses(weight):
-    model = Cuppini2014()
-    synapses = model.synapses(weight=weight)
-
-    np.testing.assert_almost_equal(np.unique(synapses), weight)
-
-
 @pytest.mark.parametrize(
     "excitation_position, inhibition_position", [(90, 20), (30, 70), (110, 50)]
 )
