@@ -1,5 +1,5 @@
 from skneuromsi.neural import Cuppini2017
-from skneuromsi.cmp import SpatialDisparity, storages
+from skneuromsi.cmp import ParameterSweep, storages
 from skneuromsi.utils import Bunch
 import pandas as pd
 import numpy as np
@@ -21,9 +21,9 @@ tqdm.pandas()
 
 model = Cuppini2017()
 
-rep = SpatialDisparity(
+rep = ParameterSweep(
     model,
-    repeat=2,
+    repeat=10,
     n_jobs=-1,
     target="auditory_position",
     seed=41,

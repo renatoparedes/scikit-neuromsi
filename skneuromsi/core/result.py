@@ -160,13 +160,13 @@ class NDResult:
 
     # ACCESSORS ===============================================================
 
-    @methodtools.lru_cache(maxsize=None)
+
     @property
     def plot(self):
         """Plot accessor."""
         return ResultPlotter(self)
 
-    @methodtools.lru_cache(maxsize=None)
+
     @property
     def stats(self):
         """Stats accessor."""

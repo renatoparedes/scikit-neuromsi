@@ -27,6 +27,8 @@ import numpy as np
 
 import pandas as pd
 
+from tqdm.auto import tqdm
+
 import seaborn as sns
 
 from ..utils import AccessorABC, Bunch
@@ -76,7 +78,16 @@ class NDResultCollectionPlotter(AccessorABC):
 # =============================================================================
 
 
-def _make_metadata_cache(ndresults):
+def _describe_modes(ndres):
+    modes = ndres.get_modes()
+    describe = modes.describe()
+    describe.loc["var"] = modes.var()
+    describe.loc["kurtosis"] = modes.kurtosis()
+    describe.loc["skew"] = modes.skew()
+    return describe
+
+
+def _make_metadata_cache(ndresults, progress_cls):
     mnames = []
     mtypes = []
     nmaps = []
@@ -87,6 +98,12 @@ def _make_metadata_cache(ndresults):
     run_parameters = []
     extras = []
     causes = []
+    modes_describes = []
+
+    if progress_cls:
+        ndresults = progress_cls(
+            iterable=ndresults, desc="Collecting metadata"
+        )
 
     for ndres in ndresults:
         mnames.append(ndres.mname)
@@ -99,6 +116,7 @@ def _make_metadata_cache(ndresults):
         run_parameters.append(ndres.run_params.to_dict())
         extras.append(ndres.extra_.to_dict())
         causes.append(ndres.causes_)
+        modes_describes.append(_describe_modes(ndres))
 
     # all the modes are the same fo take the last one
     modes = ndres.modes_
@@ -117,6 +135,7 @@ def _make_metadata_cache(ndresults):
             "run_parameters": np.asarray(run_parameters),
             "extras": np.asarray(extras),
             "causes": np.asarray(causes),
+            "modes_describes": tuple(modes_describes),
         },
     )
 
@@ -124,12 +143,7 @@ def _make_metadata_cache(ndresults):
 
 
 class NDResultCollection(Sequence):
-    def __init__(
-        self,
-        *,
-        name,
-        results,
-    ):
+    def __init__(self, name, results, *, tqdm_cls=tqdm):
         self._len = len(results)
         if not self._len:
             cls_name = type(self).__name__
@@ -137,7 +151,10 @@ class NDResultCollection(Sequence):
 
         self._name = str(name)
         self._ndresults = results
-        self._metadata_cache = _make_metadata_cache(results)
+        self._progress_cls = tqdm_cls
+        self._metadata_cache = _make_metadata_cache(
+            results, progress_cls=tqdm_cls
+        )
 
     # Because is a Sequence ==================================================
     @property
@@ -267,9 +284,15 @@ class NDResultCollection(Sequence):
         return report
 
     # BIAS ====================================================================
-    # def changing_mode(self):
-    #     # ! darme cuenta de cual es el mode que se alterando si es None
-    #     return "auditory"
+    def modes_variance(self):
+        variances_by_res = []
+        for modes_describe in self._metadata_cache.modes_describes:
+            variances_by_res.append(modes_describe.loc["var"])
+        variances = pd.DataFrame.from_records(variances_by_res).sum()
+        variances.name = "var"
+        return variances
 
-    # def bias(self, *, mode=None):
-    #     mode = self.changing_mode()
+
+
+    def bias(self, *, mode=None):
+        mode = self._coherce_mode(mode)

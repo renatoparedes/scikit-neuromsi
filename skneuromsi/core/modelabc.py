@@ -97,7 +97,6 @@ class ParameterAliasTemplate:
     def __ne__(self, other):
         return not self == other
 
-    @methodtools.lru_cache(maxsize=None)
     @property
     def template_variables(self) -> frozenset:
         """Variables del template."""

@@ -19,7 +19,8 @@
 # =============================================================================
 
 
-from .spatial import SpatialDisparity
+from .sweep import ParameterSweep
+from .ndcollection import NDResultCollection
 
 # =============================================================================
 # ALL
@@ -27,5 +28,6 @@ from .spatial import SpatialDisparity
 
 
 __all__ = [
-    "SpatialDisparity",
+    "ParameterSweep",
+    "NDResultCollection",
 ]

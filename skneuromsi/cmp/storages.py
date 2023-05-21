@@ -85,6 +85,7 @@ class DirectoryStorage(StorageABC):
         return self._files.filename
 
     def lock(self):
+        self._files.flush()
         self._files = np.memmap(
             self.fcache_, shape=self.size, dtype=self.fcache_dtype, mode="r"
         )
