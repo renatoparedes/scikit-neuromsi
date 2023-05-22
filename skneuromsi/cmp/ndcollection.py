@@ -45,29 +45,29 @@ class NDResultCollectionPlotter(AccessorABC):
         self._nd_collection = ndcollection
 
     def _line_report(self, report, ax, kws):
-        attribute = report.columns[0]
+        parameter = report.columns[0]
         x = report.index
-        y = report[attribute]
+        y = report[parameter]
 
-        kws.setdefault("label", attribute)
+        kws.setdefault("label", parameter)
         ax = sns.lineplot(x=x, y=y, ax=ax, **kws)
 
         return ax
 
-    def n_report(self, n, *, attribute=None, ax=None, **kws):
-        the_report = self._nd_collection.n_report(n, attribute=attribute)
+    def n_report(self, n, *, parameter=None, ax=None, **kws):
+        the_report = self._nd_collection.n_report(n, parameter=parameter)
         ax = self._line_report(the_report, ax, kws)
         ax.set_ylabel(f"Proportion of {n} causes")
         return ax
 
-    def unity_report(self, *, attribute=None, ax=None, **kws):
-        the_report = self._nd_collection.unity_report(attribute=attribute)
+    def unity_report(self, *, parameter=None, ax=None, **kws):
+        the_report = self._nd_collection.unity_report(parameter=parameter)
         ax = self._line_report(the_report, ax, kws)
         ax.set_ylabel("Proportion of unit causes")
         return ax
 
-    def mean_report(self, *, attribute=None, ax=None, **kws):
-        the_report = self._nd_collection.mean_report(attribute=attribute)
+    def mean_report(self, *, parameter=None, ax=None, **kws):
+        the_report = self._nd_collection.mean_report(parameter=parameter)
         ax = self._line_report(the_report, ax, kws)
         ax.set_ylabel("Mean of causes")
         return ax
@@ -78,13 +78,9 @@ class NDResultCollectionPlotter(AccessorABC):
 # =============================================================================
 
 
-def _describe_modes(ndres):
+def _modes_describe(ndres):
     modes = ndres.get_modes()
-    describe = modes.describe()
-    describe.loc["var"] = modes.var()
-    describe.loc["kurtosis"] = modes.kurtosis()
-    describe.loc["skew"] = modes.skew()
-    return describe
+    return {"var": modes.var()}
 
 
 def _make_metadata_cache(ndresults, progress_cls):
@@ -95,10 +91,10 @@ def _make_metadata_cache(ndresults, progress_cls):
     position_ranges = []
     time_resolutions = []
     position_resolutions = []
-    run_parameters = []
+    run_parameters_values = []
     extras = []
     causes = []
-    modes_describes = []
+    modes_variances = []
 
     if progress_cls:
         ndresults = progress_cls(
@@ -113,18 +109,22 @@ def _make_metadata_cache(ndresults, progress_cls):
         position_ranges.append(ndres.position_range)
         time_resolutions.append(ndres.time_res)
         position_resolutions.append(ndres.position_res)
-        run_parameters.append(ndres.run_params.to_dict())
+        run_parameters_values.append(ndres.run_params.to_dict())
         extras.append(ndres.extra_.to_dict())
         causes.append(ndres.causes_)
-        modes_describes.append(_describe_modes(ndres))
 
-    # all the modes are the same fo take the last one
+        modes_describe_dict = _modes_describe(ndres)
+        modes_variances.append(modes_describe_dict["var"])
+
+    # all the run_parameters/modes are the same fo take the last one
     modes = ndres.modes_
+    run_parameters = tuple(ndres.run_params.to_dict())
 
     cache = Bunch(
-        "ndcollectrion_metadata_cache",
+        "ndcollection_metadata_cache",
         {
             "modes": modes,
+            "run_parameters": run_parameters,
             "mnames": np.asarray(mnames),
             "mtypes": np.asarray(mtypes),
             "nmaps": np.asarray(nmaps),
@@ -132,10 +132,10 @@ def _make_metadata_cache(ndresults, progress_cls):
             "position_ranges": np.asarray(position_ranges),
             "time_resolutions": np.asarray(time_resolutions),
             "position_resolutions": np.asarray(position_resolutions),
-            "run_parameters": np.asarray(run_parameters),
+            "run_parameters_values": np.asarray(run_parameters_values),
             "extras": np.asarray(extras),
             "causes": np.asarray(causes),
-            "modes_describes": tuple(modes_describes),
+            "modes_variances_sum": sum(modes_variances),
         },
     )
 
@@ -176,123 +176,147 @@ class NDResultCollection(Sequence):
     def modes_(self):
         return self._metadata_cache.modes
 
+    @property
+    def run_parameters_(self):
+        return self._metadata_cache.run_parameters
+
     def __repr__(self):
         cls_name = type(self).__name__
         name = self.name
         length = len(self)
         storage = type(self._ndresults).__name__
-        return f"<{cls_name} {name!r} len={length} storage={storage}>"
+        return f"<{cls_name} {name!r} len={length} storage={storage!r}>"
 
     # CAUSES ==================================================================
 
     def disparity_matrix(self):
-        df = pd.DataFrame(list(self._metadata_cache.run_parameters))
+        df = pd.DataFrame(list(self._metadata_cache.run_parameters_values))
         df.index.name = "Iteration"
-        df.columns.name = "Attributes"
+        df.columns.name = "Parameters"
         return df
 
-    def changing_attributes(self):
+    def changing_parameters(self):
         dm = self.disparity_matrix()
         uniques = dm.apply(np.unique)
         changes = uniques.apply(len) != 1
         changes.name = "Changes"
         return changes
 
-    def _get_attribute_by(self, attribute):
-        if attribute is None:
-            wpc = self.changing_attributes()
+    def coerce_parameter(self, parameter):
+        if parameter is None:
+            wpc = self.changing_parameters()
             candidates = wpc[wpc].index.to_numpy()
             candidates_len = len(candidates)
             if candidates_len != 1:
                 raise ValueError(
-                    "The value of attribute is ambiguous since it has "
+                    "The value of 'parameter' is ambiguous since it has "
                     f"{candidates_len} candidates: {candidates}"
                 )
-            attribute = candidates[0]
-        return attribute
+            parameter = candidates[0]
+        elif parameter not in self.run_parameters_:
+            raise ValueError(f"Unknown run_parameter {parameter!r}")
+        return parameter
 
-    def causes_by_attribute(self, *, attribute=None):
-        attribute = self._get_attribute_by(attribute)
-        run_params = self._metadata_cache.run_parameters
+    def causes_by_parameter(self, *, parameter=None):
+        parameter = self.coerce_parameter(parameter)
+        run_params_values = self._metadata_cache.run_parameters_values
         causes = self._metadata_cache.causes
 
         columns = defaultdict(list)
-        for rp, causes in zip(run_params, causes):
-            columns[("Attributes", attribute)].append(rp[attribute])
+        for rp_value, causes in zip(run_params_values, causes):
+            columns[("Parameters", parameter)].append(rp_value[parameter])
             columns[("", "Causes")].append(causes)
 
         cdf = pd.DataFrame.from_dict(columns)
 
         cdf.index.name = "Iteration"
-        cdf["Attributes"] -= cdf["Attributes"].min()
+        cdf["Parameters"] -= cdf["Parameters"].min()
 
-        # put al the attributes together
+        # put al the parameters together
         cdf = cdf[np.sort(cdf.columns)[::-1]]
 
         return cdf
 
-    def unique_causes(self, *, attribute=None):
-        cba = self.causes_by_attribute(attribute=attribute)
+    def unique_causes(self, *, parameter=None):
+        cba = self.causes_by_parameter(parameter=parameter)
         return cba[("", "Causes")].unique()
 
-    def n_report(self, n, *, attribute=None):
-        attribute = self._get_attribute_by(attribute)
-        cdf = self.causes_by_attribute(attribute=attribute)
+    def n_report(self, n, *, parameter=None):
+        parameter = self.coerce_parameter(parameter)
+        cdf = self.causes_by_parameter(parameter=parameter)
 
-        values = cdf[("Attributes", attribute)]
+        values = cdf[("Parameters", parameter)]
         crosstab = pd.crosstab(values, cdf["", "Causes"])
         n_ity = crosstab.get(n, 0) / crosstab.sum(axis="columns")
 
-        the_report = pd.DataFrame(n_ity, columns=[attribute])
+        the_report = pd.DataFrame(n_ity, columns=[parameter])
         the_report.index.name = "Disparity"
         the_report.columns.name = "Causes"
 
         return the_report
 
-    def unity_report(self, *, attribute=None):
-        return self.n_report(1, attribute=attribute)
+    def unity_report(self, *, parameter=None):
+        return self.n_report(1, parameter=parameter)
 
-    def mean_report(self, *, attribute=None):
-        attribute = self._get_attribute_by(attribute)
-        cdf = self.causes_by_attribute(attribute=attribute)
+    def mean_report(self, *, parameter=None):
+        parameter = self.coerce_parameter(parameter)
+        cdf = self.causes_by_parameter(parameter=parameter)
 
-        groups = cdf.groupby(("Attributes", attribute))
+        groups = cdf.groupby(("Parameters", parameter))
         report = groups.mean()
 
         report.index.name = "Disparity"
 
-        report.columns = [attribute]
+        report.columns = [parameter]
         report.columns.name = "Causes"
 
         return report
 
-    def describe_causes(self, *, attribute=None):
-        attribute = self._get_attribute_by(attribute)
-        cdf = self.causes_by_attribute(attribute=attribute)
+    def describe_causes(self, *, parameter=None):
+        parameter = self.coerce_parameter(parameter)
+        cdf = self.causes_by_parameter(parameter=parameter)
 
-        groups = cdf.groupby(("Attributes", attribute))
+        groups = cdf.groupby(("Parameters", parameter))
         report = groups.describe()
 
         report.index.name = "Disparity"
 
         columns = report.columns
         report.columns = pd.MultiIndex.from_product(
-            [[attribute], columns.levels[-1]], names=["Causes", None]
+            [[parameter], columns.levels[-1]], names=["Causes", None]
         )
         report.columns.name = "Causes"
 
         return report
 
     # BIAS ====================================================================
-    def modes_variance(self):
-        variances_by_res = []
-        for modes_describe in self._metadata_cache.modes_describes:
-            variances_by_res.append(modes_describe.loc["var"])
-        variances = pd.DataFrame.from_records(variances_by_res).sum()
-        variances.name = "var"
-        return variances
+    def modes_variance_sum(self):
+        varsum = self._metadata_cache.modes_variances_sum.copy()
+        varsum.name = "VarSum"
+        return varsum
 
+    def coerce_mode(self, mode):
+        if mode is None:
+            # maybe two modes have exactly the same variance_sum
+            # for this reason we dont use argmax that only return the first max
+            modes_varsum = self.modes_variance_sum()
+            maxvalue = modes_varsum.max()
 
+            candidates = modes_varsum.index[modes_varsum == maxvalue]
+            candidates_len = len(candidates)
+
+            if candidates_len != 1:
+                raise ValueError(
+                    "The value of 'mode' is ambiguous since it has "
+                    f"{candidates_len} candidates: {candidates}"
+                )
+
+            mode = candidates[0]
+
+        elif mode not in self.modes_:
+            raise ValueError(f"Unknown mode {mode!r}")
+
+        return mode
 
     def bias(self, *, mode=None):
-        mode = self._coherce_mode(mode)
+        mode = self.coerce_mode(mode)

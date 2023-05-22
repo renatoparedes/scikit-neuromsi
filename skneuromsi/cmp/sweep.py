@@ -142,7 +142,7 @@ class ParameterSweep:
     def run(self, **run_kws):
         if self._target in run_kws:
             raise TypeError(
-                f"The parameter '{self._target}' "
+                f"Parameter '{self._target}' "
                 f"are under control of {type(self)!r} instance"
             )
 

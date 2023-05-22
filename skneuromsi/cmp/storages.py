@@ -3,10 +3,6 @@ import atexit
 import contextlib
 import shutil
 import tempfile
-from collections import Counter
-from collections.abc import MutableSequence
-import functools
-import pathlib
 import os
 
 import numpy as np

@@ -23,7 +23,7 @@ model = Cuppini2017()
 
 rep = ParameterSweep(
     model,
-    repeat=10,
+    repeat=2,
     n_jobs=-1,
     target="auditory_position",
     seed=41,
