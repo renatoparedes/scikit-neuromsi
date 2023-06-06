@@ -104,7 +104,6 @@ class ParameterAliasTemplate:
         variables = set()
         for match in tpl.pattern.finditer(tpl.template):
             variables.add(match[match.lastgroup])
-
         return frozenset(variables)
 
     def render(self, context) -> str:
@@ -127,6 +126,7 @@ class SKNMSIRunConfig:
     _result_cls: result.NDResult
     _model_name: str
     _model_type: str
+    _output_mode: str
 
     # initialization
 
@@ -163,7 +163,6 @@ class SKNMSIRunConfig:
         def parse_run_conf(conf, name):
             cache = {}
             for patpl in conf:
-
                 if isinstance(patpl, Mapping):
                     patpl = ParameterAliasTemplate(**patpl)
 
@@ -187,6 +186,7 @@ class SKNMSIRunConfig:
             getattr(method_class, "_model_name", method_class.__name__)
         )
         _model_type = method_class._model_type
+        _output_mode = method_class._output_mode
 
         return cls(
             _model_name=_model_name,
@@ -194,6 +194,7 @@ class SKNMSIRunConfig:
             _input=_input,
             _output=_output,
             _result_cls=_result,
+            _output_mode=_output_mode,
         )
 
     # API
@@ -232,7 +233,6 @@ class SKNMSIRunConfig:
         return at_map
 
     def make_run_output_alias_map(self, context):
-
         at_map = frozenbidict(
             (patpl.target, patpl.render(context)) for patpl in self._output
         )
@@ -363,7 +363,6 @@ class SKNMSIRunConfig:
 
         @functools.wraps(run_method)
         def wrapper(*args, **kwargs):
-
             # if some parameters are not valid in the aliased function
             # we must raise a type error with the correct message
             invalid_kws = set(kwargs).difference(
@@ -390,6 +389,9 @@ class SKNMSIRunConfig:
                 for k, v in bound_params.kwargs.items()
             }
             response, extra = run_method(*target_args, **target_kwargs)
+            if self._output_mode not in response:
+                raise ValueError(f"No output mode {self._output_mode} found")
+
             causes = calculate_causes_method(**response, **extra)
 
             # now we rename the output
@@ -403,6 +405,7 @@ class SKNMSIRunConfig:
             return self._result_cls(
                 mname=self._model_name,
                 mtype=self._model_type,
+                output_mode=self._output_mode,
                 nmap=output_alias_map,
                 nddata=response_aliased,
                 time_range=time_range,
@@ -483,6 +486,7 @@ TO_REDEFINE = [
     ("_run_input", "Class attribute"),
     ("_run_output", "Class attribute"),
     ("_model_type", "Class attribute"),
+    ("_output_mode", "Class attribute"),
     #
     # instance level redefinition
     ("time_range", "Attribute"),
@@ -515,7 +519,11 @@ class SKNMSIMethodABC:
         # validate redefinitions
         for attr, attr_type in TO_REDEFINE:
             if not hasattr(cls, attr):
-                msg = f"{attr_type} '{attr}' must be redefined"
+                cls_name = cls.__name__
+                msg = (
+                    f"{attr_type} '{attr}' must be redefined "
+                    f"in class {cls_name}"
+                )
                 raise TypeError(msg)
 
         # redefine with default

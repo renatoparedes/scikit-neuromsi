@@ -86,6 +86,7 @@ def _modes_describe(ndres):
 def _make_metadata_cache(ndresults, progress_cls):
     mnames = []
     mtypes = []
+    output_modes = []
     nmaps = []
     time_ranges = []
     position_ranges = []
@@ -104,6 +105,7 @@ def _make_metadata_cache(ndresults, progress_cls):
     for ndres in ndresults:
         mnames.append(ndres.mname)
         mtypes.append(ndres.mtype)
+        output_modes.append(ndres.output_mode)
         nmaps.append(ndres.nmap_)
         time_ranges.append(ndres.time_range)
         position_ranges.append(ndres.position_range)
@@ -120,6 +122,12 @@ def _make_metadata_cache(ndresults, progress_cls):
     modes = ndres.modes_
     run_parameters = tuple(ndres.run_params.to_dict())
 
+    # Resume the series collection into a single one we use sum instead of
+    # numpy sum, because we want a pandas.Serie and not a numpy array.
+    # Also we assign the name to the Serie.
+    modes_variances_sum = sum(modes_variances)
+    modes_variances_sum.name = "VarSum"
+
     cache = Bunch(
         "ndcollection_metadata_cache",
         {
@@ -127,6 +135,7 @@ def _make_metadata_cache(ndresults, progress_cls):
             "run_parameters": run_parameters,
             "mnames": np.asarray(mnames),
             "mtypes": np.asarray(mtypes),
+            "output_modes": np.asarray(output_modes),
             "nmaps": np.asarray(nmaps),
             "time_ranges": np.asarray(time_ranges),
             "position_ranges": np.asarray(position_ranges),
@@ -135,7 +144,7 @@ def _make_metadata_cache(ndresults, progress_cls):
             "run_parameters_values": np.asarray(run_parameters_values),
             "extras": np.asarray(extras),
             "causes": np.asarray(causes),
-            "modes_variances_sum": sum(modes_variances),
+            "modes_variances_sum": modes_variances_sum,
         },
     )
 
@@ -292,7 +301,6 @@ class NDResultCollection(Sequence):
     # BIAS ====================================================================
     def modes_variance_sum(self):
         varsum = self._metadata_cache.modes_variances_sum.copy()
-        varsum.name = "VarSum"
         return varsum
 
     def coerce_mode(self, mode):

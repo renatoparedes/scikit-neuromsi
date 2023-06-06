@@ -50,6 +50,7 @@ class AlaisBurr2004(SKNMSIMethodABC):
         {"target": "auditory_weight", "template": "${mode0}_weight"},
         {"target": "visual_weight", "template": "${mode1}_weight"},
     ]
+    _output_mode = "multi"
 
     def __init__(
         self,

@@ -45,6 +45,7 @@ class NDResult:
         *,
         mname,
         mtype,
+        output_mode,
         nmap,
         nddata,
         time_range,
@@ -57,6 +58,7 @@ class NDResult:
     ):
         self._mname = mname
         self._mtype = mtype
+        self._output_mode = output_mode
         self._nmap = dict(nmap)
         self._nddata = (
             modes_to_data_array(nddata) if isinstance(nddata, dict) else nddata
@@ -80,6 +82,10 @@ class NDResult:
     @property
     def mtype(self):
         return self._mtype
+
+    @property
+    def output_mode(self):
+        return self._output_mode
 
     @property
     def dims(self):
@@ -142,7 +148,6 @@ class NDResult:
     # UTILS ===================================================================
 
     def __repr__(self):
-
         cls_name = type(self).__name__
         mname = self.mname
         modes = self.modes_
@@ -160,12 +165,10 @@ class NDResult:
 
     # ACCESSORS ===============================================================
 
-
     @property
     def plot(self):
         """Plot accessor."""
         return ResultPlotter(self)
-
 
     @property
     def stats(self):
@@ -239,7 +242,6 @@ def modes_to_data_array(nddata):
 
     # we iterate over each mode
     for mode_name, mode_coords in nddata.items():
-
         # NDResult always expects to have more than one coordinate per
         # position. If it has only one coordinate, it puts it into a
         # collection of length 1, so that it can continue te operations.
@@ -258,7 +260,6 @@ def modes_to_data_array(nddata):
         nd_mode_coords = np.dstack(mode_coords)
 
         if coords is None:  # first time we need to populate the indexes
-
             # retrieve how many times, positions and
             # position coordinates has the modes
             times_n, positions_n, pcoords_n = np.shape(nd_mode_coords)

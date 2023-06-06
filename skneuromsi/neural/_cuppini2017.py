@@ -72,6 +72,7 @@ class Cuppini2017(SKNMSIMethodABC):
         {"target": "auditory", "template": "${mode0}"},
         {"target": "visual", "template": "${mode1}"},
     ]
+    _output_mode = "multi"
 
     def __init__(
         self,
