@@ -198,7 +198,7 @@ def test_cuppini2014_temporal_filter_audiovisual_stimuli():
     # In Raij 2010, for an audiovisual stimuli
     # Calcarine cortex visual response latency is 47 ms and Hechsl Gyrus auditory response latency is 23 ms.
 
-    model = Cuppini2014()
+    model = Cuppini2014(time_range=(0, 125))
     res = model.run(
         auditory_intensity=1.5,
         visual_intensity=0.9,
@@ -230,7 +230,7 @@ def test_cuppini2014_fission_illusion():
         onset=25,
         soa=56,
     )
-    fp = findpeaks(method="topology", verbose=0)
+    fp = findpeaks(method="topology", verbose=0, limit=0.40)
     X = res.get_modes("visual").query("positions==90").visual.values
     results = fp.fit(X)
     flashes = results["df"].peak.sum()

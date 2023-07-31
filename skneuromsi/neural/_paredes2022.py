@@ -763,17 +763,6 @@ class Paredes2022(SKNMSIMethodABC):
             "multi_total_input": multisensory_total_inputs,
         }
 
-    def calculate_perceived_positions(self, auditory, visual, multi, **kwargs):
-        a = auditory[-1, :].argmax()
-        v = visual[-1, :].argmax()
-        m = multi[-1, :].argmax()
-
-        return {
-            "perceived_auditory_position": a,
-            "perceived_visual_position": v,
-            "perceived_multi_position": m,
-        }
-
     def calculate_causes(
         self, multi, **kwargs
     ):  # TODO Include causes for space and time

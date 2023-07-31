@@ -553,13 +553,3 @@ class Cuppini2014(SKNMSIMethodABC):
             "auditory_filter_input": auditoryfilter_inputs,
             "visual_filter_input": visualfilter_inputs,
         }
-
-    def calculate_perceived_positions(self, auditory, visual, multi, **kwargs):
-        a = auditory[-1, :].argmax()
-        v = visual[-1, :].argmax()
-        m = multi[-1, :].argmax()
-
-        return {
-            "perceived_auditory_position": a,
-            "perceived_visual_position": v,
-        }

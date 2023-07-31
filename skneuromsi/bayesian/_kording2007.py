@@ -351,14 +351,3 @@ class Kording2007(SKNMSIMethodABC):
         if p_common_cause > 0.5:
             return 1
         return 2
-
-    def calculate_perceived_positions(self, auditory, visual, multi, **kwargs):
-        a = auditory.argmax()
-        v = visual.argmax()
-        m = multi.argmax()
-
-        return {
-            "perceived_auditory_position": a,
-            "perceived_visual_position": v,
-            "perceived_multi_position": m,
-        }
