@@ -38,6 +38,7 @@ REQUIREMENTS = [
     "xarray",
     "tqdm",
     "methodtools",
+    "findpeaks",
 ]
 
 with open(PATH / "skneuromsi" / "__init__.py") as fp:

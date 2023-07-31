@@ -394,6 +394,7 @@ class Cuppini2014(SKNMSIMethodABC):
             stimuli=point_auditory_stimuli,
             stimuli_duration=auditory_duration,
             onset=onset,
+            simulation_length=self._time_range[1],
             stimuli_n=auditory_stim_n,
             soa=soa,
         )
@@ -402,6 +403,7 @@ class Cuppini2014(SKNMSIMethodABC):
             stimuli=point_visual_stimuli,
             stimuli_duration=visual_duration,
             onset=onset,
+            simulation_length=self._time_range[1],
             stimuli_n=visual_stim_n,
         )
 
