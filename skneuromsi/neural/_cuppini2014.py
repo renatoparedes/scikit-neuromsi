@@ -15,6 +15,8 @@ import brainpy as bp
 
 import copy
 
+from findpeaks import findpeaks
+
 import numpy as np
 
 from ..core import SKNMSIMethodABC

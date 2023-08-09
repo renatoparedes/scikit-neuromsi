@@ -15,9 +15,9 @@ import brainpy as bp
 
 import copy
 
-import numpy as np
+from findpeaks import findpeaks
 
-from scipy.signal import find_peaks
+import numpy as np
 
 from ..core import SKNMSIMethodABC
 
@@ -373,6 +373,10 @@ class Cuppini2017(SKNMSIMethodABC):
         return response, extra
 
     def calculate_causes(self, multi, **kwargs):
-        peaks_idx, _ = find_peaks(multi[-1, :], prominence=0.15, height=0.15)
-        peaks = np.size(peaks_idx)
+
+        fp = findpeaks(method="topology", verbose=0)
+        X = multi[-1, :]
+        results = fp.fit(X)
+        peaks = results["df"].query("peak==True & score>0.15").score.size
+
         return peaks

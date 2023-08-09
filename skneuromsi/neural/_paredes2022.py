@@ -17,7 +17,7 @@ import copy
 
 import numpy as np
 
-from scipy.signal import find_peaks
+from findpeaks import findpeaks
 
 from ..core import SKNMSIMethodABC
 
@@ -442,10 +442,10 @@ class Paredes2022(SKNMSIMethodABC):
         visual_duration=12,
         auditory_position=None,
         visual_position=None,
-        auditory_intensity=1.5,
-        visual_intensity=1.1,
+        auditory_intensity=2.4,
+        visual_intensity=1.4,
         noise=False,
-        noise_level=0.07,
+        noise_level=0.40,
         lateral_excitation=2,
         lateral_inhibition=1.8,
         cross_modal_weight=0.075,
@@ -766,15 +766,12 @@ class Paredes2022(SKNMSIMethodABC):
     def calculate_causes(
         self, multi, **kwargs
     ):  # TODO Include causes for space and time
-
         # if dimension == "space":
-        #    peaks_idx, _ = find_peaks(multi[-1, :], prominence=0.30, height=0.40)
-        #    peaks = np.size(peaks_idx)
-        #    return peaks
 
+        fp = findpeaks(method="topology", verbose=0)
         position = int(self._position_range[1] / 2)
-        peaks_idx, _ = find_peaks(
-            multi[:, position], prominence=0.15, height=0.40
-        )
-        peaks = np.size(peaks_idx)
+        X = multi[:, position]
+        results = fp.fit(X)
+        peaks = results["df"].query("peak==True & score>0.4").score.size
+
         return peaks
