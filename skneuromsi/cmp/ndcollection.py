@@ -86,7 +86,6 @@ def _modes_describe(ndres):
 def _make_metadata_cache(ndresults, progress_cls):
     mnames = []
     mtypes = []
-    output_modes = []
     nmaps = []
     time_ranges = []
     position_ranges = []
@@ -105,7 +104,6 @@ def _make_metadata_cache(ndresults, progress_cls):
     for ndres in ndresults:
         mnames.append(ndres.mname)
         mtypes.append(ndres.mtype)
-        output_modes.append(ndres.output_mode)
         nmaps.append(ndres.nmap_)
         time_ranges.append(ndres.time_range)
         position_ranges.append(ndres.position_range)
@@ -118,13 +116,14 @@ def _make_metadata_cache(ndresults, progress_cls):
         modes_describe_dict = _modes_describe(ndres)
         modes_variances.append(modes_describe_dict["var"])
 
-    # all the run_parameters/modes are the same fo take the last one
+    # all the run_parameters/modes are the same, so lets take the last one
     modes = ndres.modes_
+    output_mode = ndres.output_mode
     run_parameters = tuple(ndres.run_params.to_dict())
 
     # Resume the series collection into a single one we use sum instead of
-    # numpy sum, because we want a pandas.Serie and not a numpy array.
-    # Also we assign the name to the Serie.
+    # numpy sum, because we want a pandas.Series and not a numpy array.
+    # Also we assign the name to the Series.
     modes_variances_sum = sum(modes_variances)
     modes_variances_sum.name = "VarSum"
 
@@ -135,7 +134,7 @@ def _make_metadata_cache(ndresults, progress_cls):
             "run_parameters": run_parameters,
             "mnames": np.asarray(mnames),
             "mtypes": np.asarray(mtypes),
-            "output_modes": np.asarray(output_modes),
+            "output_mode": output_mode,
             "nmaps": np.asarray(nmaps),
             "time_ranges": np.asarray(time_ranges),
             "position_ranges": np.asarray(position_ranges),
@@ -184,6 +183,15 @@ class NDResultCollection(Sequence):
     @property
     def modes_(self):
         return self._metadata_cache.modes
+
+    @property
+    def output_mode_(self):
+        return self._metadata_cache.output_mode
+
+    @property
+    def input_modes_(self):
+        candidates = self.modes_
+        return candidates[~(candidates == self.output_mode_)]
 
     @property
     def run_parameters_(self):
@@ -326,5 +334,42 @@ class NDResultCollection(Sequence):
 
         return mode
 
-    def bias(self, *, mode=None):
+    def bias(self, influence_parameter, *, dim="times", mode=None, changing_parameter=None):
         mode = self.coerce_mode(mode)
+        changing_parameter = self.coerce_parameter(changing_parameter)
+        print("que la dimension sea automatica")
+
+        unchanged_parameters = ~self.changing_parameters()
+        if not unchanged_parameters[influence_parameter]:
+            raise ValueError(
+                f"influence_parameter {influence_parameter!r} are not fixed"
+            )
+        elif influence_parameter == changing_parameter:
+            raise ValueError(
+                "It is not possible to evaluate the bias  of "
+                "influencing a parameter against itself."
+            )
+        influence_value = self.disparity_matrix()[influence_parameter][0]
+
+        biases = np.zeros(len(self))
+        for idx, res in enumerate(self._ndresults):
+
+            ref_value = res.run_params[changing_parameter]
+
+            # aca sacamos todos los valores del modo que nos interesa
+            modes_values = res.get_modes(mode)
+
+            # determinamos los valores del modo en la dimension que nos interesa
+            max_dim_index = modes_values.index.get_level_values(dim).max()
+            max_dim_values = modes_values.xs(
+                max_dim_index, level=dim
+            ).values.T[0]
+            current_dim_position = max_dim_values.argmax()
+
+            bias = np.abs(ref_value - current_dim_position) / np.abs(
+                current_dim_position - influence_value
+            )
+
+            biases[idx] = bias
+
+        return biases
