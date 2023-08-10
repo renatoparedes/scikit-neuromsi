@@ -388,11 +388,7 @@ class NDResultCollection(Sequence):
             raise ValueError(
                 f"influence_parameter {influence_parameter!r} are not fixed"
             )
-        elif influence_parameter == changing_parameter:
-            raise ValueError(
-                "It is not possible to evaluate the bias  of "
-                "influencing a parameter against itself."
-            )
+
         influence_value = self.disparity_matrix()[influence_parameter][0]
 
         ndresults = self._ndresults
@@ -416,8 +412,8 @@ class NDResultCollection(Sequence):
             ).values.T[0]
             current_dim_position = max_dim_values.argmax()
 
-            bias = np.abs(ref_value - current_dim_position) / np.abs(
-                current_dim_position - influence_value
+            bias = np.abs(current_dim_position - ref_value) / np.abs(
+                ref_value - influence_value
             )
 
             biases[idx] = bias
