@@ -31,6 +31,7 @@ from tqdm.auto import tqdm
 
 import seaborn as sns
 
+from ..core import constants as cons
 from ..utils import AccessorABC, Bunch
 
 # =============================================================================
@@ -70,6 +71,28 @@ class NDResultCollectionPlotter(AccessorABC):
         the_report = self._nd_collection.mean_report(parameter=parameter)
         ax = self._line_report(the_report, ax, kws)
         ax.set_ylabel("Mean of causes")
+        return ax
+
+    def bias(
+        self,
+        influence_parameter,
+        *,
+        changing_parameter=None,
+        dim=None,
+        mode=None,
+        show_progress=True,
+        ax=None,
+        **kws,
+    ):
+        the_biases = self._nd_collection.bias(
+            influence_parameter,
+            changing_parameter=changing_parameter,
+            dim=dim,
+            mode=mode,
+            show_progress=show_progress,
+        )
+        ax = self._line_report(the_biases, ax, kws)
+        ax.set_ylabel("Proportion of bias")
         return ax
 
 
@@ -120,6 +143,7 @@ def _make_metadata_cache(ndresults, progress_cls):
     modes = ndres.modes_
     output_mode = ndres.output_mode
     run_parameters = tuple(ndres.run_params.to_dict())
+    dims = ndres.dims
 
     # Resume the series collection into a single one we use sum instead of
     # numpy sum, because we want a pandas.Series and not a numpy array.
@@ -144,6 +168,7 @@ def _make_metadata_cache(ndresults, progress_cls):
             "extras": np.asarray(extras),
             "causes": np.asarray(causes),
             "modes_variances_sum": modes_variances_sum,
+            "dims": dims,
         },
     )
 
@@ -196,6 +221,10 @@ class NDResultCollection(Sequence):
     @property
     def run_parameters_(self):
         return self._metadata_cache.run_parameters
+
+    @property
+    def dims_(self):
+        return self._metadata_cache.dims
 
     def __repr__(self):
         cls_name = type(self).__name__
@@ -334,10 +363,25 @@ class NDResultCollection(Sequence):
 
         return mode
 
-    def bias(self, influence_parameter, *, dim="times", mode=None, changing_parameter=None):
+    def coerce_dimension(self, dim):
+        if dim is None:
+            dim = cons.D_TIMES
+        elif dim not in self.dims_:
+            raise ValueError(f"Unknow dimension {dim}")
+        return dim
+
+    def bias(
+        self,
+        influence_parameter,
+        *,
+        changing_parameter=None,
+        dim=None,
+        mode=None,
+        show_progress=True,
+    ):
         mode = self.coerce_mode(mode)
         changing_parameter = self.coerce_parameter(changing_parameter)
-        print("que la dimension sea automatica")
+        dim = self.coerce_dimension(dim)
 
         unchanged_parameters = ~self.changing_parameters()
         if not unchanged_parameters[influence_parameter]:
@@ -351,8 +395,14 @@ class NDResultCollection(Sequence):
             )
         influence_value = self.disparity_matrix()[influence_parameter][0]
 
+        ndresults = self._ndresults
+        if show_progress and self._progress_cls is not None:
+            ndresults = self._progress_cls(
+                iterable=ndresults, desc=f"Calculating biases"
+            )
+
         biases = np.zeros(len(self))
-        for idx, res in enumerate(self._ndresults):
+        for idx, res in enumerate(ndresults):
 
             ref_value = res.run_params[changing_parameter]
 
