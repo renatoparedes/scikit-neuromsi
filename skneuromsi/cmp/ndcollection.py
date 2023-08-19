@@ -84,15 +84,68 @@ class NDResultCollectionPlotter(AccessorABC):
         ax=None,
         **kws,
     ):
-        the_biases = self._nd_collection.bias(
-            influence_parameter,
+        the_bias = self._nd_collection.bias(
+            influence_parameter=influence_parameter,
             changing_parameter=changing_parameter,
             dim=dim,
             mode=mode,
             show_progress=show_progress,
         )
-        ax = self._line_report(the_biases, ax, kws)
-        ax.set_ylabel("Proportion of bias")
+
+        legend = kws.pop("legend", True)
+
+        kws.setdefault("estimator", "mean")
+
+        changing_parameter, influence_parameter, _ = the_bias.columns[0]
+        estimator = kws["estimator"].title()
+
+        kws.setdefault(
+            "label", f"{estimator} {changing_parameter}({influence_parameter})"
+        )
+
+        ax = sns.lineplot(data=the_bias, ax=ax, legend=False, **kws)
+
+        if legend:
+            ax.legend()
+
+        ax.set_ylabel("Bias")
+
+        return ax
+
+    def bias_mean(
+        self,
+        influence_parameter,
+        *,
+        changing_parameter=None,
+        dim=None,
+        mode=None,
+        show_progress=True,
+        ax=None,
+        **kws,
+    ):
+        the_bias = self._nd_collection.mean_bias(
+            influence_parameter=influence_parameter,
+            changing_parameter=changing_parameter,
+            dim=dim,
+            mode=mode,
+            show_progress=show_progress,
+        )
+
+        legend = kws.pop("legend", True)
+
+        changing_parameter, influence_parameter, _ = the_bias.columns[0]
+
+        kws.setdefault(
+            "label", f"Mean {changing_parameter}({influence_parameter})"
+        )
+
+        ax = sns.lineplot(data=the_bias, ax=ax, legend=False, **kws)
+
+        if legend:
+            ax.legend()
+
+        ax.set_ylabel("Bias")
+
         return ax
 
 
@@ -397,7 +450,7 @@ class NDResultCollection(Sequence):
                 iterable=ndresults, desc=f"Calculating biases"
             )
 
-        biases = np.zeros(len(self))
+        bias_arr = np.zeros(len(self))
         for idx, res in enumerate(ndresults):
 
             ref_value = res.run_params[changing_parameter]
@@ -405,7 +458,8 @@ class NDResultCollection(Sequence):
             # aca sacamos todos los valores del modo que nos interesa
             modes_values = res.get_modes(mode)
 
-            # determinamos los valores del modo en la dimension que nos interesa
+            # determinamos los valores del modo en la dimension
+            # que nos interesa
             max_dim_index = modes_values.index.get_level_values(dim).max()
             max_dim_values = modes_values.xs(
                 max_dim_index, level=dim
@@ -416,6 +470,60 @@ class NDResultCollection(Sequence):
                 ref_value - influence_value
             )
 
-            biases[idx] = bias
+            bias_arr[idx] = bias
 
-        return biases
+        # convertimos los bias_arr en un dataframe
+        dispm = self.disparity_matrix()[
+            [changing_parameter, influence_parameter]
+        ]
+
+        # el nuevo indice va a ser sale del valor relativo del
+        # parametro cambia "menos" el que influye
+        dispm_diff = dispm[changing_parameter] - dispm[influence_parameter]
+
+        # ahora necesitamos saber cuantas repetisiones hay en nuestros bias
+        cpd_len = len(dispm)
+        cpd_unique_len = len(np.unique(dispm[changing_parameter]))
+
+        repeat = cpd_len // cpd_unique_len
+        pos = cpd_len // repeat
+
+        # creamos el dataframe
+        bias_df = pd.DataFrame(bias_arr.reshape(pos, repeat))
+
+        # el indice esta repetido, por lo que solo queremos uno cada 'repeat'.
+        bias_df.index = pd.Index(dispm_diff.values[::repeat], name="Disparity")
+
+        # cramos un columna multi nivel
+        cnames = ["Changing parameter", "Influence parameter", "Iteration"]
+        cvalues = [
+            (changing_parameter, influence_parameter, it)
+            for it in bias_df.columns
+        ]
+        bias_df.columns = pd.MultiIndex.from_tuples(cvalues, names=cnames)
+
+        return bias_df
+
+    def bias_mean(
+        self,
+        influence_parameter,
+        *,
+        changing_parameter=None,
+        dim=None,
+        mode=None,
+        show_progress=True,
+    ):
+        bias = self.bias(
+            influence_parameter=influence_parameter,
+            changing_parameter=changing_parameter,
+            dim=dim,
+            mode=mode,
+            show_progress=show_progress,
+        )
+        mbias_df = bias.mean(axis=1).to_frame()
+
+        cnames = bias.columns.names[:-1] + ["Bias"]
+        cvalues = bias.columns[0][:-1] + ("mean",)
+        mbias_df.columns = pd.MultiIndex.from_tuples([cvalues], names=cnames)
+
+        return mbias_df
