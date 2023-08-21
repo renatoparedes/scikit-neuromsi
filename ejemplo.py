@@ -1,5 +1,6 @@
+from skneuromsi.cmp import storages
 from skneuromsi.neural import Cuppini2017
-from skneuromsi.cmp import ParameterSweep, storages
+from skneuromsi.cmp import ParameterSweep
 from skneuromsi.utils import Bunch
 import pandas as pd
 import numpy as np
@@ -23,10 +24,11 @@ model = Cuppini2017()
 
 rep = ParameterSweep(
     model,
-    repeat=2,
+    repeat=1,
     n_jobs=-1,
     target="auditory_position",
     seed=41,
 )
 
 res = rep.run(noise=True, visual_position=90)
+

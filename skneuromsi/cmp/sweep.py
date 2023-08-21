@@ -28,7 +28,7 @@ import numpy as np
 from tqdm.auto import tqdm
 
 from .ndcollection import NDResultCollection
-from .storages import coerce_storage_path, storage
+from .storages import storage
 
 # =============================================================================
 # CONSTANTS
@@ -54,7 +54,8 @@ class ParameterSweep:
         n_jobs=1,
         seed=None,
         tqdm_cls=tqdm,
-        result_storage=None,
+        storage="directory",
+        storage_kws=None,
     ):
         if repeat < 1:
             raise ValueError("'repeat must be >= 1'")
@@ -69,9 +70,8 @@ class ParameterSweep:
         self._seed = seed
         self._random = np.random.default_rng(seed)
         self._tqdm_cls = tqdm_cls
-        self._result_storage = coerce_storage_path(
-            result_storage, f"_{type(self).__name__}"
-        )
+        self._storage = storage
+        self._storage_kws = {} if storage_kws is None else dict(storage_kws)
 
         run_signature = inspect.signature(model.run)
         if self._target not in run_signature.parameters:
@@ -109,8 +109,12 @@ class ParameterSweep:
         return self._random
 
     @property
-    def result_storage(self):
-        return self._result_storage
+    def storage(self):
+        return self._storage
+
+    @property
+    def storage_kws(self):
+        return self._storage_kws.copy()
 
     def _run_kwargs_combinations(self, run_kws):
         iinfo = np.iinfo(int)
@@ -159,9 +163,14 @@ class ParameterSweep:
                 )
             )
 
-        # memmap
+        # Prepare to run
+        storage_type = self._storage
+        size = runs_total
+        tag = type(self).__name__
+        storage_kws = self._storage_kws
+
         with storage(
-            "directory", size=runs_total, dir=self._result_storage
+            storage_type, size=size, tag=tag, **storage_kws
         ) as results:
             # execute the first iteration synchronous so if some configuration
             # fails we can catch it here
@@ -175,8 +184,6 @@ class ParameterSweep:
                     for cit, rkw, rkw_seed in rkw_combs
                 )
 
-        result = NDResultCollection(
-            type(self).__name__, results, tqdm_cls=self._tqdm_cls
-        )
+        result = NDResultCollection(tag, results, tqdm_cls=self._tqdm_cls)
 
         return result
