@@ -137,9 +137,37 @@ _STORAGES = {
 
 @contextlib.contextmanager
 def storage(result_storage_type, size, **kwargs):
+    """Context manager for result storage.
+
+    This context manager creates and manages a result storage instance based on
+    the provided storage type. It yields the storage instance to the context
+    block for use. After the context block is executed, it locks the storage
+    instance.
+
+    Parameters
+    ----------
+    result_storage_type : str
+        The type of result storage to create.
+    size : int
+        The size of the storage.
+    **kwargs
+        Additional keyword arguments specific to the storage type.
+
+    Yields
+    ------
+    result_storage_instance
+        An instance of the result storage for use within the context block.
+
+    Example
+    -------
+    >>> with storage("type1", 100) as stg:
+    ...     stg.store("data1")
+    ...
+    """
     cls = _STORAGES[result_storage_type]
     stg = cls(size, **kwargs)
     try:
         yield stg
     finally:
         stg.lock()
+
