@@ -177,7 +177,9 @@ class NDResultCollection(Sequence):
         Returns
         -------
         pandas.DataFrame
-            A DataFrame representing the disparity matrix."""
+            A DataFrame representing the disparity matrix.
+
+        """
         df = pd.DataFrame(list(self._metadata_cache.run_parameters_values))
         df.index.name = "Iteration"
         df.columns.name = "Parameters"
