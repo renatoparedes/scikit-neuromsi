@@ -159,6 +159,7 @@ class NDResultCollection(Sequence):
         return self._metadata_cache.dims
 
     def __repr__(self):
+        """x.__repr__() <==> repr(x)"""
         cls_name = type(self).__name__
         name = self.name
         length = len(self)
@@ -168,20 +169,69 @@ class NDResultCollection(Sequence):
     # PARAMETERS ANALYSIS =====================================================
 
     def disparity_matrix(self):
+        """Generate a disparity matrix from run parameters values.
+
+        The resulting DataFrame has iterations as rows and parameters as
+        columns.
+
+        Returns
+        -------
+        pandas.DataFrame
+            A DataFrame representing the disparity matrix."""
         df = pd.DataFrame(list(self._metadata_cache.run_parameters_values))
         df.index.name = "Iteration"
         df.columns.name = "Parameters"
         return df
 
     def changing_parameters(self):
+        """Determine run parameters wich has multiple values.
+
+        This method calculates parameters that exhibit changing values
+        across the disparity matrix. It identifies parameters for which
+        the unique values are not consistent across all data points.
+
+        Returns
+        -------
+        pandas.Series
+            A series indicating whether each parameter has changing values
+            across the disparity matrix.
+
+        """
         dm = self.disparity_matrix()
         uniques = dm.apply(np.unique)
         changes = uniques.apply(len) != 1
         changes.name = "Changes"
         return changes
 
-    def coerce_parameter(self, parameter):
-        if parameter is None:
+    def coerce_parameter(self, prefer=None):
+        """Coerce the provided run parameter or select a preferred one.
+
+        If 'prefer' is None, this method selects a run parameter based on which
+        parameter is called with more than one value. If multiple changing
+        parameters are available, The method fails.
+
+        If 'prefer' is provided, it is validated against the available run
+        parameters.
+
+        Parameters
+        ----------
+        prefer : str or None, optional
+            The run parameter to be coerced or selected.
+
+        Returns
+        -------
+        str
+            The coerced or preferred run parameter.
+
+        Raises
+        ------
+        ValueError
+            If the value of 'parameter' is ambiguous due to multiple candidates
+            or if the provided run parameter is not in the available run
+            parameters.
+
+        """
+        if prefer is None:
             wpc = self.changing_parameters()
             candidates = wpc[wpc].index.to_numpy()
             candidates_len = len(candidates)
@@ -190,18 +240,56 @@ class NDResultCollection(Sequence):
                     "The value of 'parameter' is ambiguous since it has "
                     f"{candidates_len} candidates: {candidates}"
                 )
-            parameter = candidates[0]
-        elif parameter not in self.run_parameters_:
-            raise ValueError(f"Unknown run_parameter {parameter!r}")
-        return parameter
+            prefer = candidates[0]
+        elif prefer not in self.run_parameters_:
+            raise ValueError(f"Unknown run_parameter {prefer!r}")
+        return prefer
 
     def modes_variance_sum(self):
+        """Get the sum of variances for modes.
+
+        This method returns the sum of variances associated with modes.
+
+        Returns
+        -------
+        pandas.Series
+            The sum of variances for modes.
+
+        """
         cache = self._metadata_cache
         varsum = cache.modes_variances_sum.copy()
         return varsum
 
-    def coerce_mode(self, mode):
-        if mode is None:
+    def coerce_mode(self, prefer=None):
+        """Coerces the provided preferred mode or selects a mode with maximum \
+        variance.
+
+        If 'prefer' is None, this method selects the mode with the maximum
+        variance from available modes. If multiple modes have the same
+        variance, the method fails.
+
+        If 'prefer' is provided, it is validated against the available modes.
+
+        Parameters
+        ----------
+        prefer : str or None, optional
+            The mode to be validated or selected.
+
+        Returns
+        -------
+        str
+            The validate or selected mode.
+
+        Raises
+        ------
+        ValueError
+            If the value of 'prefer' is ambiguous due to multiple candidates
+            with the same variance or if the provided preferred mode is not in
+            the available modes.
+
+        """
+
+        if prefer is None:
             # maybe two modes have exactly the same variance_sum
             # for this reason we dont use argmax that only return the first max
             modes_varsum = self.modes_variance_sum()
@@ -216,15 +304,15 @@ class NDResultCollection(Sequence):
                     f"{candidates_len} candidates: {candidates}"
                 )
 
-            mode = candidates[0]
+            prefer = candidates[0]
 
-        elif mode not in self.modes_:
-            raise ValueError(f"Unknown mode {mode!r}")
+        elif prefer not in self.modes_:
+            raise ValueError(f"Unknown mode {prefer!r}")
 
-        return mode
+        return prefer
 
     def coerce_dimension(self, prefer=None):
-        """Coerce and validate the provided prefered dimension or select the \
+        """Coerce and validate the provided preferred dimension or select the \
         default dimension if None.
 
         If no dimension is provided, the method prefers to use the 'time'
@@ -233,7 +321,7 @@ class NDResultCollection(Sequence):
 
         Parameters
         ----------
-        prefer : str, optional
+        prefer : str or None, optional
             The dimension to be coerced, or the default dimension if None is
             provided.
 
@@ -241,6 +329,12 @@ class NDResultCollection(Sequence):
         -------
         str
             The coerced or selected dimension.
+
+        Raises
+        ------
+        ValueError
+            If the provided preferred dimension is not in the available
+            dimensions.
 
         """
         if prefer is None:
