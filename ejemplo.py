@@ -28,7 +28,9 @@ rep = ParameterSweep(
     n_jobs=-1,
     target="auditory_position",
     seed=41,
+    storage="memory"
 )
 
 res = rep.run(noise=True, visual_position=90)
 
+import ipdb; ipdb.set_trace()
