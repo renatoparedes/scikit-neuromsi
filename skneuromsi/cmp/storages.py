@@ -131,8 +131,8 @@ class DirectoryStorage(StorageABC):
 # IN MEMORY
 # =============================================================================
 
-class MemoryStorage(StorageABC):
 
+class MemoryStorage(StorageABC):
     def __init__(self, size, tag="", dir=None, lock_clean=True):
         self._dir_storage = DirectoryStorage(size=size, tag=tag, dir=dir)
         self._data = None
@@ -147,7 +147,9 @@ class MemoryStorage(StorageABC):
             self._dir_storage = None
 
     def __len__(self):
-        return len(self._dir_storage) if self._data is None else len(self._data)
+        return (
+            len(self._dir_storage) if self._data is None else len(self._data)
+        )
 
     def __getitem__(self, idx):
         return self._data.__getitem__(idx)
@@ -155,15 +157,13 @@ class MemoryStorage(StorageABC):
     def __setitem__(self, idx, v):
         self._dir_storage.__setitem__(idx, v)
 
+
 # =============================================================================
 # FACTORY
 # =============================================================================
 
 
-_STORAGES = {
-    "directory": DirectoryStorage,
-    "memory": MemoryStorage
-}
+_STORAGES = {"directory": DirectoryStorage, "memory": MemoryStorage}
 
 
 @contextlib.contextmanager

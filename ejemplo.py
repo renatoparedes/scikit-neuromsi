@@ -21,16 +21,17 @@ import sys
 tqdm.pandas()
 
 model = Cuppini2017()
+res = model.run()
 
-rep = ParameterSweep(
-    model,
-    repeat=1,
-    n_jobs=-1,
-    target="auditory_position",
-    seed=41,
-    storage="memory"
-)
+# rep = ParameterSweep(
+#     model,
+#     repeat=1,
+#     n_jobs=-1,
+#     target="auditory_position",
+#     seed=41,
+#     storage="memory"
+# )
 
-res = rep.run(noise=True, visual_position=90)
+# res = rep.run(noise=True, visual_position=90)
 
 import ipdb; ipdb.set_trace()

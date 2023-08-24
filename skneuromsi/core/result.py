@@ -63,8 +63,8 @@ class NDResult:
         self._nddata = (
             modes_to_data_array(nddata) if isinstance(nddata, dict) else nddata
         )
-        self._time_range = time_range
-        self._position_range = position_range
+        self._time_range = np.asarray(time_range)
+        self._position_range = np.asarray(position_range)
         self._time_res = time_res
         self._position_res = position_res
         self._time_res = time_res
