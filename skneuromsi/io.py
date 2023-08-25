@@ -24,6 +24,8 @@ import platform
 import sys
 import json
 
+import numpy as np
+
 import xarray as xa
 
 # =============================================================================
@@ -48,34 +50,45 @@ _UTC_TIMESTAMP_KEY = "utc_timestamp"
 
 _NDRESULT_KWARGS_KEY = "ndresult_kwargs"
 
+
 # =============================================================================
-# FUNCTIONALITIES
+# NDRESULT IO
 # =============================================================================
 
 
-def to_sknmsi_nc(path_or_stream, ndresult, metadata=None, **kwargs):
+class NDResultJSONEncoder(json.JSONEncoder):
+    _CONVERTERS = {
+        tuple: list,
+        set: list,
+        frozenset: list,
+        np.integer: int,
+        np.floating: float,
+        np.complexfloating: complex,
+        np.bool_: bool,
+        np.ndarray: np.ndarray.tolist,
+    }
+
+    def default(self, obj):
+        for nptype, converter in self._CONVERTERS.items():
+            if isinstance(obj, nptype):
+                return converter(obj)
+        return super(NDResultJSONEncoder, self).default(obj)
+
+
+def ndresult_to_netcdf(path_or_stream, ndresult, metadata=None, **kwargs):
+
+    # convert the ndresult to dict and extract the xarray
+    ndresult_dict = ndresult.to_dict()
+    nddata = ndresult_dict.pop("nddata")
 
     # prepare metadata
     nc_metadata = _DEFAULT_METADATA.copy()
     nc_metadata[_UTC_TIMESTAMP_KEY] = dt.datetime.utcnow().isoformat()
-    nc_metadata[_NDRESULT_KWARGS_KEY] = {
-        "mname": ndresult.mname,
-        "mtype": ndresult.mtype,
-        "output_mode": ndresult.output_mode,
-        "nmap": ndresult.nmap_,
-        "time_range": ndresult.time_range.tolist(),
-        "position_range": ndresult.position_range.tolist(),
-        "time_res": ndresult.time_res,
-        "position_res": ndresult.position_res,
-        "causes": ndresult.causes_,
-        "run_params": ndresult.run_params.to_dict(),
-        "extra": ndresult.extra_.to_dict(),
-    }
+    nc_metadata[_NDRESULT_KWARGS_KEY] = ndresult_dict
     nc_metadata.update(metadata or {})
-    nc_metadata_json = json.dumps(nc_metadata)
+    nc_metadata_json = json.dumps(nc_metadata, cls=NDResultJSONEncoder)
 
     # convert the data to xarray
-    nddata = ndresult.to_xarray()
     nddata.attrs[_METADATA_KEY] = nc_metadata_json
 
     return nddata.to_netcdf(
@@ -83,7 +96,7 @@ def to_sknmsi_nc(path_or_stream, ndresult, metadata=None, **kwargs):
     )
 
 
-def read_sknmsi_nc(path_or_stream, **kwargs):
+def ndresult_from_netcdf(path_or_stream, **kwargs):
     nddata = xa.open_dataarray(
         path_or_stream, engine="netcdf4", group=None, **kwargs
     )
@@ -93,3 +106,8 @@ def read_sknmsi_nc(path_or_stream, **kwargs):
     ndresult_kwargs = nc_metadata[_NDRESULT_KWARGS_KEY]
 
     return core.NDResult(nddata=nddata, **ndresult_kwargs)
+
+
+# =============================================================================
+# NDCOLLECTION
+# =============================================================================

@@ -231,6 +231,30 @@ class NDResult:
 
     get_pcoords = get_positions_coordinates
 
+    # IO ======================================================================
+    def to_dict(self):
+        return {
+            "mname": str(self.mname),
+            "mtype": str(self.mtype),
+            "output_mode": str(self.output_mode),
+            "nmap": self.nmap_,
+            "time_range": self.time_range,
+            "position_range": self.position_range,
+            "time_res": self.time_res,
+            "position_res": self.position_res,
+            "causes": self.causes_,
+            "run_params": self.run_params.to_dict(),
+            "extra": self.extra_.to_dict(),
+            "nddata": self.to_xarray(),
+        }
+
+    def to_netcdf(self, path_or_stream, metadata=None, **kwargs):
+        from .. import io
+
+        io.ndresult_to_netcdf(
+            path_or_stream, self, metadata=metadata, **kwargs
+        )
+
 
 # =============================================================================
 # UTILITIES

@@ -26,4 +26,5 @@ VERSION = __version__
 # IMPORTS
 # =============================================================================
 
-# from .core import *  # noqa
+from .core import *  # noqa
+from .io import *  # noqa
