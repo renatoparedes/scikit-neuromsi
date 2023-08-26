@@ -248,12 +248,10 @@ class NDResult:
             "nddata": self.to_xarray(),
         }
 
-    def to_netcdf(self, path_or_stream, metadata=None, **kwargs):
+    def to_ndr(self, path_or_stream, metadata=None, **kwargs):
         from .. import io
 
-        io.ndresult_to_netcdf(
-            path_or_stream, self, metadata=metadata, **kwargs
-        )
+        io.to_ndr(path_or_stream, self, extra_metadata=metadata, **kwargs)
 
 
 # =============================================================================
