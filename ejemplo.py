@@ -1,4 +1,4 @@
-from skneuromsi.cmp import storages
+from skneuromsi.utils import storages
 from skneuromsi.neural import Cuppini2017
 from skneuromsi.mle import AlaisBurr2004
 from skneuromsi.cmp import ParameterSweep
@@ -20,19 +20,21 @@ import sys
 # sg[0] = "hola"
 # import ipdb; ipdb.set_trace()
 
-tqdm.pandas()
+# tqdm.pandas()
 
-model = AlaisBurr2004()
-res = model.run()
+# model = AlaisBurr2004()
+# res = model.run()
 
-res.to_ndr("zaraza.ndr")
+# res.to_ndr("zaraza.ndr")
 
-with open("zaraza.ndr", "rb") as fx:
-    res = skn.read_ndr(fx)
+# with open("zaraza.ndr", "rb") as fx:
+#     res = skn.read_ndr(fx)
 
+# import ipdb; ipdb.set_trace()
+
+
+res = skn.read_ndc("coso.ndc")
 import ipdb; ipdb.set_trace()
-
-
 
 # rep = ParameterSweep(
 #     model,

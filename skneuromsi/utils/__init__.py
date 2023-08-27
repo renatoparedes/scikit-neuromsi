@@ -21,6 +21,7 @@
 
 from .accabc import AccessorABC
 from .bunch import Bunch
+from . import storages
 
 
-__all__ = ["AccessorABC", "Bunch"]
+__all__ = ["AccessorABC", "Bunch", "storages"]

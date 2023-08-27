@@ -28,7 +28,7 @@ import numpy as np
 from tqdm.auto import tqdm
 
 from .ndcollection import NDResultCollection
-from .storages import storage
+from ..utils import storages
 
 # =============================================================================
 # CONSTANTS
@@ -169,7 +169,7 @@ class ParameterSweep:
         tag = type(self).__name__
         storage_kws = self._storage_kws
 
-        with storage(
+        with storages.storage(
             storage_type, size=size, tag=tag, **storage_kws
         ) as results:
             # execute the first iteration synchronous so if some configuration

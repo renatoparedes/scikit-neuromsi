@@ -5,6 +5,8 @@ import shutil
 import tempfile
 import os
 
+import bidict
+
 import numpy as np
 
 import joblib
@@ -46,6 +48,10 @@ class StorageABC(metaclass=abc.ABCMeta):
         filled = " ".join([("X" if e else "-") for e in self])
         repr_str = f"<{stype} [ {filled} ]>"
         return repr_str
+
+    @classmethod
+    def register_as(cls):
+        return _STORAGES.inverse[cls]
 
 
 # =============================================================================
@@ -163,7 +169,9 @@ class MemoryStorage(StorageABC):
 # =============================================================================
 
 
-_STORAGES = {"directory": DirectoryStorage, "memory": MemoryStorage}
+_STORAGES = bidict.bidict(
+    {"directory": DirectoryStorage, "memory": MemoryStorage}
+)
 
 
 @contextlib.contextmanager

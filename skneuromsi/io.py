@@ -29,6 +29,8 @@ import numpy as np
 import xarray as xa
 
 from . import VERSION, cmp, core
+from .utils import storages
+
 
 # =============================================================================
 # CONSTANTS
@@ -37,9 +39,35 @@ from . import VERSION, cmp, core
 
 _DEFAULT_METADATA = {
     "skneuromsi": VERSION,
-    "author_email": "",
-    "affiliation": "",
-    "url": "https://github.com/",
+    "authors": "Paredes, Cabral & Seriès",
+    "author_email": "paredesrenato92@gmail.com)",
+    "affiliation": [
+        (
+            "Cognitive Science Group, "
+            "Instituto de Investigaciones Psicológicas, "
+            "Facultad de Psicología - UNC-CONICET. "
+            "Córdoba, Córdoba, Argentina."
+        ),
+        (
+            "Department of Psychology, "
+            "Pontifical Catholic University of Peru, Lima, Peru."
+        ),
+        (
+            "The University of Edinburgh, School of Informatics, "
+            "Edinburgh, United Kingdom."
+        ),
+        (
+            "Gerencia De Vinculacion Tecnológica "
+            "Comisión Nacional de Actividades Espaciales (CONAE), "
+            "Falda del Cañete, Córdoba, Argentina."
+        ),
+        (
+            "Instituto De Astronomía Teorica y Experimental - "
+            "Observatorio Astronómico Córdoba (IATE-OAC-UNC-CONICET), "
+            "Cordoba, Argentina."
+        ),
+    ],
+    "url": "https://github.com/renatoparedes/scikit-neuromsi",
     "platform": platform.platform(),
     "system_encoding": sys.getfilesystemencoding(),
     "Python": sys.version,
@@ -64,6 +92,11 @@ class _ObjTypes:
 
     NDRESULT_TYPE = "ndresult"
     NDCOLLETION_TYPE = "ndcollection"
+
+
+class _Compression:
+    COMPRESSION = zipfile.ZIP_DEFLATED
+    COMPRESS_LEVEL = 9
 
 
 # =============================================================================
@@ -133,7 +166,7 @@ def _ndr_split_and_serialize(ndresult, timestamp, extra_metadata):
         extra_metadata=extra_metadata or {},
     )
 
-    ndr_nddata_nc = ndr_nddata.to_netcdf(None, group=None)
+    ndr_nddata_nc = ndr_nddata.to_netcdf(None)
     ndr_metadata_json = json.dumps(
         ndr_metadata, cls=NDResultJSONEncoder, indent=2
     )
@@ -141,9 +174,13 @@ def _ndr_split_and_serialize(ndresult, timestamp, extra_metadata):
     return ndr_nddata_nc, ndr_metadata_json
 
 
-def to_ndr(path_or_stream, ndresult, metadata=None):
+def to_ndr(path_or_stream, ndresult, metadata=None, **kwargs):
     if not isinstance(ndresult, core.NDResult):
         raise TypeError(f"'ndresult' must be an instance of {core.NDResult!r}")
+
+    # default parameters for zipfile
+    kwargs.setdefault("compression", _Compression.COMPRESSION)
+    kwargs.setdefault("compresslevel", _Compression.COMPRESS_LEVEL)
 
     # timestamp
     timestamp = dt.datetime.utcnow()
@@ -151,24 +188,26 @@ def to_ndr(path_or_stream, ndresult, metadata=None):
         ndresult, timestamp, metadata
     )
 
-    with zipfile.ZipFile(path_or_stream, "w", zipfile.ZIP_DEFLATED) as zfp:
+    with zipfile.ZipFile(path_or_stream, "w", **kwargs) as zfp:
         zfp.writestr(_ZipFileNames.NDDATA, ndr_nddata_nc)
         zfp.writestr(_ZipFileNames.METADATA, ndr_metadata_json)
 
 
 def read_ndr(path_or_stream, **kwargs):
-    with zipfile.ZipFile(path_or_stream, "r", zipfile.ZIP_DEFLATED) as zfp:
+
+    with zipfile.ZipFile(path_or_stream, "r", **kwargs) as zfp:
         with zfp.open(_ZipFileNames.METADATA) as fp:
             ndr_metadata = json.load(fp)
-        with zfp.open(_ZipFileNames.NDDATA) as fp:
-            nddata = xa.open_dataarray(fp, group=None, **kwargs)
 
-    obj_type = ndr_metadata.pop(_Keys.OBJ_TYPE_KEY)
-    if obj_type != _ObjTypes.NDRESULT_TYPE:
-        raise ValueError(
-            f"'ndr' files must have 'object_type={_ObjTypes.NDRESULT_TYPE}'. "
-            f"Found {obj_type!r}"
-        )
+        obj_type = ndr_metadata.pop(_Keys.OBJ_TYPE_KEY)
+        if obj_type != _ObjTypes.NDRESULT_TYPE:
+            raise ValueError(
+                f"'object_type' != {_ObjTypes.NDRESULT_TYPE!r}. "
+                f"Found {obj_type!r}"
+            )
+
+        with zfp.open(_ZipFileNames.NDDATA) as fp:
+            nddata = xa.open_dataarray(fp).compute()
 
     ndresult_kwargs = ndr_metadata[_Keys.OBJ_KWARGS_KEY]
 
@@ -188,39 +227,105 @@ def to_ndc(path_or_stream, ndrcollection, metadata=None, **kwargs):
             f"of {cmp.NDResultCollection!r}"
         )
 
-    ndrcollection_size = len(ndrcollection)
-    ndrcollection_kwargs = {"name": ndrcollection.name}
+    # default parameters for zipfile
+    kwargs.setdefault("compression", _Compression.COMPRESSION)
+    kwargs.setdefault("compresslevel", _Compression.COMPRESS_LEVEL)
+
+    # extract the data from the object
+    ndrcollection_kwargs = ndrcollection.to_dict()
+    ndresults = ndrcollection_kwargs.pop("ndresults")
 
     # timestamp
     timestamp = dt.datetime.utcnow()
 
-    # collection metadata
+    # collection of metadata
     ndc_metadata = _prepare_metadata(
-        size=ndrcollection_size,
+        size=len(ndresults),
         obj_type=_ObjTypes.NDCOLLETION_TYPE,
         obj_kwargs=ndrcollection_kwargs,
         utc_timestamp=timestamp,
         extra_metadata=metadata or {},
     )
 
-    with zipfile.ZipFile(path_or_stream, "w", zipfile.ZIP_DEFLATED) as zfp:
+    with zipfile.ZipFile(path_or_stream, "w", **kwargs) as zfp:
 
+        # write the collection metadata.json
         ndc_metadata_json = json.dumps(
             ndc_metadata, cls=NDResultJSONEncoder, indent=2
         )
         zfp.writestr(_ZipFileNames.METADATA, ndc_metadata_json)
 
-        for idx in range(ndrcollection_size):
-            ndresult = ndrcollection[idx]
+        # write every ndresult
+        for idx, ndresult in enumerate(ndresults):
 
+            # determine the directory
             ndr_metadata_filename = f"ndr_{idx}/{_ZipFileNames.METADATA}"
             ndr_nddata_filename = f"ndr_{idx}/{_ZipFileNames.NDDATA}"
 
+            # serielize the ndresult
             ndr_nddata_nc, ndr_metadata_json = _ndr_split_and_serialize(
                 ndresult, timestamp, metadata
             )
 
+            # write
             zfp.writestr(ndr_nddata_filename, ndr_nddata_nc)
             zfp.writestr(ndr_metadata_filename, ndr_metadata_json)
 
-            del ndresult
+            del ndresult, ndr_nddata_nc, ndr_metadata_json
+
+
+def read_ndc(path_or_stream, storage="directory", storage_kws=None, **kwargs):
+    # default parameters for storage_kws
+    storage_kws = {} if storage_kws is None else dict(storage_kws)
+
+    with zipfile.ZipFile(path_or_stream, "r", **kwargs) as zfp:
+
+        with zfp.open(_ZipFileNames.METADATA) as fp:
+            ndc_metadata = json.load(fp)
+
+        obj_type = ndc_metadata.pop(_Keys.OBJ_TYPE_KEY)
+        if obj_type != _ObjTypes.NDCOLLETION_TYPE:
+            raise ValueError(
+                f"'object_type' != {_ObjTypes.NDCOLLETION_TYPE!r}. "
+                f"Found {obj_type!r}"
+            )
+
+        ndcollection_kwargs = ndc_metadata[_Keys.OBJ_KWARGS_KEY]
+
+        object_size = ndc_metadata[_Keys.OBJ_SIZE_KEY]
+        tag = ndcollection_kwargs.get("name", "<UNKNOW>")
+
+        with storages.storage(
+            storage, size=object_size, tag=tag, **storage_kws
+        ) as results:
+            for idx in range(object_size):
+
+                # determine the directory
+                ndr_metadata_filename = f"ndr_{idx}/{_ZipFileNames.METADATA}"
+                ndr_nddata_filename = f"ndr_{idx}/{_ZipFileNames.NDDATA}"
+
+                with zfp.open(ndr_metadata_filename) as fp:
+                    ndr_metadata = json.load(fp)
+
+                obj_type = ndr_metadata.pop(_Keys.OBJ_TYPE_KEY)
+                if obj_type != _ObjTypes.NDRESULT_TYPE:
+                    raise ValueError(
+                        f"ndr_{idx} "
+                        f"'object_type' != {_ObjTypes.NDRESULT_TYPE!r}. "
+                        f"Found {obj_type!r}"
+                    )
+
+                with zfp.open(ndr_nddata_filename) as fp:
+                    nddata = xa.open_dataarray(fp).compute()
+
+                ndresult_kwargs = ndr_metadata[_Keys.OBJ_KWARGS_KEY]
+                ndresult = core.NDResult(nddata=nddata, **ndresult_kwargs)
+
+                results[idx] = ndresult
+
+                del ndr_metadata, nddata, ndresult_kwargs, ndresult
+
+        ndcollection_kwargs["results"] = results
+        ndrcollection = cmp.NDResultCollection(**ndcollection_kwargs)
+
+        return ndrcollection

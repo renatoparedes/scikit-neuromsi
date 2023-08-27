@@ -361,3 +361,13 @@ class NDResultCollection(Sequence):
     @property
     def plot(self):
         return plot_acc.NDResultCollectionPlotter(self)
+
+    # IO ======================================================================
+
+    def to_dict(self):
+        return {"name": self.name, "ndresults": self._ndresults}
+
+    def to_ndc(self, path_or_stream, metadata=None, **kwargs):
+        from ...io import to_ndc  # noqa
+
+        to_ndc(path_or_stream, self, metadata=metadata, **kwargs)
