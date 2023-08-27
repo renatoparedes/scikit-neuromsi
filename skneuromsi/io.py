@@ -12,35 +12,28 @@
 # DOCS
 # =============================================================================
 
-"""Implementation of multisensory integration models."""
+"""Implementation of I/O for skneuromsi."""
 
 # =============================================================================
 # IMPORTS
 # =============================================================================
 
-import contextlib
 import datetime as dt
+import json
 import platform
 import sys
-import json
-from collections import namedtuple
 import zipfile
 
 import numpy as np
 
-from pandas.io import common as pd_io_common
-
 import xarray as xa
 
-from . import core, VERSION
+from . import VERSION, cmp, core
 
 # =============================================================================
 # CONSTANTS
 # =============================================================================
 
-_DEFAULT_ENGINE = "h5netcdf"
-
-_FORMAT =""
 
 _DEFAULT_METADATA = {
     "skneuromsi": VERSION,
@@ -55,7 +48,6 @@ _DEFAULT_METADATA = {
 
 
 class _Keys:
-    SKN_METADATA_KEY = "__skneuromsi__"
     UTC_TIMESTAMP_KEY = "utc_timestamp"
     OBJ_TYPE_KEY = "object_type"
     OBJ_KWARGS_KEY = "object_kwargs"
@@ -63,31 +55,15 @@ class _Keys:
     EXTRA_METADATA_KEYS = "extra"
 
 
+class _ZipFileNames:
+    METADATA = "metadata.json"
+    NDDATA = "nddata.nc"
+
+
 class _ObjTypes:
 
     NDRESULT_TYPE = "ndresult"
     NDCOLLETION_TYPE = "ndcollection"
-
-
-# =============================================================================
-# IO HELPERS
-# =============================================================================
-
-
-@contextlib.contextmanager
-def _get_buffer(buf, mode):
-    # Based on https://github.com/pandas-dev/pandas/blob/
-    # 48f5a961cb58b535e370c5688a336bc45493e404/
-    # pandas/io/formats/format.py#L1180
-
-    if hasattr(buf, "write"):
-        yield buf
-    elif isinstance(buf, str):
-        pd_io_common.check_parent_directory(str(buf))
-        with open(buf, mode) as fp:
-            yield fp
-    else:
-        raise TypeError("buf is not a file name and it has no write method")
 
 
 # =============================================================================
@@ -119,7 +95,8 @@ class NDResultJSONEncoder(json.JSONEncoder):
 # METADATA MERGER
 # =============================================================================
 
-def _prepare_ndr_metadata(
+
+def _prepare_metadata(
     size, obj_type, obj_kwargs, utc_timestamp, extra_metadata
 ):
 
@@ -127,6 +104,7 @@ def _prepare_ndr_metadata(
     nc_metadata = _DEFAULT_METADATA.copy()
     nc_metadata.update(
         {
+            _Keys.OBJ_SIZE_KEY: size,
             _Keys.UTC_TIMESTAMP_KEY: utc_timestamp,
             _Keys.OBJ_TYPE_KEY: obj_type,
             _Keys.OBJ_KWARGS_KEY: obj_kwargs,
@@ -142,56 +120,60 @@ def _prepare_ndr_metadata(
 # =============================================================================
 
 
-def to_ndr(path_or_stream, ndresult, metadata=None, **kwargs):
-    if not isinstance(ndresult, core.NDResult):
-        raise TypeError(f"'ndresult' must be an instance of {core.NDResult!r}")
-
+def _ndr_split_and_serialize(ndresult, timestamp, extra_metadata):
     # convert the ndresult to dict and extract the xarray
     ndresult_kwargs = ndresult.to_dict()
-    nddata = ndresult_kwargs.pop("nddata")
+    ndr_nddata = ndresult_kwargs.pop("nddata")
 
-    # timestamp
-    now = dt.datetime.utcnow()
-
-    ndr_metadata = _prepare_ndr_metadata(
+    ndr_metadata = _prepare_metadata(
         size=None,
         obj_type=_ObjTypes.NDRESULT_TYPE,
         obj_kwargs=ndresult_kwargs,
-        utc_timestamp=now,
-        extra_metadata=metadata or {},
+        utc_timestamp=timestamp,
+        extra_metadata=extra_metadata or {},
+    )
+
+    ndr_nddata_nc = ndr_nddata.to_netcdf(None, group=None)
+    ndr_metadata_json = json.dumps(
+        ndr_metadata, cls=NDResultJSONEncoder, indent=2
+    )
+
+    return ndr_nddata_nc, ndr_metadata_json
+
+
+def to_ndr(path_or_stream, ndresult, metadata=None):
+    if not isinstance(ndresult, core.NDResult):
+        raise TypeError(f"'ndresult' must be an instance of {core.NDResult!r}")
+
+    # timestamp
+    timestamp = dt.datetime.utcnow()
+    ndr_nddata_nc, ndr_metadata_json = _ndr_split_and_serialize(
+        ndresult, timestamp, metadata
     )
 
     with zipfile.ZipFile(path_or_stream, "w", zipfile.ZIP_DEFLATED) as zfp:
-
-        json_buff = json.dumps(ndr_metadata, cls=NDResultJSONEncoder)
-        zfp.writestr(METADATA_FILENAME, json_buff)
-
-        nddata_buff = io.BytesIO()
-        nddata.to_netcdf(nddata_buff, group=None, **kwargs)
-        zfp.writestr(NDDATA_NC_FILENAME, nddata_buff.getvalue())
-
-        del nddata_buff
+        zfp.writestr(_ZipFileNames.NDDATA, ndr_nddata_nc)
+        zfp.writestr(_ZipFileNames.METADATA, ndr_metadata_json)
 
 
 def read_ndr(path_or_stream, **kwargs):
-    with _get_buffer(path_or_stream, "rb") as fp:
-        # For some reason if i add the _DEFAULT_ENGINE here the code not work
-        nddata = xa.open_dataarray(fp, group=None, **kwargs)
+    with zipfile.ZipFile(path_or_stream, "r", zipfile.ZIP_DEFLATED) as zfp:
+        with zfp.open(_ZipFileNames.METADATA) as fp:
+            ndr_metadata = json.load(fp)
+        with zfp.open(_ZipFileNames.NDDATA) as fp:
+            nddata = xa.open_dataarray(fp, group=None, **kwargs)
 
-    # extract and remove all the sknmsi metadata
-    nc_metadata = json.loads(nddata.attrs.pop(_Keys.SKN_METADATA_KEY))
-
-    # type verification
-    obj_type = nc_metadata.pop(_Keys.OBJ_TYPE_KEY)
+    obj_type = ndr_metadata.pop(_Keys.OBJ_TYPE_KEY)
     if obj_type != _ObjTypes.NDRESULT_TYPE:
         raise ValueError(
             f"'ndr' files must have 'object_type={_ObjTypes.NDRESULT_TYPE}'. "
             f"Found {obj_type!r}"
         )
 
-    ndresult_kwargs = nc_metadata[_Keys.OBJ_KWARGS_KEY]
+    ndresult_kwargs = ndr_metadata[_Keys.OBJ_KWARGS_KEY]
 
-    return core.NDResult(nddata=nddata, **ndresult_kwargs)
+    ndresult = core.NDResult(nddata=nddata, **ndresult_kwargs)
+    return ndresult
 
 
 # =============================================================================
@@ -199,8 +181,46 @@ def read_ndr(path_or_stream, **kwargs):
 # =============================================================================
 
 
-def ndcollection_to_netcdf(
-    path_or_stream, ndcollection, metadata=None, **kwargs
-):
-    length = len(ndcollection)
-    empty_da = xa.DataArray()
+def to_ndc(path_or_stream, ndrcollection, metadata=None, **kwargs):
+    if not isinstance(ndrcollection, cmp.NDResultCollection):
+        raise TypeError(
+            "'ndrcollection' must be an instance "
+            f"of {cmp.NDResultCollection!r}"
+        )
+
+    ndrcollection_size = len(ndrcollection)
+    ndrcollection_kwargs = {"name": ndrcollection.name}
+
+    # timestamp
+    timestamp = dt.datetime.utcnow()
+
+    # collection metadata
+    ndc_metadata = _prepare_metadata(
+        size=ndrcollection_size,
+        obj_type=_ObjTypes.NDCOLLETION_TYPE,
+        obj_kwargs=ndrcollection_kwargs,
+        utc_timestamp=timestamp,
+        extra_metadata=metadata or {},
+    )
+
+    with zipfile.ZipFile(path_or_stream, "w", zipfile.ZIP_DEFLATED) as zfp:
+
+        ndc_metadata_json = json.dumps(
+            ndc_metadata, cls=NDResultJSONEncoder, indent=2
+        )
+        zfp.writestr(_ZipFileNames.METADATA, ndc_metadata_json)
+
+        for idx in range(ndrcollection_size):
+            ndresult = ndrcollection[idx]
+
+            ndr_metadata_filename = f"ndr_{idx}/{_ZipFileNames.METADATA}"
+            ndr_nddata_filename = f"ndr_{idx}/{_ZipFileNames.NDDATA}"
+
+            ndr_nddata_nc, ndr_metadata_json = _ndr_split_and_serialize(
+                ndresult, timestamp, metadata
+            )
+
+            zfp.writestr(ndr_nddata_filename, ndr_nddata_nc)
+            zfp.writestr(ndr_metadata_filename, ndr_metadata_json)
+
+            del ndresult
