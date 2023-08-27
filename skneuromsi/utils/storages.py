@@ -58,6 +58,8 @@ class StorageABC(metaclass=abc.ABCMeta):
 # IN DISK
 # =============================================================================
 
+import os
+
 
 class DirectoryStorage(StorageABC):
     def __init__(self, size, tag="", dir=None):
@@ -134,7 +136,7 @@ class DirectoryStorage(StorageABC):
 
 
 # =============================================================================
-# IN MEMORY
+# IN MEMORY Multi process
 # =============================================================================
 
 
@@ -165,12 +167,38 @@ class MemoryStorage(StorageABC):
 
 
 # =============================================================================
+# MEMORY MONO PROCESS
+# =============================================================================
+
+
+class SingleProcessStorage(StorageABC):
+    def __init__(self, size, tag=""):
+        self._data = np.full(size, None, dtype=object)
+
+    def lock(self):
+        self._data.setflags(write=False)
+
+    def __len__(self):
+        return len(self._data)
+
+    def __getitem__(self, idx):
+        return self._data.__getitem__(idx)
+
+    def __setitem__(self, idx, v):
+        self._data.__setitem__(idx, v)
+
+
+# =============================================================================
 # FACTORY
 # =============================================================================
 
 
 _STORAGES = bidict.bidict(
-    {"directory": DirectoryStorage, "memory": MemoryStorage}
+    {
+        "directory": DirectoryStorage,
+        "memory": MemoryStorage,
+        "single_process": SingleProcessStorage,
+    }
 )
 
 

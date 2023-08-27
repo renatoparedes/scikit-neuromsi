@@ -248,10 +248,10 @@ class NDResult:
             "nddata": self.to_xarray(),
         }
 
-    def to_ndr(self, path_or_stream, metadata=None, **kwargs):
-        from ..io import to_ndr  # noqa
+    def to_ndc(self, path_or_stream, metadata=None, **kwargs):
+        from ..io import store_ndresult  # noqa
 
-        to_ndr(path_or_stream, self, metadata=metadata, **kwargs)
+        store_ndresult(path_or_stream, self, metadata=metadata, **kwargs)
 
 
 # =============================================================================

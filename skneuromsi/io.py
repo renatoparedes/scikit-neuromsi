@@ -28,6 +28,8 @@ import numpy as np
 
 import xarray as xa
 
+from tqdm.auto import tqdm
+
 from . import VERSION, cmp, core
 from .utils import storages
 
@@ -129,7 +131,7 @@ class NDResultJSONEncoder(json.JSONEncoder):
 # =============================================================================
 
 
-def _prepare_metadata(
+def _prepare_ndc_metadata(
     size, obj_type, obj_kwargs, utc_timestamp, extra_metadata
 ):
 
@@ -148,23 +150,15 @@ def _prepare_metadata(
     return nc_metadata
 
 
-# =============================================================================
-# NDRESULT IO
-# =============================================================================
-
-
-def _ndr_split_and_serialize(ndresult, timestamp, extra_metadata):
+def _ndr_split_and_serialize(ndresult):
     # convert the ndresult to dict and extract the xarray
     ndresult_kwargs = ndresult.to_dict()
     ndr_nddata = ndresult_kwargs.pop("nddata")
 
-    ndr_metadata = _prepare_metadata(
-        size=None,
-        obj_type=_ObjTypes.NDRESULT_TYPE,
-        obj_kwargs=ndresult_kwargs,
-        utc_timestamp=timestamp,
-        extra_metadata=extra_metadata or {},
-    )
+    ndr_metadata = {
+        _Keys.OBJ_TYPE_KEY: _ObjTypes.NDRESULT_TYPE,
+        _Keys.OBJ_KWARGS_KEY: ndresult_kwargs,
+    }
 
     ndr_nddata_nc = ndr_nddata.to_netcdf(None)
     ndr_metadata_json = json.dumps(
@@ -174,45 +168,47 @@ def _ndr_split_and_serialize(ndresult, timestamp, extra_metadata):
     return ndr_nddata_nc, ndr_metadata_json
 
 
-def to_ndr(path_or_stream, ndresult, metadata=None, **kwargs):
-    if not isinstance(ndresult, core.NDResult):
-        raise TypeError(f"'ndresult' must be an instance of {core.NDResult!r}")
-
-    # default parameters for zipfile
-    kwargs.setdefault("compression", _Compression.COMPRESSION)
-    kwargs.setdefault("compresslevel", _Compression.COMPRESS_LEVEL)
-
-    # timestamp
-    timestamp = dt.datetime.utcnow()
-    ndr_nddata_nc, ndr_metadata_json = _ndr_split_and_serialize(
-        ndresult, timestamp, metadata
-    )
-
-    with zipfile.ZipFile(path_or_stream, "w", **kwargs) as zfp:
-        zfp.writestr(_ZipFileNames.NDDATA, ndr_nddata_nc)
-        zfp.writestr(_ZipFileNames.METADATA, ndr_metadata_json)
+def _check_object_type(obj_type, expected):
+    if obj_type != expected:
+        raise ValueError(
+            f"'object_type' != {expected!r}. " f"Found {obj_type!r}"
+        )
 
 
-def read_ndr(path_or_stream, **kwargs):
+def _mk_ndr_zip_paths(idx):
+    ndr_metadata_filename = f"ndr_{idx}/{_ZipFileNames.METADATA}"
+    ndr_nddata_filename = f"ndr_{idx}/{_ZipFileNames.NDDATA}"
+    return ndr_metadata_filename, ndr_nddata_filename
 
-    with zipfile.ZipFile(path_or_stream, "r", **kwargs) as zfp:
-        with zfp.open(_ZipFileNames.METADATA) as fp:
+
+def _read_nd_results(zip_fp, storage, tqdm_cls):
+
+    indexes = range(len(storage))
+    if tqdm_cls:
+        indexes = tqdm_cls(iterable=indexes, desc="Reading ndresults")
+
+    for idx in indexes:
+
+        # determine the directory
+        ndr_metadata_filename, ndr_nddata_filename = _mk_ndr_zip_paths(idx)
+
+        with zip_fp.open(ndr_metadata_filename) as fp:
             ndr_metadata = json.load(fp)
 
         obj_type = ndr_metadata.pop(_Keys.OBJ_TYPE_KEY)
-        if obj_type != _ObjTypes.NDRESULT_TYPE:
-            raise ValueError(
-                f"'object_type' != {_ObjTypes.NDRESULT_TYPE!r}. "
-                f"Found {obj_type!r}"
-            )
+        _check_object_type(obj_type, _ObjTypes.NDRESULT_TYPE)
 
-        with zfp.open(_ZipFileNames.NDDATA) as fp:
+        with zip_fp.open(ndr_nddata_filename) as fp:
             nddata = xa.open_dataarray(fp).compute()
 
-    ndresult_kwargs = ndr_metadata[_Keys.OBJ_KWARGS_KEY]
+        ndresult_kwargs = ndr_metadata[_Keys.OBJ_KWARGS_KEY]
+        ndresult = core.NDResult(nddata=nddata, **ndresult_kwargs)
 
-    ndresult = core.NDResult(nddata=nddata, **ndresult_kwargs)
-    return ndresult
+        storage[idx] = ndresult
+
+        del ndr_metadata, nddata, ndresult_kwargs, ndresult
+
+    return storage
 
 
 # =============================================================================
@@ -220,7 +216,9 @@ def read_ndr(path_or_stream, **kwargs):
 # =============================================================================
 
 
-def to_ndc(path_or_stream, ndrcollection, metadata=None, **kwargs):
+def store_ndrcollection(
+    path_or_stream, ndrcollection, *, metadata=None, **kwargs
+):
     if not isinstance(ndrcollection, cmp.NDResultCollection):
         raise TypeError(
             "'ndrcollection' must be an instance "
@@ -239,7 +237,7 @@ def to_ndc(path_or_stream, ndrcollection, metadata=None, **kwargs):
     timestamp = dt.datetime.utcnow()
 
     # collection of metadata
-    ndc_metadata = _prepare_metadata(
+    ndc_metadata = _prepare_ndc_metadata(
         size=len(ndresults),
         obj_type=_ObjTypes.NDCOLLETION_TYPE,
         obj_kwargs=ndrcollection_kwargs,
@@ -247,85 +245,106 @@ def to_ndc(path_or_stream, ndrcollection, metadata=None, **kwargs):
         extra_metadata=metadata or {},
     )
 
-    with zipfile.ZipFile(path_or_stream, "w", **kwargs) as zfp:
+    with zipfile.ZipFile(path_or_stream, "w", **kwargs) as zip_fp:
 
         # write the collection metadata.json
         ndc_metadata_json = json.dumps(
             ndc_metadata, cls=NDResultJSONEncoder, indent=2
         )
-        zfp.writestr(_ZipFileNames.METADATA, ndc_metadata_json)
+        zip_fp.writestr(_ZipFileNames.METADATA, ndc_metadata_json)
 
         # write every ndresult
         for idx, ndresult in enumerate(ndresults):
 
             # determine the directory
-            ndr_metadata_filename = f"ndr_{idx}/{_ZipFileNames.METADATA}"
-            ndr_nddata_filename = f"ndr_{idx}/{_ZipFileNames.NDDATA}"
+            ndr_metadata_filename, ndr_nddata_filename = _mk_ndr_zip_paths(idx)
 
             # serielize the ndresult
             ndr_nddata_nc, ndr_metadata_json = _ndr_split_and_serialize(
-                ndresult, timestamp, metadata
+                ndresult
             )
 
             # write
-            zfp.writestr(ndr_nddata_filename, ndr_nddata_nc)
-            zfp.writestr(ndr_metadata_filename, ndr_metadata_json)
+            zip_fp.writestr(ndr_nddata_filename, ndr_nddata_nc)
+            zip_fp.writestr(ndr_metadata_filename, ndr_metadata_json)
 
             del ndresult, ndr_nddata_nc, ndr_metadata_json
 
 
-def read_ndc(path_or_stream, storage="directory", storage_kws=None, **kwargs):
+def open_ndrcollection(
+    path_or_stream,
+    *,
+    storage="directory",
+    storage_kws=None,
+    expected_size=None,
+    tqdm_cls=tqdm,
+    **kwargs,
+):
     # default parameters for storage_kws
     storage_kws = {} if storage_kws is None else dict(storage_kws)
 
-    with zipfile.ZipFile(path_or_stream, "r", **kwargs) as zfp:
+    with zipfile.ZipFile(path_or_stream, "r", **kwargs) as zip_fp:
 
-        with zfp.open(_ZipFileNames.METADATA) as fp:
+        # open the collection metadata
+        with zip_fp.open(_ZipFileNames.METADATA) as fp:
             ndc_metadata = json.load(fp)
 
+        # validate the object type
         obj_type = ndc_metadata.pop(_Keys.OBJ_TYPE_KEY)
-        if obj_type != _ObjTypes.NDCOLLETION_TYPE:
-            raise ValueError(
-                f"'object_type' != {_ObjTypes.NDCOLLETION_TYPE!r}. "
-                f"Found {obj_type!r}"
-            )
+        _check_object_type(obj_type, _ObjTypes.NDCOLLETION_TYPE)
 
+        # extract the extra arguments needed to create an dncollection
         ndcollection_kwargs = ndc_metadata[_Keys.OBJ_KWARGS_KEY]
 
-        object_size = ndc_metadata[_Keys.OBJ_SIZE_KEY]
+        # retrieve the collection size and check if the size is correct
+        size = ndc_metadata[_Keys.OBJ_SIZE_KEY]
+        if expected_size is not None and size != int(expected_size):
+            raise ValueError(
+                f"{str(path_or_stream)}: Expected {expected_size} "
+                f"results, but {size} were found"
+            )
+
+        # create the tag for the storage
         tag = ndcollection_kwargs.get("name", "<UNKNOW>")
 
+        # open the storage and read the entire ndresults
         with storages.storage(
-            storage, size=object_size, tag=tag, **storage_kws
+            storage, size=size, tag=tag, **storage_kws
         ) as results:
-            for idx in range(object_size):
+            results = _read_nd_results(
+                zip_fp=zip_fp, storage=results, tqdm_cls=tqdm_cls
+            )
 
-                # determine the directory
-                ndr_metadata_filename = f"ndr_{idx}/{_ZipFileNames.METADATA}"
-                ndr_nddata_filename = f"ndr_{idx}/{_ZipFileNames.NDDATA}"
+        # store the results inside the ndr collection
+        ndr_collection = cmp.NDResultCollection(
+            results=results, tqdm_cls=tqdm_cls, **ndcollection_kwargs
+        )
 
-                with zfp.open(ndr_metadata_filename) as fp:
-                    ndr_metadata = json.load(fp)
+        return ndr_collection
 
-                obj_type = ndr_metadata.pop(_Keys.OBJ_TYPE_KEY)
-                if obj_type != _ObjTypes.NDRESULT_TYPE:
-                    raise ValueError(
-                        f"ndr_{idx} "
-                        f"'object_type' != {_ObjTypes.NDRESULT_TYPE!r}. "
-                        f"Found {obj_type!r}"
-                    )
 
-                with zfp.open(ndr_nddata_filename) as fp:
-                    nddata = xa.open_dataarray(fp).compute()
+# =============================================================================
+# ND RESULT
+# =============================================================================
 
-                ndresult_kwargs = ndr_metadata[_Keys.OBJ_KWARGS_KEY]
-                ndresult = core.NDResult(nddata=nddata, **ndresult_kwargs)
 
-                results[idx] = ndresult
+def store_ndresult(path_or_stream, ndresult, *, metadata=None, **kwargs):
+    if not isinstance(ndresult, core.NDResult):
+        raise TypeError(f"'ndresult' must be an instance of {core.NDResult!r}")
+    ndrcollection = cmp.NDResultCollection(
+        "NDResult", [ndresult], tqdm_cls=None
+    )
+    store_ndrcollection(
+        path_or_stream, ndrcollection, metadata=metadata, **kwargs
+    )
 
-                del ndr_metadata, nddata, ndresult_kwargs, ndresult
 
-        ndcollection_kwargs["results"] = results
-        ndrcollection = cmp.NDResultCollection(**ndcollection_kwargs)
-
-        return ndrcollection
+def open_ndresult(path_or_stream, **kwargs):
+    ndr_collection = open_ndrcollection(
+        path_or_stream,
+        storage="single_process",
+        expected_size=1,
+        tqdm_cls=None,
+        **kwargs,
+    )
+    return ndr_collection[0]

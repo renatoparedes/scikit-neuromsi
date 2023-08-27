@@ -368,6 +368,6 @@ class NDResultCollection(Sequence):
         return {"name": self.name, "ndresults": self._ndresults}
 
     def to_ndc(self, path_or_stream, metadata=None, **kwargs):
-        from ...io import to_ndc  # noqa
+        from ...io import store_ndrcollection  # noqa
 
-        to_ndc(path_or_stream, self, metadata=metadata, **kwargs)
+        store_ndrcollection(path_or_stream, self, metadata=metadata, **kwargs)
