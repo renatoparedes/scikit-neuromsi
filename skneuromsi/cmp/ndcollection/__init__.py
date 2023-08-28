@@ -121,7 +121,7 @@ class NDResultCollection(Sequence):
 
         self._name = str(name)
         self._ndresults = results
-        self._progress_cls = tqdm_cls
+        self._tqdm_cls = tqdm_cls
         self._metadata_cache = _make_metadata_cache(
             results, progress_cls=tqdm_cls
         )
@@ -367,7 +367,14 @@ class NDResultCollection(Sequence):
     def to_dict(self):
         return {"name": self.name, "ndresults": self._ndresults}
 
-    def to_ndc(self, path_or_stream, metadata=None, **kwargs):
+    def to_nmsi(self, path_or_stream, metadata=None, quiet=False, **kwargs):
         from ...io import store_ndrcollection  # noqa
 
-        store_ndrcollection(path_or_stream, self, metadata=metadata, **kwargs)
+        tqdm_cls = self._tqdm_cls if quiet is False else None
+        store_ndrcollection(
+            path_or_stream,
+            self,
+            metadata=metadata,
+            tqdm_cls=tqdm_cls,
+            **kwargs,
+        )

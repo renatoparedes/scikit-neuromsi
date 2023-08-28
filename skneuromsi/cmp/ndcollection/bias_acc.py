@@ -79,7 +79,7 @@ class NDResultBiasAcc(AccessorABC):
         changing_parameter=None,
         dim=None,
         mode=None,
-        show_progress=True,
+        quiet=False,
     ):
         nd_collection = self._nd_collection
 
@@ -101,9 +101,9 @@ class NDResultBiasAcc(AccessorABC):
 
         ndresults = nd_collection._ndresults
         progress_cls = nd_collection._progress_cls
-        if show_progress and progress_cls is not None:
+        if quiet is False and progress_cls is not None:
             ndresults = progress_cls(
-                iterable=ndresults, desc=f"Calculating biases"
+                iterable=ndresults, desc="Calculating biases"
             )
 
         bias_arr = np.zeros(len(nd_collection))
@@ -142,14 +142,14 @@ class NDResultBiasAcc(AccessorABC):
         changing_parameter=None,
         dim=None,
         mode=None,
-        show_progress=True,
+        quiet=False,
     ):
         bias = self.bias(
             influence_parameter=influence_parameter,
             changing_parameter=changing_parameter,
             dim=dim,
             mode=mode,
-            show_progress=show_progress,
+            quiet=quiet,
         )
         mbias_df = bias.mean(axis=1).to_frame()
 

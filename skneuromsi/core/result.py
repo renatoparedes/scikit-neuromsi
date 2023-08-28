@@ -14,8 +14,6 @@
 
 from typing import Iterable
 
-import methodtools
-
 import numpy as np
 
 import pandas as pd
@@ -168,12 +166,16 @@ class NDResult:
     @property
     def plot(self):
         """Plot accessor."""
-        return ResultPlotter(self)
+        if not hasattr(self, "__plot"):
+            self.__plot = ResultPlotter(self)
+        return self.__plot
 
     @property
     def stats(self):
         """Stats accessor."""
-        return ResultStatsAccessor(self)
+        if not hasattr(self, "__stats"):
+            self.__stats = ResultStatsAccessor(self)
+        return self.__stats
 
     # DF BY DIMENSION =========================================================
     def _coherce_filters(self, flt, defaults, dim_name):
@@ -248,7 +250,7 @@ class NDResult:
             "nddata": self.to_xarray(),
         }
 
-    def to_ndc(self, path_or_stream, metadata=None, **kwargs):
+    def to_nmsi(self, path_or_stream, metadata=None, **kwargs):
         from ..io import store_ndresult  # noqa
 
         store_ndresult(path_or_stream, self, metadata=metadata, **kwargs)

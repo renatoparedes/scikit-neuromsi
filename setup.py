@@ -39,6 +39,7 @@ REQUIREMENTS = [
     "tqdm",
     "methodtools",
     "findpeaks",
+    "netcdf4",
 ]
 
 with open(PATH / "skneuromsi" / "__init__.py") as fp:

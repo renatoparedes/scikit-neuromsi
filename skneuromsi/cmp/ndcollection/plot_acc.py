@@ -73,7 +73,7 @@ class NDResultCollectionPlotter(AccessorABC):
         changing_parameter=None,
         dim=None,
         mode=None,
-        show_progress=True,
+        quiet=False,
         ax=None,
         **kws,
     ):
@@ -83,7 +83,7 @@ class NDResultCollectionPlotter(AccessorABC):
             changing_parameter=changing_parameter,
             dim=dim,
             mode=mode,
-            show_progress=show_progress,
+            quiet=quiet,
         )
 
         legend = kws.pop("legend", True)
@@ -113,7 +113,7 @@ class NDResultCollectionPlotter(AccessorABC):
         changing_parameter=None,
         dim=None,
         mode=None,
-        show_progress=True,
+        quiet=False,
         ax=None,
         **kws,
     ):
@@ -123,7 +123,7 @@ class NDResultCollectionPlotter(AccessorABC):
             changing_parameter=changing_parameter,
             dim=dim,
             mode=mode,
-            show_progress=show_progress,
+            quiet=quiet,
         )
 
         legend = kws.pop("legend", True)

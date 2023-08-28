@@ -12,7 +12,11 @@
 # DOCS
 # =============================================================================
 
-"""Implementation of I/O for skneuromsi."""
+"""Implementation of I/O for skneuromsi.
+
+This module implements the N
+
+"""
 
 # =============================================================================
 # IMPORTS
@@ -42,7 +46,7 @@ from .utils import storages
 _DEFAULT_METADATA = {
     "skneuromsi": VERSION,
     "authors": "Paredes, Cabral & Seriès",
-    "author_email": "paredesrenato92@gmail.com)",
+    "author_email": "paredesrenato92@gmail.com",
     "affiliation": [
         (
             "Cognitive Science Group, "
@@ -217,7 +221,7 @@ def _read_nd_results(zip_fp, storage, tqdm_cls):
 
 
 def store_ndrcollection(
-    path_or_stream, ndrcollection, *, metadata=None, **kwargs
+    path_or_stream, ndrcollection, *, metadata=None, tqdm_cls=tqdm, **kwargs
 ):
     if not isinstance(ndrcollection, cmp.NDResultCollection):
         raise TypeError(
@@ -252,6 +256,9 @@ def store_ndrcollection(
             ndc_metadata, cls=NDResultJSONEncoder, indent=2
         )
         zip_fp.writestr(_ZipFileNames.METADATA, ndc_metadata_json)
+
+        if tqdm_cls:
+            ndresults = tqdm_cls(iterable=ndresults, desc="Writing ndresults")
 
         # write every ndresult
         for idx, ndresult in enumerate(ndresults):
@@ -331,6 +338,7 @@ def open_ndrcollection(
 def store_ndresult(path_or_stream, ndresult, *, metadata=None, **kwargs):
     if not isinstance(ndresult, core.NDResult):
         raise TypeError(f"'ndresult' must be an instance of {core.NDResult!r}")
+
     ndrcollection = cmp.NDResultCollection(
         "NDResult", [ndresult], tqdm_cls=None
     )

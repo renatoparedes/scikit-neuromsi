@@ -58,8 +58,6 @@ class StorageABC(metaclass=abc.ABCMeta):
 # IN DISK
 # =============================================================================
 
-import os
-
 
 class DirectoryStorage(StorageABC):
     def __init__(self, size, tag="", dir=None):
