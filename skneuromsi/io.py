@@ -34,7 +34,7 @@ import xarray as xa
 
 from tqdm.auto import tqdm
 
-from . import VERSION, cmp, core
+from . import VERSION, core
 from .utils import storages
 
 
@@ -223,10 +223,10 @@ def _read_nd_results(zip_fp, storage, tqdm_cls):
 def store_ndrcollection(
     path_or_stream, ndrcollection, *, metadata=None, tqdm_cls=tqdm, **kwargs
 ):
-    if not isinstance(ndrcollection, cmp.NDResultCollection):
+    if not isinstance(ndrcollection, core.NDResultCollection):
         raise TypeError(
             "'ndrcollection' must be an instance "
-            f"of {cmp.NDResultCollection!r}"
+            f"of {core.NDResultCollection!r}"
         )
 
     # default parameters for zipfile
@@ -323,7 +323,7 @@ def open_ndrcollection(
             )
 
         # store the results inside the ndr collection
-        ndr_collection = cmp.NDResultCollection(
+        ndr_collection = core.NDResultCollection(
             results=results, tqdm_cls=tqdm_cls, **ndcollection_kwargs
         )
 
@@ -339,7 +339,7 @@ def store_ndresult(path_or_stream, ndresult, *, metadata=None, **kwargs):
     if not isinstance(ndresult, core.NDResult):
         raise TypeError(f"'ndresult' must be an instance of {core.NDResult!r}")
 
-    ndrcollection = cmp.NDResultCollection(
+    ndrcollection = core.NDResultCollection(
         "NDResult", [ndresult], tqdm_cls=None
     )
     store_ndrcollection(

@@ -19,6 +19,7 @@
 # =============================================================================
 
 
+from .ndcollection import NDResultCollection
 from .modelabc import ParameterAliasTemplate, SKNMSIMethodABC, SKNMSIRunConfig
 from .result import NDResult
 
@@ -32,4 +33,5 @@ __all__ = [
     "SKNMSIRunConfig",
     "SKNMSIMethodABC",
     "NDResult",
+    "NDResultCollection",
 ]
