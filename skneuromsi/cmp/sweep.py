@@ -27,7 +27,7 @@ import numpy as np
 
 from tqdm.auto import tqdm
 
-from .ndcollection import NDResultCollection
+from ..core import NDResultCollection
 from ..utils import storages
 
 # =============================================================================

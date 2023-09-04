@@ -20,7 +20,6 @@
 
 
 from .sweep import ParameterSweep
-from .ndcollection import NDResultCollection
 
 # =============================================================================
 # ALL
