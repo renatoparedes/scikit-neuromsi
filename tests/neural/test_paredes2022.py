@@ -99,7 +99,6 @@ def test_paredes2022_temporal_filter_audiovisual_stimuli():
 
 
 def test_paredes2022_fission_illusion():
-
     model = Paredes2022(time_range=(0, 400))
     res = model.run(
         auditory_intensity=3,
@@ -121,7 +120,6 @@ def test_paredes2022_fission_illusion():
 
 
 def test_paredes2022_supraddivity_effect():
-
     # Two weak stimuli combined are able to elicit a multisensory response.
 
     model = Paredes2022(time_range=(0, 250))

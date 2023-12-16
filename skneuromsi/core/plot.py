@@ -54,7 +54,6 @@ class ResultPlotter(AccessorABC):
 
     # LINE ====================================================================
     def _resolve_axis(self, ax):
-
         if ax is None:
             coords_number = len(self._result.pcoords_)
 
@@ -86,7 +85,6 @@ class ResultPlotter(AccessorABC):
         return xr.combine_nested(completed, dim)
 
     def _scale_xtickslabels(self, *, limits, ticks, single_value):
-
         ll, tl = np.sort(limits)
         ticks_array = np.asarray(ticks, dtype=float)
 
@@ -104,7 +102,6 @@ class ResultPlotter(AccessorABC):
     # API======================================================================
 
     def line_positions(self, time=None, **kwargs):
-
         if time is None:
             time = self._result.stats.dimmax()[D_TIMES]
 
@@ -120,7 +117,6 @@ class ResultPlotter(AccessorABC):
         kwargs.setdefault("alpha", 0.75)
 
         for coord, ax in zip(self._result.pcoords_, axes):
-
             df = xa.sel(positions_coordinates=coord, times=time).to_dataframe()
 
             sns.lineplot(
@@ -151,7 +147,6 @@ class ResultPlotter(AccessorABC):
     linep = line_positions
 
     def line_times(self, position=None, **kwargs):
-
         if position is None:
             position = self._result.stats.dimmax()[D_POSITIONS]
 
@@ -167,7 +162,6 @@ class ResultPlotter(AccessorABC):
         kwargs.setdefault("alpha", 0.75)
 
         for coord, ax in zip(self._result.pcoords_, axes):
-
             df = xa.sel(
                 positions_coordinates=coord, positions=position
             ).to_dataframe()

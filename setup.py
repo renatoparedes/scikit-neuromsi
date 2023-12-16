@@ -31,8 +31,10 @@ PATH = pathlib.Path(os.path.abspath(os.path.dirname(__file__)))
 
 REQUIREMENTS = [
     "numpy",
-    "brain-py",
+    "brainpy",
+    "brainpylib",
     "jaxlib",
+    "jax",
     "bidict",
     "seaborn",
     "xarray",

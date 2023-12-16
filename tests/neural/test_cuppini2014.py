@@ -218,7 +218,6 @@ def test_cuppini2014_temporal_filter_audiovisual_stimuli():
 
 
 def test_cuppini2014_fission_illusion():
-
     model = Cuppini2014(time_range=(0, 250))
     res = model.run(
         auditory_intensity=2.30,

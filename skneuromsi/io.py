@@ -95,7 +95,6 @@ class _ZipFileNames:
 
 
 class _ObjTypes:
-
     NDRESULT_TYPE = "ndresult"
     NDCOLLETION_TYPE = "ndcollection"
 
@@ -138,7 +137,6 @@ class NDResultJSONEncoder(json.JSONEncoder):
 def _prepare_ndc_metadata(
     size, obj_type, obj_kwargs, utc_timestamp, extra_metadata
 ):
-
     # prepare metadata with the default values, time and custom metadata
     nc_metadata = _DEFAULT_METADATA.copy()
     nc_metadata.update(
@@ -186,13 +184,11 @@ def _mk_ndr_zip_paths(idx):
 
 
 def _read_nd_results(zip_fp, storage, tqdm_cls):
-
     indexes = range(len(storage))
     if tqdm_cls:
         indexes = tqdm_cls(iterable=indexes, desc="Reading ndresults")
 
     for idx in indexes:
-
         # determine the directory
         ndr_metadata_filename, ndr_nddata_filename = _mk_ndr_zip_paths(idx)
 
@@ -250,7 +246,6 @@ def store_ndrcollection(
     )
 
     with zipfile.ZipFile(path_or_stream, "w", **kwargs) as zip_fp:
-
         # write the collection metadata.json
         ndc_metadata_json = json.dumps(
             ndc_metadata, cls=NDResultJSONEncoder, indent=2
@@ -262,7 +257,6 @@ def store_ndrcollection(
 
         # write every ndresult
         for idx, ndresult in enumerate(ndresults):
-
             # determine the directory
             ndr_metadata_filename, ndr_nddata_filename = _mk_ndr_zip_paths(idx)
 
@@ -291,7 +285,6 @@ def open_ndrcollection(
     storage_kws = {} if storage_kws is None else dict(storage_kws)
 
     with zipfile.ZipFile(path_or_stream, "r", **kwargs) as zip_fp:
-
         # open the collection metadata
         with zip_fp.open(_ZipFileNames.METADATA) as fp:
             ndc_metadata = json.load(fp)

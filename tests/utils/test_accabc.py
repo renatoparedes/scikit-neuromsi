@@ -36,7 +36,6 @@ from skneuromsi.utils import AccessorABC
 
 def test_AccessorABC():
     class FooAccessor(AccessorABC):
-
         _default_kind = "zaraza"
 
         def __init__(self, v):
@@ -61,7 +60,6 @@ def test_AccessorABC_no__default_kind():
 
 def test_AccessorABC_invalid_kind():
     class FooAccessor(AccessorABC):
-
         _default_kind = "zaraza"
 
         def __init__(self):

@@ -41,7 +41,6 @@ class NDResultBiasAcc(AccessorABC):
     def _bias_as_frame(
         self, disp_mtx, influence_parameter, changing_parameter, bias_arr
     ):
-
         # el nuevo indice va a ser sale del valor relativo del
         # parametro cambia "menos" el que influye
         dispm_diff = (
@@ -108,7 +107,6 @@ class NDResultBiasAcc(AccessorABC):
 
         bias_arr = np.zeros(len(nd_collection))
         for idx, res in enumerate(ndresults):
-
             ref_value = res.run_params[changing_parameter]
 
             # aca sacamos todos los valores del modo que nos interesa

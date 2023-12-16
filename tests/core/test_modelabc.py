@@ -356,7 +356,6 @@ def test_SKNMSIRunConfig_validate_init_and_run_missing_template_variable():
 
 
 def test_SKNMSIRunConfig_invalid_model_type():
-
     with pytest.raises(ValueError):
         modelabc.SKNMSIRunConfig(
             [modelabc.ParameterAliasTemplate("foo", "${p0}_foo")],
@@ -368,7 +367,6 @@ def test_SKNMSIRunConfig_invalid_model_type():
 
 
 def test_SKNMSIRunConfig_wrap_run():
-
     config = modelabc.SKNMSIRunConfig(
         [modelabc.ParameterAliasTemplate("foo", "${p0}_foo")],
         [],
@@ -380,7 +378,6 @@ def test_SKNMSIRunConfig_wrap_run():
     foo_calls = []
 
     class MethodClass:
-
         time_range = (1, 2)
         position_range = (1, 2)
         time_res = 1
@@ -414,7 +411,6 @@ def test_SKNMSIRunConfig_wrap_run():
 
 
 def test_SKNMSIRunConfig_wrap_init():
-
     config = modelabc.SKNMSIRunConfig(
         _input=[modelabc.ParameterAliasTemplate("foo", "${p0}_foo")],
         _output=[],
@@ -474,7 +470,6 @@ def test_SKNMSIRunConfig_wrap_init():
 
 
 def test_SKNMSIMethodABC():
-
     foo_calls = []
 
     class Method(modelabc.SKNMSIMethodABC):
@@ -532,7 +527,6 @@ def test_SKNMSIMethodABC_something_is_not_redefined(ignore, err_msg):
 
 def test_SKNMSIMethodABC_abstract():
     class Method(modelabc.SKNMSIMethodABC):
-
         _abstract = True
         _run_input = [
             {"target": "foo", "template": "${p0}_foo"},

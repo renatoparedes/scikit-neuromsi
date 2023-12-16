@@ -37,7 +37,6 @@ class Cuppini2014Integrator:
         return 1 / (1 + np.exp(-self.s * (u - self.theta)))
 
     def __call__(self, y_a, y_v, t, u_a, u_v):
-
         # Auditory
         dy_a = (-y_a + self.sigmoid(u_a)) * (1 / self.tau[0])
 
@@ -70,7 +69,6 @@ class Cuppini2014TemporalFilter:
         a_gain,
         v_gain,
     ):
-
         # Auditory
 
         da_outside_input = auditoryfilter_input
@@ -231,7 +229,6 @@ class Cuppini2014(SKNMSIMethodABC):
         excitation_scale,
         inhibition_scale,
     ):
-
         the_lateral_synapses = np.zeros((self.neurons, self.neurons))
 
         for neuron_i in range(self.neurons):
@@ -346,7 +343,6 @@ class Cuppini2014(SKNMSIMethodABC):
         auditory_stim_n=2,
         visual_stim_n=1,
     ):
-
         auditory_position = (
             int(self._position_range[1] / 2)
             if auditory_position is None
@@ -445,7 +441,6 @@ class Cuppini2014(SKNMSIMethodABC):
         del z_1d, z_2d
 
         for i in range(hist_times.size):
-
             time = int(hist_times[i] / self._integrator.dt)
 
             # Compute cross-modal input

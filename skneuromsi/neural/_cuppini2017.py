@@ -37,7 +37,6 @@ class Cuppini2017IntegratorFunction:
         return 1 / (1 + np.exp(-self.s * (u - self.theta)))
 
     def __call__(self, y_a, y_v, y_m, t, u_a, u_v, u_m):
-
         # Auditory
         dy_a = (-y_a + self.sigmoid(u_a)) * (1 / self.tau[0])
 
@@ -172,7 +171,6 @@ class Cuppini2017(SKNMSIMethodABC):
         excitation_scale,
         inhibition_scale,
     ):
-
         the_lateral_synapses = np.zeros((self.neurons, self.neurons))
 
         for neuron_i in range(self.neurons):
@@ -204,7 +202,6 @@ class Cuppini2017(SKNMSIMethodABC):
         return the_stimuli
 
     def synapses(self, weight, sigma):
-
         the_synapses = np.zeros((self.neurons, self.neurons))
 
         for j in range(self.neurons):
@@ -230,7 +227,6 @@ class Cuppini2017(SKNMSIMethodABC):
         visual_intensity=27,
         noise=False,
     ):
-
         auditory_position = (
             int(self._position_range[1] / 2)
             if auditory_position is None
@@ -311,7 +307,6 @@ class Cuppini2017(SKNMSIMethodABC):
         ) * self.random.random(self.neurons)
 
         for i in range(hist_times.size):
-
             time = hist_times[i]
 
             # Compute cross-modal input
@@ -373,7 +368,6 @@ class Cuppini2017(SKNMSIMethodABC):
         return response, extra
 
     def calculate_causes(self, multi, **kwargs):
-
         fp = findpeaks(method="topology", verbose=0)
         X = multi[-1, :]
         results = fp.fit(X)

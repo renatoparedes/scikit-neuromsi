@@ -37,7 +37,6 @@ class Paredes2022Integrator:
         return 1 / (1 + np.exp(-self.s * (u - self.theta)))
 
     def __call__(self, y_a, y_v, y_m, t, u_a, u_v, u_m):
-
         # Auditory
         dy_a = (-y_a + self.sigmoid(u_a)) * (1 / self.tau)
 
@@ -82,7 +81,6 @@ class Paredes2022TemporalFilter:
         v_noise,
         include_noise,
     ):
-
         if not include_noise:
             a_noise, v_noise = 0, 0
 
@@ -267,7 +265,6 @@ class Paredes2022(SKNMSIMethodABC):
         excitation_scale,
         inhibition_scale,
     ):
-
         the_lateral_synapses = np.zeros((self.neurons, self.neurons))
 
         for neuron_i in range(self.neurons):
@@ -412,7 +409,6 @@ class Paredes2022(SKNMSIMethodABC):
         return stimuli_matrix
 
     def synapses(self, weight, sigma):
-
         the_synapses = np.zeros((self.neurons, self.neurons))
 
         for j in range(self.neurons):
@@ -459,7 +455,6 @@ class Paredes2022(SKNMSIMethodABC):
         auditory_stim_n=2,
         visual_stim_n=1,
     ):
-
         auditory_position = (
             int(self._position_range[1] / 2)
             if auditory_position is None
@@ -603,7 +598,6 @@ class Paredes2022(SKNMSIMethodABC):
         del z_1d, z_2d
 
         for i in range(hist_times.size):
-
             time = int(hist_times[i] / self._integrator.dt)
 
             # Input noise

@@ -61,7 +61,6 @@ class Kording2007(SKNMSIMethodABC):
         time_res=1,
         seed=None,
     ):
-
         self._n = n
         self._mode0 = mode0
         self._mode1 = mode1
@@ -122,7 +121,6 @@ class Kording2007(SKNMSIMethodABC):
         prior_mu,
         unisensory_input,
     ):
-
         unisensory_hat_ind = (
             (unisensory_input / unisensory_var)
             + (np.ones(self.n) * prior_mu) / prior_var
@@ -149,7 +147,6 @@ class Kording2007(SKNMSIMethodABC):
         auditory_input,
         visual_input,
     ):
-
         # Inputs
         single_stim = np.sum(np.isnan([auditory_input, visual_input]))
 
@@ -258,7 +255,6 @@ class Kording2007(SKNMSIMethodABC):
         strategy="averaging",
         noise=True,
     ):
-
         possible_locations = np.arange(
             self._position_range[0],
             self._position_range[1],
@@ -342,7 +338,6 @@ class Kording2007(SKNMSIMethodABC):
         return response, extra
 
     def calculate_causes(self, p_common_cause, **kwargs):
-
         if self.n > 1:
             if np.average(p_common_cause) > 0.5:
                 return 1

@@ -62,7 +62,6 @@ class AlaisBurr2004(SKNMSIMethodABC):
         time_range=(1, 1),
         time_res=1,
     ):
-
         self._mode0 = mode0
         self._mode1 = mode1
         self._position_range = position_range
@@ -100,7 +99,6 @@ class AlaisBurr2004(SKNMSIMethodABC):
     def unisensory_estimator(
         self, unisensory_sigma, unisensory_position, possible_locations
     ):
-
         sigma = unisensory_sigma
         location = unisensory_position
         plocations = possible_locations
@@ -128,7 +126,6 @@ class AlaisBurr2004(SKNMSIMethodABC):
         multisensory_sigma,
         possible_locations,
     ):
-
         sigma = multisensory_sigma
 
         location = (
