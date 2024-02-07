@@ -327,13 +327,13 @@ class SKNMSIRunConfig:
         return doc
 
     def wrap_run(self, model_instance, run_template_context):
-        """Retorna una wrapper para el metodo run.
+        """Returns a wrapper for the run method.
 
-        Este metodo es utilizado *por cada instancia* de un objeto de clase
+        This method is used *for each instance* of a class object
         ``SKNMSIMethodABC``.
 
-        El metodo resultante acepta como parámetros los alias resultantes de
-        la configuracion y los mapea a los "targets".
+        The resulting method accepts as parameters the resulting aliases from
+        the configuration and maps them to the "targets".
 
         """
         # extraemos el run, calculate_causes y calculate_perceived_positions
