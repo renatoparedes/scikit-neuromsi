@@ -419,6 +419,12 @@ class Paredes2022(SKNMSIMethodABC):
                 )
         return the_synapses
 
+    def pruning(self, synapses_weight_matrix, pruning_threshold):
+        pruned_synpases = np.copy(synapses_weight_matrix)
+        pruned_synpases[pruned_synpases < pruning_threshold] = 0
+
+        return pruned_synpases
+
     # Model run
     def set_random(self, rng):
         self._random = rng
@@ -454,6 +460,8 @@ class Paredes2022(SKNMSIMethodABC):
         multisensory_gain=None,
         auditory_stim_n=2,
         visual_stim_n=1,
+        feedforward_pruning_threshold=0,
+        cross_modal_pruning_threshold=0,
     ):
         auditory_position = (
             int(self._position_range[1] / 2)
@@ -519,6 +527,20 @@ class Paredes2022(SKNMSIMethodABC):
         )
         multi_to_visual_synapses = self.synapses(
             weight=feedback_weight, sigma=0.5
+        )
+
+        # Prune synapses
+        auditory_to_multi_synapses = self.pruning(
+            auditory_to_multi_synapses, feedforward_pruning_threshold
+        )
+        visual_to_multi_synapses = self.pruning(
+            visual_to_multi_synapses, feedforward_pruning_threshold
+        )
+        auditory_to_visual_synapses = self.pruning(
+            auditory_to_visual_synapses, cross_modal_pruning_threshold
+        )
+        visual_to_auditory_synapses = self.pruning(
+            visual_to_auditory_synapses, cross_modal_pruning_threshold
         )
 
         # Generate Stimuli
