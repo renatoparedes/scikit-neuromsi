@@ -80,47 +80,64 @@ class Paredes2022TemporalFilter:
         a_noise,
         v_noise,
         include_noise,
+        include_temporal_noise,
+        t_noise,
     ):
         if not include_noise:
             a_noise, v_noise = 0, 0
+
+        if include_temporal_noise:
+            a_tau, v_tau, m_tau = (
+                self.random.uniform(
+                    self.tau[0] - t_noise / 2, self.tau[0] + t_noise / 2
+                ),
+                self.random.uniform(
+                    self.tau[1] - t_noise / 2, self.tau[1] + t_noise / 2
+                ),
+                self.random.uniform(
+                    self.tau[2] - t_noise / 2, self.tau[2] + t_noise / 2
+                ),
+            )
+        else:
+            a_tau, v_tau, m_tau = self.tau[0], self.tau[1], self.tau[2]
 
         # Auditory
         da_outside_input = auditoryfilter_input
 
         dauditory_filter_input = (
-            (a_gain / self.tau[0])
+            (a_gain / a_tau)
             * (
                 a_external_input
                 + a_cross_modal_input
                 + a_feedback_input
                 + a_noise
             )
-            - ((2 * auditoryfilter_input) / self.tau[0])
-            - a_outside_input / np.square(self.tau[0])
+            - ((2 * auditoryfilter_input) / a_tau)
+            - a_outside_input / np.square(a_tau)
         )
 
         # Visual
         dv_outside_input = visualfilter_input
 
         dvisual_filter_input = (
-            (v_gain / self.tau[1])
+            (v_gain / v_tau)
             * (
                 v_external_input
                 + v_cross_modal_input
                 + v_feedback_input
                 + v_noise
             )
-            - ((2 * visualfilter_input) / self.tau[1])
-            - v_outside_input / np.square(self.tau[1])
+            - ((2 * visualfilter_input) / v_tau)
+            - v_outside_input / np.square(v_tau)
         )
 
         # Multisensory
         dm_outside_input = multisensoryfilter_input
 
         dmultisensory_filter_input = (
-            (m_gain / self.tau[2]) * (m_external_input)
-            - ((2 * multisensoryfilter_input) / self.tau[2])
-            - m_outside_input / np.square(self.tau[2])
+            (m_gain / m_tau) * (m_external_input)
+            - ((2 * multisensoryfilter_input) / m_tau)
+            - m_outside_input / np.square(m_tau)
         )
 
         return (
@@ -448,6 +465,8 @@ class Paredes2022(SKNMSIMethodABC):
         visual_intensity=1.4,
         noise=False,
         noise_level=0.40,
+        temporal_noise=True,
+        temporal_noise_scale=5,
         lateral_excitation=2,
         lateral_inhibition=1.8,
         cross_modal_weight=0.075,
@@ -701,6 +720,8 @@ class Paredes2022(SKNMSIMethodABC):
                 a_noise=auditory_noise,
                 v_noise=visual_noise,
                 include_noise=noise,
+                include_temporal_noise=temporal_noise,
+                t_noise=temporal_noise_scale,
             )
 
             (
