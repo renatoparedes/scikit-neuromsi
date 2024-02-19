@@ -81,22 +81,18 @@ class Paredes2022TemporalFilter:
         v_noise,
         include_noise,
         include_temporal_noise,
-        t_noise,
+        a_temporal_noise,
+        v_temporal_noise,
+        m_temporal_noise,
     ):
         if not include_noise:
             a_noise, v_noise = 0, 0
 
         if include_temporal_noise:
             a_tau, v_tau, m_tau = (
-                self.random.uniform(
-                    self.tau[0] - t_noise / 2, self.tau[0] + t_noise / 2
-                ),
-                self.random.uniform(
-                    self.tau[1] - t_noise / 2, self.tau[1] + t_noise / 2
-                ),
-                self.random.uniform(
-                    self.tau[2] - t_noise / 2, self.tau[2] + t_noise / 2
-                ),
+                a_temporal_noise,
+                v_temporal_noise,
+                m_temporal_noise,
             )
         else:
             a_tau, v_tau, m_tau = self.tau[0], self.tau[1], self.tau[2]
@@ -217,10 +213,10 @@ class Paredes2022(SKNMSIMethodABC):
             f=temporal_filter_model, **integrator_kws
         )
 
+        self.set_random(np.random.default_rng(seed=seed))
+
         self._mode0 = mode0
         self._mode1 = mode1
-
-        self.set_random(np.random.default_rng(seed=seed))
 
     # PROPERTY ================================================================
 
@@ -229,8 +225,12 @@ class Paredes2022(SKNMSIMethodABC):
         return self._neurons
 
     @property
-    def tau(self):
+    def tau_neurons(self):
         return self._integrator.f.tau
+
+    @property
+    def tau(self):
+        return self._temporal_filter.f.tau
 
     @property
     def s(self):
@@ -465,7 +465,7 @@ class Paredes2022(SKNMSIMethodABC):
         visual_intensity=1.4,
         noise=False,
         noise_level=0.40,
-        temporal_noise=True,
+        temporal_noise=False,
         temporal_noise_scale=5,
         lateral_excitation=2,
         lateral_inhibition=1.8,
@@ -638,6 +638,22 @@ class Paredes2022(SKNMSIMethodABC):
 
         del z_1d, z_2d
 
+        # Temporal noise
+        rand_a_tau, rand_v_tau, rand_m_tau = (
+            self.random.uniform(
+                self.tau[0] - temporal_noise_scale / 2,
+                self.tau[0] + temporal_noise_scale / 2,
+            ),
+            self.random.uniform(
+                self.tau[1] - temporal_noise_scale / 2,
+                self.tau[1] + temporal_noise_scale / 2,
+            ),
+            self.random.uniform(
+                self.tau[2] - temporal_noise_scale / 2,
+                self.tau[2] + temporal_noise_scale / 2,
+            ),
+        )
+
         for i in range(hist_times.size):
             time = int(hist_times[i] / self._integrator.dt)
 
@@ -721,7 +737,9 @@ class Paredes2022(SKNMSIMethodABC):
                 v_noise=visual_noise,
                 include_noise=noise,
                 include_temporal_noise=temporal_noise,
-                t_noise=temporal_noise_scale,
+                a_temporal_noise=rand_a_tau,
+                v_temporal_noise=rand_v_tau,
+                m_temporal_noise=rand_m_tau,
             )
 
             (
