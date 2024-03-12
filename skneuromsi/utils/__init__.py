@@ -12,16 +12,16 @@
 # DOCS
 # =============================================================================
 
-"""Utilities."""
+"""Utilities for scikit-neuromsi."""
 
 
 # =============================================================================
 # IMPORTS
 # =============================================================================
 
+from . import storages
 from .accabc import AccessorABC
 from .bunch import Bunch
-from . import storages
+from .doctools import doc_inherit
 
-
-__all__ = ["AccessorABC", "Bunch", "storages"]
+__all__ = ["AccessorABC", "Bunch", "storages", "doc_inherit"]

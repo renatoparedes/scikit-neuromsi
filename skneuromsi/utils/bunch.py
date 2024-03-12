@@ -27,9 +27,8 @@
 # IMPORTS
 # =============================================================================
 
-from collections.abc import Mapping
 import copy
-
+from collections.abc import Mapping
 
 # =============================================================================
 # DOC INHERITANCE
