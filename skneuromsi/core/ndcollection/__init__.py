@@ -12,7 +12,12 @@
 # DOCS
 # =============================================================================
 
-""""""
+"""Implementation of NDCollection.
+
+The ndcollection module implements the NDCollection class, which is a
+collection of NDResult objects.
+
+"""
 
 # =============================================================================
 # IMPORTS
@@ -21,17 +26,13 @@
 from collections.abc import Sequence
 
 import methodtools
-
 import numpy as np
-
 import pandas as pd
-
 from tqdm.auto import tqdm
 
 from ...core import constants as cons
 from ...utils import Bunch
-from . import plot_acc, bias_acc, causes_acc
-
+from . import bias_acc, causes_acc, plot_acc
 
 # =============================================================================
 # RESULT COLLECTION
@@ -39,11 +40,81 @@ from . import plot_acc, bias_acc, causes_acc
 
 
 def _modes_describe(ndres):
+    """Describe the modes of an NDResult.
+
+    This function calculates and returns a dictionary containing information
+    about the modes of an NDResult.
+
+    Parameters
+    ----------
+    ndres : NDResult
+        The NDResult object for which to describe the modes.
+
+    Returns
+    -------
+    dict
+        A dictionary with the following key:
+
+        - 'var' : float
+            Variance of the modes.
+
+    """
     modes = ndres.get_modes()
     return {"var": modes.var()}
 
 
 def _make_metadata_cache(ndresults, progress_cls):
+    """Create a metadata cache from a collection of NDResult objects.
+
+    This function iterates over a collection of NDResult objects and extracts
+    various metadata information to create a metadata cache.
+
+    Parameters
+    ----------
+    ndresults : iterable
+        Iterable containing NDResult objects.
+    progress_cls : class or None
+        Class to use for tqdm progress bar or None if no progress bar
+        is needed.
+
+    Returns
+    -------
+    cache : Bunch
+        A dict like object containing the metadata cache with the following
+        attributes:
+
+        - modes : array-like
+            Modes associated with the NDResult collection.
+        - run_parameters : tuple
+            Tuple representing the run parameters of the NDResult collection.
+        - mnames : ndarray
+            Names of the NDResults.
+        - mtypes : ndarray
+            Types of the NDResults.
+        - output_mode : str
+            Output mode of the NDResult collection.
+        - nmaps : ndarray
+            Number of maps associated with each NDResult.
+        - time_ranges : ndarray
+            Time ranges associated with each NDResult.
+        - position_ranges : ndarray
+            Position ranges associated with each NDResult.
+        - time_resolutions : ndarray
+            Time resolutions associated with each NDResult.
+        - position_resolutions : ndarray
+            Position resolutions associated with each NDResult.
+        - run_parameters_values : ndarray
+            Run parameter values for each NDResult.
+        - extras : ndarray
+            Extra information for each NDResult.
+        - causes : ndarray
+            Causes information for each NDResult.
+        - modes_variances_sum : pandas.Series
+            Sum of variances for modes.
+        - dims : array-like
+            Dimensions associated with the NDResult collection.
+
+    """
     mnames = []
     mtypes = []
     nmaps = []
@@ -113,6 +184,19 @@ def _make_metadata_cache(ndresults, progress_cls):
 
 
 class NDResultCollection(Sequence):
+    """Collection of NDResult objects.
+
+    Parameters
+    ----------
+    name : str
+        Name of the NDResultCollection.
+    results : iterable
+        Iterable containing NDResult objects.
+    tqdm_cls : class, optional
+        Class to use for tqdm progress bar. Defaults to tqdm.auto.tqdm.
+
+    """
+
     def __init__(self, name, results, *, tqdm_cls=tqdm):
         self._len = len(results)
         if not self._len:
@@ -127,35 +211,52 @@ class NDResultCollection(Sequence):
         )
 
     # Because is a Sequence ==================================================
-    @property
-    def name(self):
-        return self._name
 
     def __len__(self):
+        """Return the number of NDResult objects in the collection."""
         return self._len
 
     def __getitem__(self, idxs):
+        """Return the NDResult object at the given index."""
         return self._ndresults.__getitem__(idxs)
+
+    # PROPERTIES =============================================================
+
+    @property
+    def name(self):
+        """Name of the NDResultCollection."""
+        return self._name
 
     @property
     def modes_(self):
+        """Modes of all the results in the NDResultCollection."""
         return self._metadata_cache.modes
 
     @property
     def output_mode_(self):
+        """Output mode of all the results in the \
+        NDResultCollection."""
         return self._metadata_cache.output_mode
 
     @property
     def input_modes_(self):
+        """Input modes of all the results in the NDResultCollection.
+
+        Returns all modes that are not the output mode.
+
+        """
         candidates = self.modes_
         return candidates[~(candidates == self.output_mode_)]
 
     @property
     def run_parameters_(self):
+        """Array with all the run parameters of each result in the \
+        NDResultCollection."""
         return self._metadata_cache.run_parameters
 
     @property
     def dims_(self):
+        """Dimensions of all the results in the NDResultCollection."""
         return self._metadata_cache.dims
 
     def __repr__(self):
@@ -350,24 +451,45 @@ class NDResultCollection(Sequence):
     @methodtools.lru_cache(maxsize=None)
     @property
     def causes(self):
+        """Accessor for NDResultCausesAcc providing access to causes \
+        analysis."""
         return causes_acc.NDResultCausesAcc(self)
 
     @methodtools.lru_cache(maxsize=None)
     @property
     def bias(self):
+        """Accessor for NDResultBiasAcc providing access to bias analysis."""
         return bias_acc.NDResultBiasAcc(self)
 
     @methodtools.lru_cache(maxsize=None)
     @property
     def plot(self):
+        """Accessor for NDResultCollectionPlotter providing access to \
+        plotting utilities."""
         return plot_acc.NDResultCollectionPlotter(self)
 
     # IO ======================================================================
 
     def to_dict(self):
+        """Convert the NDResultCollection to a dictionary."""
         return {"name": self.name, "ndresults": self._ndresults}
 
     def to_nmsi(self, path_or_stream, metadata=None, quiet=False, **kwargs):
+        """Store the NDResultCollection in a NMSI format.
+
+        Parameters
+        ----------
+        path_or_stream : str or file-like
+            File path or file-like object to save the NMSI file.
+        metadata : dict, optional
+            Additional metadata to include in the NMSI file.
+        quiet : bool, optional
+            If True, suppress tqdm progress bar. Defaults to False.
+        **kwargs
+            Additional keyword arguments passed to store_ndrcollection
+            function.
+
+        """
         from ...io import store_ndrcollection  # noqa
 
         tqdm_cls = self._tqdm_cls if quiet is False else None

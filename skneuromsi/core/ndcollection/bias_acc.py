@@ -12,20 +12,24 @@
 # DOCS
 # =============================================================================
 
-""""""
+"""Implementation of bias analysis in multisensory integration.
+
+The NDResultBiasAcc class provides an accessor, NDResultBiasAcc, for analyzing
+biases in the context of multisensory integration. It offers methods to
+calculate biases and mean biases based on specified influence and changing
+parameters.
+
+"""
 
 # =============================================================================
 # IMPORTS
 # =============================================================================
 
 import methodtools
-
 import numpy as np
-
 import pandas as pd
 
 from ...utils import AccessorABC
-
 
 # =============================================================================
 # BIAS ACC
@@ -33,6 +37,23 @@ from ...utils import AccessorABC
 
 
 class NDResultBiasAcc(AccessorABC):
+    """Accessor for calculating biases in an NDResultCollection.
+
+    Bias analysis in multisensory integration refers to the examination and
+    identification of potential biases that may influence the way different
+    sensory modalities are combined or integrated in the human brain.
+
+    This accessor provides methods for calculating biases based on
+    various parameters.
+
+    Parameters
+    ----------
+    ndcollection : NDResultCollection
+        The NDResultCollection for which to calculate biases.
+
+
+    """
+
     _default_kind = "bias"
 
     def __init__(self, ndcollection):
@@ -41,26 +62,46 @@ class NDResultBiasAcc(AccessorABC):
     def _bias_as_frame(
         self, disp_mtx, influence_parameter, changing_parameter, bias_arr
     ):
-        # el nuevo indice va a ser sale del valor relativo del
-        # parametro cambia "menos" el que influye
+        """Create a DataFrame from the calculated biases.
+
+        Parameters
+        ----------
+        disp_mtx : pandas.DataFrame
+            Disparity matrix containing the changing and influence parameters.
+        influence_parameter : str
+            Parameter influencing the biases.
+        changing_parameter : str
+            Parameter changing across iterations.
+        bias_arr : numpy.ndarray
+            Array of calculated biases.
+
+        Returns
+        -------
+        pandas.DataFrame
+            A DataFrame representing biases with columns representing changing
+            and influence parameters.
+
+        """
+        # The new index is obtained by subtracting the relative value of the
+        # changing parameter from the influence parameter.
         dispm_diff = (
             disp_mtx[changing_parameter] - disp_mtx[influence_parameter]
         )
 
-        # ahora necesitamos saber cuantas repetisiones hay en nuestros bias
+        # Now we need to know how many repetitions there are in our biases
         cpd_len = len(disp_mtx)
         cpd_unique_len = len(np.unique(disp_mtx[changing_parameter]))
 
         repeat = cpd_len // cpd_unique_len
         pos = cpd_len // repeat
 
-        # creamos el dataframe
+        # Create the DataFrame
         bias_df = pd.DataFrame(bias_arr.reshape(pos, repeat))
 
-        # el indice esta repetido, por lo que solo queremos uno cada 'repeat'.
+        # The index is repeated, so we only want one each 'repeat'.
         bias_df.index = pd.Index(dispm_diff.values[::repeat], name="Disparity")
 
-        # cramos un columna multi nivel
+        # Create a multi-level column
         cnames = ["Changing parameter", "Influence parameter", "Iteration"]
         cvalues = [
             (changing_parameter, influence_parameter, it)
@@ -80,6 +121,46 @@ class NDResultBiasAcc(AccessorABC):
         mode=None,
         quiet=False,
     ):
+        """Calculate biases for a specified influence parameter.
+
+        This method calculates biases in the context of multisensory
+        integration analysis. Biases represent the deviation of a specific
+        parameter's influence on the integration process across different
+        iterations. The analysis considers the relationship between the
+        changing parameter and the influence parameter in each iteration over
+        a given mode.
+
+        Parameters
+        ----------
+        influence_parameter : str
+            The parameter influencing the biases.
+        changing_parameter : str or None, optional
+            The parameter changing across iterations. If None,
+            automatically selected.
+        dim : str or None, optional
+            The dimension for calculating biases. If None, defaults to 'time'.
+        mode : str or None, optional
+            The mode for which to calculate biases. If None, defaults to the
+            mode with maximum variance.
+        quiet : bool, optional
+            If True, suppress tqdm progress bar. Defaults to False.
+
+        Returns
+        -------
+        pandas.DataFrame
+            A DataFrame containing biases with columns representing changing
+            and influence parameters.
+            The columns represent the changing and influence parameters, and
+            each row corresponds to a specific disparity in the relationship
+            between these parameters across iterations.
+
+        Raises
+        ------
+        ValueError
+            If the specified parameters are invalid.
+
+        """
+
         nd_collection = self._nd_collection
 
         mode = nd_collection.coerce_mode(mode)
@@ -109,11 +190,11 @@ class NDResultBiasAcc(AccessorABC):
         for idx, res in enumerate(ndresults):
             ref_value = res.run_params[changing_parameter]
 
-            # aca sacamos todos los valores del modo que nos interesa
+            # here we extract all the values of the mode we are interested in
             modes_values = res.get_modes(mode)
 
-            # determinamos los valores del modo en la dimension
-            # que nos interesa
+            # we determine the values of the mode in the dimension
+            # that interests us
             max_dim_index = modes_values.index.get_level_values(dim).max()
             max_dim_values = modes_values.xs(
                 max_dim_index, level=dim
@@ -126,7 +207,7 @@ class NDResultBiasAcc(AccessorABC):
 
             bias_arr[idx] = bias
 
-        # convertimos los bias_arr en un dataframe
+        # convert biases array to a DataFrame
         bias_df = self._bias_as_frame(
             disp_mtx, influence_parameter, changing_parameter, bias_arr
         )
@@ -142,6 +223,47 @@ class NDResultBiasAcc(AccessorABC):
         mode=None,
         quiet=False,
     ):
+        """Calculate the mean biases in multisensory integration analysis.
+
+        This method calculates the mean biases in the context of multisensory
+        integration analysis. Mean biases represent the average deviation of a
+        specific parameter's influence on the integration
+        process across different iterations. The analysis considers the
+        relationship between the changing parameter and the influence parameter
+        in each iteration.
+
+        Parameters
+        ----------
+        influence_parameter : str
+            The parameter influencing the mean biases in multisensory
+            integration.
+        changing_parameter : str or None, optional
+            The parameter that changes across iterations. If None, the function
+            automatically selects it.
+        dim : str or None, optional
+            The dimension for calculating mean biases. If None, it defaults to
+            'time'.
+        mode : str or None, optional
+            The mode for which to calculate mean biases. If None, it defaults
+            to the mode with maximum variance.
+        quiet : bool, optional
+            If True, suppresses the tqdm progress bar. Defaults to False.
+
+        Returns
+        -------
+        pandas.DataFrame
+            A DataFrame containing the mean biases in multisensory integration
+            analysis. The columns represent the changing and influence
+            parameters, and each row corresponds to a specific disparity in
+            the relationship between these parameters across iterations.
+
+        Raises
+        ------
+        ValueError
+            If the specified parameters are invalid or the influence parameter
+            is not fixed across iterations.
+
+        """
         bias = self.bias(
             influence_parameter=influence_parameter,
             changing_parameter=changing_parameter,
