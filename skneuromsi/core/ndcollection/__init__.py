@@ -259,6 +259,11 @@ class NDResultCollection(Sequence):
         """Dimensions of all the results in the NDResultCollection."""
         return self._metadata_cache.dims
 
+    @property
+    def tqdm_cls(self):
+        """Class to use for tqdm progress bar."""
+        return self._tqdm_cls
+
     def __repr__(self):
         """x.__repr__() <==> repr(x)"""
         cls_name = type(self).__name__
