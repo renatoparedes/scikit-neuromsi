@@ -12,7 +12,13 @@
 # DOCS
 # =============================================================================
 
-""""""
+"""
+This module contains classes for plotting NDResultCollection data.
+
+NDResultCollectionPlotter provides methods for plotting NDResultCollection
+data, including line plots for reports and biases.
+
+"""
 
 # =============================================================================
 # IMPORTS
@@ -20,7 +26,6 @@
 
 
 import seaborn as sns
-
 
 from ...utils import AccessorABC
 
@@ -30,12 +35,40 @@ from ...utils import AccessorABC
 
 
 class NDResultCollectionPlotter(AccessorABC):
+    """NDResultCollection plotting utilities.
+
+    Parameters
+    ----------
+    ndcollection : NDResultCollection
+        The NDResultCollection object to be plotted.
+
+
+
+    """
+
     _default_kind = "unity_report"
 
     def __init__(self, ndcollection):
         self._nd_collection = ndcollection
 
     def _line_report(self, report, ax, kws):
+        """Generate a line plot for a given report.
+
+        Parameters
+        ----------
+        report : pandas.DataFrame
+            The report data to be plotted.
+        ax : matplotlib.axes.Axes
+            The axes object to plot on.
+        kws : dict
+            Additional keyword arguments for the plot.
+
+        Returns
+        -------
+        ax : matplotlib.axes.Axes
+            The plotted axes object.
+
+        """
         parameter = report.columns[0]
         x = report.index
         y = report[parameter]
@@ -46,6 +79,25 @@ class NDResultCollectionPlotter(AccessorABC):
         return ax
 
     def n_report(self, n, *, parameter=None, ax=None, **kws):
+        """Line plot of the N-report for a given number of causes.
+
+        Parameters
+        ----------
+        n : int
+            The number of causes for the N-report.
+        parameter : str, optional
+            The parameter to plot, by default None.
+        ax : matplotlib.axes.Axes, optional
+            The axes object to plot on, by default None.
+        **kws
+            Additional keyword arguments for the plot.
+
+        Returns
+        -------
+        ax : matplotlib.axes.Axes
+            The plotted axes object.
+
+        """
         causes_acc = self._nd_collection.causes
         the_report = causes_acc.n_report(n, parameter=parameter)
         ax = self._line_report(the_report, ax, kws)
@@ -53,6 +105,22 @@ class NDResultCollectionPlotter(AccessorABC):
         return ax
 
     def unity_report(self, *, parameter=None, ax=None, **kws):
+        """Line plot of the unity report.
+
+        Parameters
+        ----------
+        parameter : str, optional
+            The parameter to plot, by default None.
+        ax : matplotlib.axes.Axes, optional
+            The axes object to plot on, by default None.
+        **kws
+            Additional keyword arguments for the plot.
+
+        Returns
+        -------
+        ax : matplotlib.axes.Axes
+            The plotted axes object.
+        """
         causes_acc = self._nd_collection.causes
         the_report = causes_acc.unity_report(parameter=parameter)
         ax = self._line_report(the_report, ax, kws)
@@ -60,6 +128,22 @@ class NDResultCollectionPlotter(AccessorABC):
         return ax
 
     def mean_report(self, *, parameter=None, ax=None, **kws):
+        """Line plot of the mean report.
+
+        Parameters
+        ----------
+        parameter : str, optional
+            The parameter to plot, by default None.
+        ax : matplotlib.axes.Axes, optional
+            The axes object to plot on, by default None.
+        **kws
+            Additional keyword arguments for the plot.
+
+        Returns
+        -------
+        ax : matplotlib.axes.Axes
+            The plotted axes object.
+        """
         causes_acc = self._nd_collection.causes
         the_report = causes_acc.mean_report(parameter=parameter)
         ax = self._line_report(the_report, ax, kws)
@@ -77,6 +161,30 @@ class NDResultCollectionPlotter(AccessorABC):
         ax=None,
         **kws,
     ):
+        """Line plot of the bias for a given influence parameter.
+
+        Parameters
+        ----------
+        influence_parameter : str
+            The influence parameter for the bias plot.
+        changing_parameter : str, optional
+            The changing parameter, by default None.
+        dim : str, optional
+            The dimension to plot, by default None.
+        mode : str, optional
+            The mode of the plot, by default None.
+        quiet : bool, optional
+            Whether to suppress output, by default False.
+        ax : matplotlib.axes.Axes, optional
+            The axes object to plot on, by default None.
+        **kws
+            Additional keyword arguments for the plot.
+
+        Returns
+        -------
+        ax : matplotlib.axes.Axes
+            The plotted axes object.
+        """
         bias_acc = self._nd_collection.bias
         the_bias = bias_acc.bias(
             influence_parameter,

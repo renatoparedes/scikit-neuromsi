@@ -26,7 +26,9 @@ parameters.
 # =============================================================================
 
 import methodtools
+
 import numpy as np
+
 import pandas as pd
 
 from ...utils import AccessorABC
@@ -182,9 +184,7 @@ class NDResultBiasAcc(AccessorABC):
         ndresults = nd_collection._ndresults
         tqdm_cls = nd_collection._tqdm_cls
         if quiet is False and tqdm_cls is not None:
-            ndresults = tqdm_cls(
-                iterable=ndresults, desc="Calculating biases"
-            )
+            ndresults = tqdm_cls(iterable=ndresults, desc="Calculating biases")
 
         bias_arr = np.zeros(len(nd_collection))
         for idx, res in enumerate(ndresults):

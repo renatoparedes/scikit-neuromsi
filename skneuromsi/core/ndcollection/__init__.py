@@ -8,6 +8,7 @@
 # Full Text:
 #     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
 
+
 # =============================================================================
 # DOCS
 # =============================================================================
@@ -26,13 +27,17 @@ collection of NDResult objects.
 from collections.abc import Sequence
 
 import methodtools
+
 import numpy as np
+
 import pandas as pd
+
 from tqdm.auto import tqdm
 
+from . import bias_acc, causes_acc, plot_acc
 from ...core import constants as cons
 from ...utils import Bunch
-from . import bias_acc, causes_acc, plot_acc
+
 
 # =============================================================================
 # RESULT COLLECTION
