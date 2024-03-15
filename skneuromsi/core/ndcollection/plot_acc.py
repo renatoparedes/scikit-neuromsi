@@ -12,8 +12,7 @@
 # DOCS
 # =============================================================================
 
-"""
-This module contains classes for plotting NDResultCollection data.
+"""Utilities for plotting NDResultCollection data.
 
 NDResultCollectionPlotter provides methods for plotting NDResultCollection
 data, including line plots for reports and biases.
@@ -225,6 +224,30 @@ class NDResultCollectionPlotter(AccessorABC):
         ax=None,
         **kws,
     ):
+        """Line plot ot the mean bias.
+
+        Parameters
+        ----------
+        influence_parameter : str
+            The influencing parameter.
+        changing_parameter : str, optional
+            The changing parameter (default is None).
+        dim : str, optional
+            Dimension (default is None).
+        mode : str, optional
+            Mode (default is None).
+        quiet : bool, optional
+            If True, suppress warnings (default is False).
+        ax : matplotlib.axes.Axes, optional
+            The axes to plot onto (default is None).
+        **kws : dict
+            Additional keyword arguments to pass to seaborn lineplot.
+
+        Returns
+        -------
+        matplotlib.axes.Axes
+            The axes with the plotted mean bias.
+        """
         bias_acc = self._nd_collection.bias
         the_bias = bias_acc.bias_mean(
             influence_parameter,

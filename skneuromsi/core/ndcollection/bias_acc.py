@@ -162,7 +162,6 @@ class NDResultBiasAcc(AccessorABC):
             If the specified parameters are invalid.
 
         """
-
         nd_collection = self._nd_collection
 
         mode = nd_collection.coerce_mode(mode)
@@ -227,10 +226,9 @@ class NDResultBiasAcc(AccessorABC):
 
         This method calculates the mean biases in the context of multisensory
         integration analysis. Mean biases represent the average deviation of a
-        specific parameter's influence on the integration
-        process across different iterations. The analysis considers the
-        relationship between the changing parameter and the influence parameter
-        in each iteration.
+        specific parameter's influence on the integration process across
+        different iterations. The analysis considers the relationship between
+        the changing parameter and the influence parameter in each iteration.
 
         Parameters
         ----------

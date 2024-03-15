@@ -270,7 +270,7 @@ class NDResultCollection(Sequence):
         return self._tqdm_cls
 
     def __repr__(self):
-        """x.__repr__() <==> repr(x)"""
+        """x.__repr__() <==> repr(x)."""
         cls_name = type(self).__name__
         name = self.name
         length = len(self)
@@ -401,7 +401,6 @@ class NDResultCollection(Sequence):
             the available modes.
 
         """
-
         if prefer is None:
             # maybe two modes have exactly the same variance_sum
             # for this reason we dont use argmax that only return the first max
