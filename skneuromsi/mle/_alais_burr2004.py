@@ -61,6 +61,7 @@ class AlaisBurr2004(SKNMSIMethodABC):
         position_res=0.01,
         time_range=(1, 1),
         time_res=1,
+        seed=None
     ):
         self._mode0 = mode0
         self._mode1 = mode1
@@ -68,6 +69,8 @@ class AlaisBurr2004(SKNMSIMethodABC):
         self._position_res = float(position_res)
         self._time_range = time_range
         self._time_res = float(time_res)
+
+        self.set_random(np.random.default_rng(seed=seed))
 
     # PROPERTY ================================================================
 
@@ -143,8 +146,8 @@ class AlaisBurr2004(SKNMSIMethodABC):
         return multisensory_estimate
 
     # Model run
-    def set_random(self):
-        pass
+    def set_random(self, rng):
+        self._random = rng
 
     def run(
         self,
@@ -153,6 +156,7 @@ class AlaisBurr2004(SKNMSIMethodABC):
         visual_position=5,
         auditory_sigma=3.0,
         visual_sigma=3.0,
+        noise=None,
     ):
         possible_locations = np.arange(
             self._position_range[0],
