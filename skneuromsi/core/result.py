@@ -8,6 +8,15 @@
 # Full Text:
 #     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
 
+
+# =============================================================================
+# DOCS
+# =============================================================================
+
+"""Utilities to represents a multisensory integration result as a \
+multidimensional array."""
+
+
 # =============================================================================
 # IMPORTS
 # =============================================================================
@@ -15,22 +24,20 @@
 from typing import Iterable
 
 import numpy as np
-
 import pandas as pd
-
 import xarray as xr
 
+from ..utils import Bunch
 from .constants import (
-    DIMENSIONS,
     D_MODES,
     D_POSITIONS,
     D_POSITIONS_COORDINATES,
     D_TIMES,
+    DIMENSIONS,
     XA_NAME,
 )
 from .plot import ResultPlotter
 from .stats import ResultStatsAccessor
-from ..utils import Bunch
 
 # =============================================================================
 # CLASS RESULT
@@ -38,6 +45,72 @@ from ..utils import Bunch
 
 
 class NDResult:
+    """Represents a multisensory integration result.
+
+    Parameters
+    ----------
+    mname : str
+        The name of the model.
+    mtype : str
+        The type of the model.
+    output_mode : str
+        The output mode of the model.
+    nmap : dict
+        A dictionary mapping modes to their corresponding values.
+    nddata : xarray.DataArray or dict
+        The multidimensional data as an xarray.DataArray or a dictionary.
+    time_range : tuple
+        The range of time values.
+    position_range : tuple
+        The range of position values.
+    time_res : float
+        The resolution of time values.
+    position_res : float
+        The resolution of position values.
+    causes : int
+        The number of causes in the result.
+    run_params : dict
+        The parameters used for running the model.
+    extra : dict
+        Extra information associated with the result.
+
+    Attributes
+    ----------
+    mname : str
+        The name of the model.
+    mtype : str
+        The type of the model.
+    output_mode : str
+        The output mode of the model.
+    dims : list
+        The dimensions of the result data.
+    nmap_ : dict
+        A copy of the nmap dictionary.
+    time_range : tuple
+        The range of time values.
+    position_range : tuple
+        The range of position values.
+    time_res : float
+        The resolution of time values.
+    position_res : float
+        The resolution of position values.
+    run_params : Bunch
+        The parameters used for running the model.
+    extra_ : Bunch
+        Extra information associated with the result.
+    causes_ : int
+        The number of causes in the result.
+    modes_ : numpy.ndarray
+        The modes of the result data.
+    times_ : numpy.ndarray
+        The time values of the result data.
+    positions_ : numpy.ndarray
+        The position values of the result data.
+    positions_coordinates_ : numpy.ndarray
+        The position coordinates of the result data.
+
+    """
+
     def __init__(
         self,
         *,
@@ -75,70 +148,86 @@ class NDResult:
 
     @property
     def mname(self):
+        """str: The name of the model."""
         return self._mname
 
     @property
     def mtype(self):
+        """str: The type of the model."""
         return self._mtype
 
     @property
     def output_mode(self):
+        """str: The output mode of the model."""
         return self._output_mode
 
     @property
     def dims(self):
+        """list: The dimensions of the result data."""
         return DIMENSIONS.copy()
 
     @property
     def nmap_(self):
+        """dict: A copy of the nmap dictionary."""
         return self._nmap.copy()
 
     @property
     def time_range(self):
+        """tuple: The range of time values."""
         return self._time_range
 
     @property
     def position_range(self):
+        """tuple: The range of position values."""
         return self._position_range
 
     @property
     def time_res(self):
+        """float: The resolution of time values."""
         return self._time_res
 
     @property
     def position_res(self):
+        """float: The resolution of position values."""
         return self._position_res
 
     @property
     def run_params(self):
+        """Bunch: The parameters used for running the model."""
         return self._run_params
 
     rp = run_params
 
     @property
     def extra_(self):
+        """Bunch: Extra information associated with the result."""
         return self._extra
 
     e_ = extra_
 
     @property
     def causes_(self):
+        """int: The number of causes in the result."""
         return self._causes
 
     @property
     def modes_(self):
+        """numpy.ndarray: The modes of the result data."""
         return self._nddata[D_MODES].to_numpy()
 
     @property
     def times_(self):
+        """numpy.ndarray: The time values of the result data."""
         return self._nddata[D_TIMES].to_numpy()
 
     @property
     def positions_(self):
+        """numpy.ndarray: The position values of the result data."""
         return self._nddata[D_POSITIONS].to_numpy()
 
     @property
     def positions_coordinates_(self):
+        """numpy.ndarray: The position coordinates of the result data."""
         return self._nddata[D_POSITIONS_COORDINATES].to_numpy()
 
     pcoords_ = positions_coordinates_
@@ -146,6 +235,7 @@ class NDResult:
     # UTILS ===================================================================
 
     def __repr__(self):
+        """Return a string representation of the NDResult object."""
         cls_name = type(self).__name__
         mname = self.mname
         modes = self.modes_
@@ -159,26 +249,49 @@ class NDResult:
         )
 
     def to_xarray(self):
+        """Return a copy of the result data as an xarray.DataArray."""
         return self._nddata.copy()
 
     # ACCESSORS ===============================================================
 
     @property
     def plot(self):
-        """Plot accessor."""
+        """ResultPlotter: Plot accessor for the NDResult object."""
         if not hasattr(self, "__plot"):
             self.__plot = ResultPlotter(self)
         return self.__plot
 
     @property
     def stats(self):
-        """Stats accessor."""
+        """ResultStatsAccessor: Stats accessor for the NDResult object."""
         if not hasattr(self, "__stats"):
             self.__stats = ResultStatsAccessor(self)
         return self.__stats
 
     # DF BY DIMENSION =========================================================
     def _coherce_filters(self, flt, defaults, dim_name):
+        """Coerce filters for a given dimension.
+
+        Parameters
+        ----------
+        flt : str, int, float, numpy.number, Iterable, or None
+            The filter value(s) for the dimension.
+        defaults : Iterable
+            The default values for the dimension.
+        dim_name : str
+            The name of the dimension.
+
+        Returns
+        -------
+        list
+            The coerced filter values.
+
+        Raises
+        ------
+        ValueError
+            If any filter value is not found in the defaults.
+
+        """
         if flt is None:
             return list(defaults)
 
@@ -194,6 +307,21 @@ class NDResult:
         return flt
 
     def _dim_as_dataframe(self, flt, dim_name):
+        """Convert a dimension to a pandas DataFrame.
+
+        Parameters
+        ----------
+        flt : list
+            The filter values for the dimension.
+        dim_name : str
+            The name of the dimension.
+
+        Returns
+        -------
+        pandas.DataFrame
+            The dimension as a DataFrame.
+
+        """
         xa, dfs = self._nddata.sel({dim_name: flt}), []
 
         for gname, group in xa.groupby(dim_name):
@@ -210,21 +338,77 @@ class NDResult:
         return df
 
     def get_modes(self, include=None):
+        """Get the modes of the result data as a DataFrame.
+
+        Parameters
+        ----------
+        include : str, int, float, numpy.number, Iterable, or None, optional
+            The modes to include in the DataFrame. If None, all modes are
+            included.
+
+        Returns
+        -------
+        pandas.DataFrame
+            The modes as a DataFrame.
+
+        """
         flt = self._coherce_filters(include, self.modes_, D_MODES)
         df = self._dim_as_dataframe(flt, D_MODES)
         return df
 
     def get_times(self, include=None):
+        """Get the time values of the result data as a DataFrame.
+
+        Parameters
+        ----------
+        include : str, int, float, numpy.number, Iterable, or None, optional
+            The time values to include in the DataFrame. If None, all time
+            values are included.
+
+        Returns
+        -------
+        pandas.DataFrame
+            The time values as a DataFrame.
+
+        """
         flt = self._coherce_filters(include, self.times_, D_TIMES)
         df = self._dim_as_dataframe(flt, D_TIMES)
         return df
 
     def get_positions(self, include=None):
+        """Get the position values of the result data as a DataFrame.
+
+        Parameters
+        ----------
+        include : str, int, float, numpy.number, Iterable, or None, optional
+            The position values to include in the DataFrame. If None, all
+            position values are included.
+
+        Returns
+        -------
+        pandas.DataFrame
+            The position values as a DataFrame.
+
+        """
         flt = self._coherce_filters(include, self.positions_, D_POSITIONS)
         df = self._dim_as_dataframe(flt, D_POSITIONS)
         return df
 
     def get_positions_coordinates(self, include=None):
+        """Get the position coordinates of the result data as a DataFrame.
+
+        Parameters
+        ----------
+        include : str, int, float, numpy.number, Iterable, or None, optional
+            The position coordinates to include in the DataFrame. If None, all
+            position coordinates are included.
+
+        Returns
+        -------
+        pandas.DataFrame
+            The position coordinates as a DataFrame.
+
+        """
         flt = self._coherce_filters(
             include, self.positions_coordinates_, D_POSITIONS_COORDINATES
         )
@@ -235,6 +419,14 @@ class NDResult:
 
     # IO ======================================================================
     def to_dict(self):
+        """Convert the NDResult object to a dictionary.
+
+        Returns
+        -------
+        dict
+            The NDResult object as a dictionary.
+
+        """
         return {
             "mname": str(self.mname),
             "mtype": str(self.mtype),
@@ -251,6 +443,18 @@ class NDResult:
         }
 
     def to_nmsi(self, path_or_stream, metadata=None, **kwargs):
+        """Store the NDResult object in NMSI format.
+
+        Parameters
+        ----------
+        path_or_stream : str or file-like object
+            The path or file-like object to store the NMSI data.
+        metadata : dict, optional
+            Additional metadata to include in the NMSI data.
+        **kwargs
+            Additional keyword arguments to pass to the NMSI storage function.
+
+        """
         from ..io import store_ndresult  # noqa
 
         store_ndresult(path_or_stream, self, metadata=metadata, **kwargs)
@@ -262,6 +466,19 @@ class NDResult:
 
 
 def modes_to_data_array(nddata):
+    """Convert a dictionary of modes to an xarray.DataArray.
+
+    Parameters
+    ----------
+    nddata : dict
+        A dictionary of modes and their corresponding coordinates.
+
+    Returns
+    -------
+    xarray.DataArray
+        The modes as an xarray.DataArray.
+
+    """
     modes, coords = [], None
 
     # we iterate over each mode
@@ -309,11 +526,6 @@ def modes_to_data_array(nddata):
         np.concatenate(modes) if modes else np.array([], ndmin=len(DIMENSIONS))
     )
 
-    xa = xr.DataArray(
-        data,
-        coords=coords,
-        dims=DIMENSIONS,
-        name=XA_NAME,
-    )
+    xa = xr.DataArray(data, coords=coords, dims=DIMENSIONS, name=XA_NAME)
 
     return xa

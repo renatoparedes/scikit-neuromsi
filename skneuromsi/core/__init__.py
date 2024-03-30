@@ -19,8 +19,10 @@
 # =============================================================================
 
 
-from .ndcollection import NDResultCollection
 from .modelabc import ParameterAliasTemplate, SKNMSIMethodABC, SKNMSIRunConfig
+
+from .ndcollection import NDResultCollection
+
 from .result import NDResult
 
 # =============================================================================

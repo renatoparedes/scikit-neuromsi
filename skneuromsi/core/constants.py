@@ -24,11 +24,20 @@ import numpy as np
 # CONSTANTS
 # =============================================================================
 
+#: Name of the "modes" dimension to be stored within the NDResult.
 D_MODES = "modes"
+
+#: Name of the "times" dimension to be stored within the NDResult.
 D_TIMES = "times"
+
+#: Name of the "positions" dimension to be stored within the NDResult.
 D_POSITIONS = "positions"
+
+#: Name of the "positions_coordinates" dimension within the NDResult.
 D_POSITIONS_COORDINATES = "positions_coordinates"
 
+#: Array containing all dimension names used in NDResult.
 DIMENSIONS = np.array([D_MODES, D_TIMES, D_POSITIONS, D_POSITIONS_COORDINATES])
 
+#: Name of the xarray.DataArray internal to the NDResult.
 XA_NAME = "values"

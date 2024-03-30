@@ -42,8 +42,13 @@ class ResultPlotter(AccessorABC):
     """Make plots of Result.
 
     Kind of plot to produce:
+    - line_positions
+    - line_times
 
-
+    Parameters
+    ----------
+    result : NDResult
+        The NDResult object for which to create plots.
 
     """
 
@@ -54,6 +59,24 @@ class ResultPlotter(AccessorABC):
 
     # LINE ====================================================================
     def _resolve_axis(self, ax):
+        """Resolve the axis for plotting.
+
+        If `ax` is None, create a new figure and axis based on the number of
+        position coordinates in the result. Otherwise, ensure `ax` is an
+        iterable.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes or None
+            The axis to plot on. If None, a new figure and axis will
+            be created.
+
+        Returns
+        -------
+        ax : numpy.ndarray
+            The resolved axis as a numpy array.
+
+        """
         if ax is None:
             coords_number = len(self._result.pcoords_)
 
@@ -68,6 +91,29 @@ class ResultPlotter(AccessorABC):
         return ax
 
     def _complete_dimension(self, xa, dim, n, scalar_dim=True):
+        """Complete a dimension in the xarray.DataArray.
+
+        This method creates a new xarray.DataArray with the specified dimension
+        `dim` completed by adding zero-valued entries around the original data.
+
+        Parameters
+        ----------
+        xa : xarray.DataArray
+            The input xarray.DataArray.
+        dim : str
+            The dimension to complete.
+        n : int
+            The number of entries to add on each side of the original data.
+        scalar_dim : bool, optional
+            Whether the dimension is scalar (True) or not (False).
+            Default is True.
+
+        Returns
+        -------
+        xarray.DataArray
+            The completed xarray.DataArray.
+
+        """
         # the original array must be in the final data
         completed = [xa]
 
@@ -85,6 +131,23 @@ class ResultPlotter(AccessorABC):
         return xr.combine_nested(completed, dim)
 
     def _scale_xtickslabels(self, *, limits, ticks, single_value):
+        """Scale the x-tick labels based on the provided limits and ticks.
+
+        Parameters
+        ----------
+        limits : tuple
+            The lower and upper limits for scaling the x-tick labels.
+        ticks : array-like
+            The original tick positions.
+        single_value : bool
+            Whether there is a single value in the data.
+
+        Returns
+        -------
+        labels : numpy.ndarray
+            The scaled x-tick labels.
+
+        """
         ll, tl = np.sort(limits)
         ticks_array = np.asarray(ticks, dtype=float)
 
@@ -102,6 +165,22 @@ class ResultPlotter(AccessorABC):
     # API======================================================================
 
     def line_positions(self, time=None, **kwargs):
+        """Create a line plot of positions at a specific time.
+
+        Parameters
+        ----------
+        time : float or None, optional
+            The time at which to plot the positions. If None, the maximum time
+            from the result will be used. Default is None.
+        **kwargs
+            Additional keyword arguments to pass to seaborn.lineplot().
+
+        Returns
+        -------
+        ax : numpy.ndarray
+            The plotted axes.
+
+        """
         if time is None:
             time = self._result.stats.dimmax()[D_TIMES]
 
@@ -147,6 +226,23 @@ class ResultPlotter(AccessorABC):
     linep = line_positions
 
     def line_times(self, position=None, **kwargs):
+        """Create a line plot of time series at a specific position.
+
+        Parameters
+        ----------
+        position : float or None, optional
+            The position at which to plot the time series. If None, the
+            position with the maximum value from the result will be used.
+            Default is None.
+        **kwargs
+            Additional keyword arguments to pass to seaborn.lineplot().
+
+        Returns
+        -------
+        ax : numpy.ndarray
+            The plotted axes.
+
+        """
         if position is None:
             position = self._result.stats.dimmax()[D_POSITIONS]
 

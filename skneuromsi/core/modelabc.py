@@ -34,6 +34,10 @@ from . import result
 """Implementation of a metaclass to create renameable parameters in functions \
 and methods.
 
+This module provides classes and utilities for creating renameable parameters
+in functions and methods, as well as configuring the run method of
+SKNMSIMethodABC subclasses.
+
 """
 
 # =============================================================================
@@ -50,17 +54,17 @@ MODEL_TYPES = ("MLE", "Bayesian", "Neural")
 
 @dataclass
 class ParameterAliasTemplate:
-    """Representa la regla de como construir alias para algun parámetro.
+    """Represents the rule for constructing aliases for a parameter.
 
     Parameters
     ----------
-    target: str
-        Es el nombre del parametro a reemplazar.
-    template: string.Template
-        Es el template sobre el cual se generaran los alias para el target.
-    doc_pattern: re.Pattern
-        Regex para reemplazar todas las ocurrencias del target por el alias
-        en la documentación.
+    target : str
+        The name of the parameter to replace.
+    template : string.Template
+        The template used to generate aliases for the target.
+    doc_pattern : re.Pattern, optional
+        Regex pattern to replace all occurrences of the target with the alias
+        in the documentation. If not provided, a default pattern is used.
 
     """
 
@@ -82,9 +86,11 @@ class ParameterAliasTemplate:
             self.doc_pattern = re.compile(self.doc_pattern)
 
     def __hash__(self):
+        """Hash based on the target and template."""
         return hash((self.target, self.template))
 
     def __eq__(self, other):
+        """Equality based on the target and template."""
         return (
             isinstance(other, type(self))
             and self.target == other.target
@@ -93,6 +99,7 @@ class ParameterAliasTemplate:
         )
 
     def __ne__(self, other):
+        """Inequality based on the target and template."""
         return not self == other
 
     @property
@@ -114,8 +121,23 @@ class ParameterAliasTemplate:
 # =============================================================================
 @dataclass
 class SKNMSIRunConfig:
-    """Esta clase contiene toda la configuracion necesaria para utilizar alias
-    en el metodo run, ademas de crear el objeto result.
+    """Configuration class for using aliases in the run method and creating \
+    the result object.
+
+    Parameters
+    ----------
+    _input : tuple
+        Input configuration for alias templates.
+    _output : tuple
+        Output configuration for alias templates.
+    _result_cls : type
+        Class to use for creating the result object.
+    _model_name : str
+        Name of the model.
+    _model_type : str
+        Type of the model.
+    _output_mode : str
+        Output mode of the model.
 
     """
 
@@ -150,11 +172,21 @@ class SKNMSIRunConfig:
 
     @classmethod
     def from_method_class(cls, method_class):
-        """Crea una nueva instancia de configuracion basandose en una
-        subclase de SKNMSIMethodABC.
+        """Creates a new configuration instance based on a subclass of \
+        SKNMSIMethodABC.
 
-        La clase debe implementar la variable de ''_run_input''
-        la cual contiene la configuracion de los alias templates.
+        The class must implement the '_run_input' variable, which contains the
+        configuration of the alias templates.
+
+        Parameters
+        ----------
+        method_class : type
+            Subclass of SKNMSIMethodABC.
+
+        Returns
+        -------
+        SKNMSIRunConfig
+            Configuration instance based on the method class.
 
         """
 
@@ -199,61 +231,81 @@ class SKNMSIRunConfig:
 
     @property
     def input_targets(self):
-        """Set con todos los parametros configurables de run."""
+        """Set of all configurable parameters of the run method."""
         return frozenset(patpl.target for patpl in self._input)
 
     @property
     def output_targets(self):
-        """Set con todos los parametros configurables de run output."""
+        """Set of all configurable parameters of run method output."""
         return frozenset(patpl.target for patpl in self._output)
 
     @property
     def template_variables(self):
-        """Todas las variables de alias-template definidas en todos los \
-        targets.
-
-        """
+        """All alias-template variables defined in all targets."""
         template_variables = set()
         for patpl in it.chain(self._input, self._output):
             template_variables.update(patpl.template_variables)
         return frozenset(template_variables)
 
     def make_run_input_alias_map(self, context):
-        """Crea un bidict que mapea los alias con los targets.
+        """Creates a bidirectional dictionary that maps aliases to targets.
 
-        El contexto es la configurar que provee el usuario a traves de los
-        parametros de init.
+        The context is the configuration provided by the user through the
+        init parameters.
+
+        Parameters
+        ----------
+        context : dict
+            Context for rendering the aliases.
+
+        Returns
+        -------
+        frozenbidict
+            Bidirectional dictionary mapping aliases to targets.
 
         """
-        at_map = frozenbidict(
+        ia_map = frozenbidict(
             (patpl.target, patpl.render(context)) for patpl in self._input
         )
-        return at_map
+        return ia_map
 
     def make_run_output_alias_map(self, context):
-        at_map = frozenbidict(
+        """Creates a bidirectional dictionary that maps output aliases to \
+        targets.
+
+        Parameters
+        ----------
+        context : dict
+            Context for rendering the aliases.
+
+        Returns
+        -------
+        frozenbidict
+            Bidirectional dictionary mapping output aliases to targets.
+
+        """
+        oa_map = frozenbidict(
             (patpl.target, patpl.render(context)) for patpl in self._output
         )
-        return at_map
+        return oa_map
 
     # VALIDATION ==============================================================
 
     def _parameters_difference(self, method, expected_parameters):
-        """Retorna la diferencia entre los parametros de un metodo y un
-        conjunto de valores esperados.
+        """Returns the difference between the parameters of a method and a \
+        set of expected values.
 
         Parameters
         ----------
-        method: callable
-            Metodo donde se extraeran los parametros.
-        expected_parameters: iterable
-            Colleccion de parametros que se espera que tenga el metodo
+        method : callable
+            Method from which to extract the parameters.
+        expected_parameters : iterable
+            Collection of expected parameters that the method should have.
 
         Returns
         -------
-        set :
-            Todos los parametros que eran esperados pero que no se encontraban
-            en el método.
+        set
+            All parameters that were expected but not found in the method.
 
         """
         parameters = inspect.signature(method).parameters
@@ -261,15 +313,20 @@ class SKNMSIRunConfig:
         return parameters_difference
 
     def validate_init_and_run(self, method_class):
-        """Valida que los metodos __init__ y run tengan los parametros \
-        adecuados.
+        """Validates that the __init__ and run methods have the appropriate \
+        parameters.
 
-        El metodo recibe como argumento una clase heredada de SKNMSIMethodABC.
+        The method takes as argument a class inherited from SKNMSIMethodABC.
+
+        Parameters
+        ----------
+        method_class : type
+            Subclass of SKNMSIMethodABC.
 
         Raises
         ------
-        TypeError :
-            Si __init__ o run() no poseen los parametros requeridos.
+        TypeError
+            If __init__ or run() do not have the required parameters.
 
         """
 
@@ -296,9 +353,25 @@ class SKNMSIRunConfig:
 
     # RUN METHOD REPLACEMENT ==================================================
     def _make_run_signature_with_alias(self, run_method, target_alias_map):
-        # reemplazamos cada parametro "target" por uno con un alias
-        # los que no son target lo dejamos como vienen
-        # el resto de la metadata de loa parametros no cambian
+        """Creates a new run method signature with aliased parameters.
+
+        Parameters
+        ----------
+        run_method : callable
+            Original run method.
+        target_alias_map : dict
+            Mapping of targets to aliases.
+
+        Returns
+        -------
+        inspect.Signature
+            New run method signature with aliased parameters.
+
+        """
+
+        # replace each "target" parameter with one with an alias
+        # leaving unchanged the ones that are not targets
+        # the rest of the parameter metadata remains the same
         run_signature = inspect.signature(run_method)
         aliased_run_parameters = []
         for run_parameter in run_signature.parameters.values():
@@ -319,6 +392,21 @@ class SKNMSIRunConfig:
         return signature_with_alias
 
     def _make_run_doc_with_alias(self, run_method, target_alias_map):
+        """Creates a new run method docstring with aliased parameters.
+
+        Parameters
+        ----------
+        run_method : callable
+            Original run method.
+        target_alias_map : dict
+            Mapping of targets to aliases.
+
+        Returns
+        -------
+        str
+            New run method docstring with aliased parameters.
+
+        """
         doc = run_method.__doc__ or ""
         for pat in self._input:
             pattern = pat.doc_pattern
@@ -335,13 +423,26 @@ class SKNMSIRunConfig:
         The resulting method accepts as parameters the resulting aliases from
         the configuration and maps them to the "targets".
 
+        Parameters
+        ----------
+        model_instance : SKNMSIMethodABC
+            Instance of the model class.
+        run_template_context : dict
+            Context for rendering the aliases.
+
+        Returns
+        -------
+        callable
+            Wrapped run method.
+
         """
-        # extraemos el run, calculate_causes y calculate_perceived_positions
+        # extract the runmethod , calculate_causes
+        # and calculate_perceived_positions
         run_method = model_instance.run
         calculate_causes_method = model_instance.calculate_causes
 
-        # creamos el mapeo de alias y target en un diccionario bidireccional
-        # para el input y el output
+        # create a bidirectional mapping of alias and target in a dictionary
+        # for the input and the output
         input_alias_map = self.make_run_input_alias_map(run_template_context)
         output_alias_map = self.make_run_output_alias_map(run_template_context)
 
@@ -360,7 +461,7 @@ class SKNMSIRunConfig:
         position_res = float(model_instance.position_res)
 
         @functools.wraps(run_method)
-        def wrapper(*args, **kwargs):
+        def run_wrapper(*args, **kwargs):
             # if some parameters are not valid in the aliased function
             # we must raise a type error with the correct message
             invalid_kws = set(kwargs).difference(
@@ -373,14 +474,13 @@ class SKNMSIRunConfig:
                     f"run() got an unexpected keyword argument {invalid!r}"
                 )
 
-            # ya dentro del wrapper lo que hacemos es bindear los parametros
-            # asi asignamos los valores de manera correcta a los nombres
-            # de parametros adecuados
+            # inside the wrapper, we bind the parameters
+            # so we can assign the values to the appropriate parameter names
             bound_params = signature_with_alias.bind(*args, **kwargs)
             bound_params.apply_defaults()
 
-            # ahora separamos los args de los kwargs y cambiamos los
-            # alias a los targets correspondientes.
+            # now we separate the args from the kwargs and change the
+            # aliases to the corresponding targets.
             target_args = bound_params.args
             target_kwargs = {
                 input_alias_map.inv.get(k, k): v
@@ -415,52 +515,88 @@ class SKNMSIRunConfig:
                 extra=extra_aliased,
             )
 
-        wrapper.__skneuromsi_run_template_context__ = run_template_context
-        wrapper.__signature__ = signature_with_alias
-        wrapper.__doc__ = doc_with_alias
+        run_wrapper.__skneuromsi_run_template_context__ = run_template_context
+        run_wrapper.__signature__ = signature_with_alias
+        run_wrapper.__doc__ = doc_with_alias
 
-        return wrapper
+        return run_wrapper
 
     # WRAP INIT================================================================
 
     def wrap_init(self, init_method):
+        """Wraps the __init__ method of an SKNMSIMethodABC subclass.
+
+        Parameters
+        ----------
+        init_method : callable
+            Original __init__ method.
+
+        Returns
+        -------
+        callable
+            Wrapped __init__ method.
+
+        """
         signature = inspect.signature(init_method)
 
         @functools.wraps(init_method)
-        def wrapper(instance, *args, **kwargs):
-            # primero ejecuto el init_viejo y dejo el objeto configurado
+        def init_wrapper(instance, *args, **kwargs):
+            # first, execute the old init and leave the object configured
             init_method(instance, *args, **kwargs)
 
-            # bindeamos todos los argumentos al init, asi sabemos bien que
-            # valor va con que parametro
+            # bind all arguments to init, so we know exactly what value goes
+            # with what parameter
             bound_args = signature.bind_partial(instance, *args, **kwargs)
             bound_args.apply_defaults()
 
-            # agarramos los parametros bindeados y si ese parametro, pertenece
-            # a una variable de template lo agregamos al diccionario que se
-            # va a usar para crear los alias de run()
+            # grab the bound arguments and if that argument belongs to a
+            # template variable, add it to the dictionary that will be used to
+            # create aliases for run()
             run_template_context = {
                 tvar: bound_args.arguments[tvar]
                 for tvar in self.template_variables
             }
 
-            # creamos el nuevo run, y lo chantamos a nivel de instancia!
+            # create the new run, and chant it at the instance level!
             instance.run = self.wrap_run(instance, run_template_context)
 
-        return wrapper
+        return init_wrapper
 
     # MODEL GET-SET STATE =====================================================
 
     def get_model_state(self, instance):
+        """Gets the state of a model instance.
+
+        Parameters
+        ----------
+        instance : SKNMSIMethodABC
+            Model instance.
+
+        Returns
+        -------
+        dict
+            State of the model instance.
+
+        """
         state = dict(instance.__dict__)
 
-        # becase the run instance method is a clojure we can serialize this
+        # becase the run instance method is a clojure we can't serialize this
         # and we only store the context
         state["run"] = dict(instance.run.__skneuromsi_run_template_context__)
 
         return state
 
     def set_model_state(self, instance, state):
+        """Sets the state of a model instance.
+
+        Parameters
+        ----------
+        instance : SKNMSIMethodABC
+            Model instance.
+        state : dict
+            State to set on the model instance.
+
+        """
         # remove the run_template_context to restore the instance runt
         run_template_context = state.pop("run")
 
@@ -501,15 +637,28 @@ REDEFINE_WITH_DEFAULT = [
 
 
 class SKNMSIMethodABC:
-    """Abstract class that allows to configure method names dynamically."""
+    """Abstract class that allows to configure method names dynamically.
+
+    This class serves as the base class for all models in skneuromsi. It
+    provides dynamic configuration of method names and parameters using
+    aliases.
+
+    """
 
     def __init_subclass__(cls):
-        """Solo se realizan en este metodo la validacion superfical de
-        las subclases, y se delega integramente a SKNMSIRunConfig las
-        validaciones propias de la configuracuión.
+        """Performs validation and configuration of subclasses.
+
+        This method is called when a new subclass of SKNMSIMethodABC is
+        defined. It validates the subclass attributes and creates the
+        SKNMSIRunConfig instance for the subclass.
+
+        Raises
+        ------
+        TypeError
+            If the subclass does not redefine the required attributes or
+            methods.
 
         """
-
         # simple validation
         if vars(cls).get("_abstract", False):
             return
@@ -552,4 +701,20 @@ class SKNMSIMethodABC:
     #     cls._run_config.set_model_state(self, state)
 
     def calculate_causes(self, **kwargs):
+        """Calculates the causes based on the model output.
+
+        This method should be overridden by subclasses to provide the specific
+        implementation for calculating causes.
+
+        Parameters
+        ----------
+        **kwargs
+            Keyword arguments representing the model output.
+
+        Returns
+        -------
+        Any
+            The calculated causes.
+
+        """
         return None
