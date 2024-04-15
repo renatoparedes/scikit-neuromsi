@@ -8,6 +8,20 @@
 # Full Text:
 #     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
 
+
+# =============================================================================
+# DOCS
+# =============================================================================
+
+"""Implementation of a metaclass to create renameable parameters in functions \
+and methods.
+
+This module provides classes and utilities for creating renameable parameters
+in functions and methods, as well as configuring the run method of
+SKNMSIMethodABC subclasses.
+
+"""
+
 # =============================================================================
 # IMPORTS
 # =============================================================================
@@ -25,20 +39,6 @@ from bidict import frozenbidict
 import numpy as np
 
 from . import result
-
-
-# =============================================================================
-# DOCS
-# =============================================================================
-
-"""Implementation of a metaclass to create renameable parameters in functions \
-and methods.
-
-This module provides classes and utilities for creating renameable parameters
-in functions and methods, as well as configuring the run method of
-SKNMSIMethodABC subclasses.
-
-"""
 
 # =============================================================================
 # CONSTANTS
@@ -73,6 +73,15 @@ class ParameterAliasTemplate:
     doc_pattern: str = None
 
     def __post_init__(self) -> None:
+        """Initialize the object after it has been created.
+
+        This method is called automatically after the object has been created
+        and initializes the object's attributes. It checks if the `template`
+        attribute is an instance of `string.Template` and if not,
+        it converts it to one. It also checks if the `doc_pattern` attribute
+        is an instance of `re.Pattern` and if not, it converts it to one.
+
+        """
         if not isinstance(self.template, string.Template):
             self.template = string.Template(self.template)
 
@@ -151,6 +160,16 @@ class SKNMSIRunConfig:
     # initialization
 
     def __post_init__(self):
+        """Initialize the object after it has been created.
+
+        This method is automatically called after the object has been created
+        and initializes the `_input` and `_output` attributes as tuples. It
+        also checks if the `_model_type` attribute is valid and raises a
+        `ValueError` if it is not. Additionally, it checks for duplicate
+        targets in the `_input` and `_output` attributes and raises a
+        `ValueError` if any are found.
+
+        """
         self._input = tuple(self._input)
         self._output = tuple(self._output)
 
@@ -172,7 +191,7 @@ class SKNMSIRunConfig:
 
     @classmethod
     def from_method_class(cls, method_class):
-        """Creates a new configuration instance based on a subclass of \
+        """Create a new configuration instance based on a subclass of \
         SKNMSIMethodABC.
 
         The class must implement the '_run_input' variable, which contains the
@@ -248,7 +267,7 @@ class SKNMSIRunConfig:
         return frozenset(template_variables)
 
     def make_run_input_alias_map(self, context):
-        """Creates a bidirectional dictionary that maps aliases to targets.
+        """Create a bidirectional dictionary that maps aliases to targets.
 
         The context is the configuration provided by the user through the
         init parameters.
@@ -270,7 +289,7 @@ class SKNMSIRunConfig:
         return ia_map
 
     def make_run_output_alias_map(self, context):
-        """Creates a bidirectional dictionary that maps output aliases to \
+        """Create a bidirectional dictionary that maps output aliases to \
         targets.
 
         Parameters
@@ -292,7 +311,7 @@ class SKNMSIRunConfig:
     # VALIDATION ==============================================================
 
     def _parameters_difference(self, method, expected_parameters):
-        """Returns the difference between the parameters of a method and a \
+        """Return the difference between the parameters of a method and a \
         set of expected values.
 
         Parameters
@@ -313,7 +332,7 @@ class SKNMSIRunConfig:
         return parameters_difference
 
     def validate_init_and_run(self, method_class):
-        """Validates that the __init__ and run methods have the appropriate \
+        """Validate that the __init__ and run methods have the appropriate \
         parameters.
 
         The method takes as argument a class inherited from SKNMSIMethodABC.
@@ -329,7 +348,6 @@ class SKNMSIRunConfig:
             If __init__ or run() do not have the required parameters.
 
         """
-
         # THE RUN ------------------------------------------------------------
         targets_not_found = self._parameters_difference(
             method_class.run, self.input_targets
@@ -353,7 +371,7 @@ class SKNMSIRunConfig:
 
     # RUN METHOD REPLACEMENT ==================================================
     def _make_run_signature_with_alias(self, run_method, target_alias_map):
-        """Creates a new run method signature with aliased parameters.
+        """Create a new run method signature with aliased parameters.
 
         Parameters
         ----------
@@ -368,7 +386,6 @@ class SKNMSIRunConfig:
             New run method signature with aliased parameters.
 
         """
-
         # replace each "target" parameter with one with an alias
         # leaving unchanged the ones that are not targets
         # the rest of the parameter metadata remains the same
@@ -392,7 +409,7 @@ class SKNMSIRunConfig:
         return signature_with_alias
 
     def _make_run_doc_with_alias(self, run_method, target_alias_map):
-        """Creates a new run method docstring with aliased parameters.
+        """Create a new run method docstring with aliased parameters.
 
         Parameters
         ----------
@@ -415,7 +432,7 @@ class SKNMSIRunConfig:
         return doc
 
     def wrap_run(self, model_instance, run_template_context):
-        """Returns a wrapper for the run method.
+        """Return a wrapper for the run method.
 
         This method is used *for each instance* of a class object
         ``SKNMSIMethodABC``.
@@ -524,7 +541,7 @@ class SKNMSIRunConfig:
     # WRAP INIT================================================================
 
     def wrap_init(self, init_method):
-        """Wraps the __init__ method of an SKNMSIMethodABC subclass.
+        """Wrap the __init__ method of an SKNMSIMethodABC subclass.
 
         Parameters
         ----------
@@ -565,7 +582,7 @@ class SKNMSIRunConfig:
     # MODEL GET-SET STATE =====================================================
 
     def get_model_state(self, instance):
-        """Gets the state of a model instance.
+        """Get the state of a model instance.
 
         Parameters
         ----------
@@ -587,7 +604,7 @@ class SKNMSIRunConfig:
         return state
 
     def set_model_state(self, instance, state):
-        """Sets the state of a model instance.
+        """Set the state of a model instance.
 
         Parameters
         ----------
@@ -646,7 +663,7 @@ class SKNMSIMethodABC:
     """
 
     def __init_subclass__(cls):
-        """Performs validation and configuration of subclasses.
+        """Perform a validation and configuration of subclasses.
 
         This method is called when a new subclass of SKNMSIMethodABC is
         defined. It validates the subclass attributes and creates the
@@ -701,7 +718,7 @@ class SKNMSIMethodABC:
     #     cls._run_config.set_model_state(self, state)
 
     def calculate_causes(self, **kwargs):
-        """Calculates the causes based on the model output.
+        """Calculate the causes based on the model output.
 
         This method should be overridden by subclasses to provide the specific
         implementation for calculating causes.

@@ -5,6 +5,7 @@ include CHANGELOG.md
 recursive-include skneuromsi *.py
 
 exclude tox.ini
+exclude .flake8
 exclude pyproject.toml
 exclude .header-template
 exclude .readthedocs.yml

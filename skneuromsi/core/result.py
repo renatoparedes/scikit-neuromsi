@@ -24,20 +24,22 @@ multidimensional array."""
 from typing import Iterable
 
 import numpy as np
+
 import pandas as pd
+
 import xarray as xr
 
-from ..utils import Bunch
 from .constants import (
+    DIMENSIONS,
     D_MODES,
     D_POSITIONS,
     D_POSITIONS_COORDINATES,
     D_TIMES,
-    DIMENSIONS,
     XA_NAME,
 )
 from .plot import ResultPlotter
 from .stats import ResultStatsAccessor
+from ..utils import Bunch
 
 # =============================================================================
 # CLASS RESULT
