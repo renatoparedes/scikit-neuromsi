@@ -42,6 +42,7 @@ REQUIREMENTS = [
     "methodtools",
     "findpeaks",
     "netcdf4",
+    "custom_inherit"
 ]
 
 with open(PATH / "skneuromsi" / "__init__.py") as fp:

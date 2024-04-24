@@ -311,7 +311,7 @@ class NDResultCollection(Sequence):
 
         """
         dm = self.disparity_matrix()
-        uniques = dm.apply(np.unique)
+        uniques = dm.apply(set)
         changes = uniques.apply(len) != 1
         changes.name = "Changes"
         return changes

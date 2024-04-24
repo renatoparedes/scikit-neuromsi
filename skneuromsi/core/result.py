@@ -30,6 +30,7 @@ import pandas as pd
 import xarray as xr
 
 from .constants import (
+    DEFAULT_FLOAT_DTYPE,
     DIMENSIONS,
     D_MODES,
     D_POSITIONS,
@@ -127,15 +128,13 @@ class NDResult:
         position_res,
         causes,
         run_params,
-        extra,
+        extra, *,
+        dtype=DEFAULT_FLOAT_DTYPE,
     ):
         self._mname = mname
         self._mtype = mtype
         self._output_mode = output_mode
         self._nmap = dict(nmap)
-        self._nddata = (
-            modes_to_data_array(nddata) if isinstance(nddata, dict) else nddata
-        )
         self._time_range = np.asarray(time_range)
         self._position_range = np.asarray(position_range)
         self._time_res = time_res
@@ -145,6 +144,14 @@ class NDResult:
         self._run_params = Bunch("run_params", run_params)
         self._extra = Bunch("extra", extra)
         self._causes = causes
+
+        # validate the dtypes
+        if isinstance(nddata, Mapping):
+            nddata = modes_to_data_array(nddata, dtype)
+        elif nddata.dtype != dtype:
+            nddata = nddata.astype(dtype, copy=False)
+
+        self._nddata = nddata
 
     # PROPERTIES ==============================================================
 
@@ -201,6 +208,10 @@ class NDResult:
     rp = run_params
 
     @property
+    def dtype(self):
+        return self._nddata.dtype
+
+    @property
     def extra_(self):
         """Bunch: Extra information associated with the result."""
         return self._extra
@@ -233,6 +244,8 @@ class NDResult:
         return self._nddata[D_POSITIONS_COORDINATES].to_numpy()
 
     pcoords_ = positions_coordinates_
+
+
 
     # UTILS ===================================================================
 
@@ -467,13 +480,15 @@ class NDResult:
 # =============================================================================
 
 
-def modes_to_data_array(nddata):
+def modes_to_data_array(nddata, dtype):
     """Convert a dictionary of modes to an xarray.DataArray.
 
     Parameters
     ----------
     nddata : dict
         A dictionary of modes and their corresponding coordinates.
+    dtype : numpy.dtype, optional
+        The data type of the resulting xarray.DataArray.
 
     Returns
     -------
@@ -500,7 +515,8 @@ def modes_to_data_array(nddata):
         # np.dstack((x0, x1))
         # [[[1, 10], [2, 20], [3, 30]],
         #  [[4, 40], [5, 50], [6, 60]]]
-        nd_mode_coords = np.dstack(mode_coords)
+        # The astype is to ensure that the data type is consistent
+        nd_mode_coords = np.dstack(mode_coords).astype(dtype, copy=False)
 
         if coords is None:  # first time we need to populate the indexes
             # retrieve how many times, positions and
@@ -531,3 +547,21 @@ def modes_to_data_array(nddata):
     xa = xr.DataArray(data, coords=coords, dims=DIMENSIONS, name=XA_NAME)
 
     return xa
+
+
+
+
+def dict_astype(d, dtype):
+    """Recursively apply astype to every np.array, xarray.DataArray or pandas.DataFrame found in the dict"""
+    d = d.copy()
+    for k, v in d.items():
+        if isinstance(v, np.ndarray):
+            d[k] = v.astype(dtype, copy=False)
+        elif isinstance(v, xr.DataArray):
+            d[k] = v.astype(dtype)
+        elif isinstance(v, pd.DataFrame):
+            d[k] = v.astype(dtype)
+        elif isinstance(v, Mapping):
+            d[k] = dict_astype(v, dtype)
+    return d
+
