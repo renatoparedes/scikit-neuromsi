@@ -41,6 +41,3 @@ DIMENSIONS = np.array([D_MODES, D_TIMES, D_POSITIONS, D_POSITIONS_COORDINATES])
 
 #: Name of the xarray.DataArray internal to the NDResult.
 XA_NAME = "values"
-
-#: Default data type for NDResult.
-DEFAULT_FLOAT_DTYPE = np.float32

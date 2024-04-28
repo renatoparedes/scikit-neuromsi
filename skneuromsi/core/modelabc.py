@@ -152,8 +152,7 @@ class SKNMSIRunConfig:
 
     _input: tuple
     _output: tuple
-    _ndresult_conf: dict
-
+    _result_cls: result.NDResult
     _model_name: str
     _model_type: str
     _output_mode: str

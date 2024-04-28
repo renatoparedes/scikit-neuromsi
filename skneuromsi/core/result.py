@@ -21,16 +21,15 @@ multidimensional array."""
 # IMPORTS
 # =============================================================================
 
-from typing import Iterable
+from typing import Iterable, Mapping
 
 import numpy as np
 
 import pandas as pd
 
-import xarray as xr
+import xarray as xa
 
 from .constants import (
-    DEFAULT_FLOAT_DTYPE,
     DIMENSIONS,
     D_MODES,
     D_POSITIONS,
@@ -41,6 +40,130 @@ from .constants import (
 from .plot import ResultPlotter
 from .stats import ResultStatsAccessor
 from ..utils import Bunch
+
+# =============================================================================
+# HELPER FUNCTIONS
+# =============================================================================
+
+#: The data types that can be type-casted.
+_ASTYPE_TYPES = (np.ndarray, pd.DataFrame, pd.Series, xa.DataArray, xa.Dataset)
+
+
+def _astype(obj, dtype=None):
+    """
+    Ensure that the given object has the specified data type.
+
+    Parameters
+    ----------
+    obj : object
+        The object to be converted to the specified data type.
+    dtype : data type, optional
+        The desired data type for the object. If None, the object is returned
+        as-is.
+
+    Returns
+    -------
+    object
+        The object with the specified data type. If the input object is a
+        mapping (dict-like), a new mapping with the same keys is returned,
+        with the values converted to the specified data type. If the input
+        object is neither a mapping nor a type that supports the `astype`
+        method, the same object is returned.
+
+    Notes
+    -----
+    This function recursively converts the values of a mapping (dict-like)
+    to the specified data type. If the input object is a type that supports
+    the `astype` method (e.g., NumPy array), it is converted using that method.
+    Otherwise, the same object is returned.
+
+    """
+    if dtype is None:
+        return obj
+
+    elif isinstance(obj, _ASTYPE_TYPES):
+        return obj.astype(dtype, copy=False)
+
+    elif isinstance(obj, Mapping):
+        original_type, new_obj = type(obj), {}
+
+        for k, v in obj.items():
+            new_obj[k] = _astype(v, dtype)
+        return original_type(new_obj)
+
+    return obj
+
+
+def _modes_to_data_array(nddata, dtype):
+    """Convert a dictionary of modes to an xarray.DataArray.
+
+    Parameters
+    ----------
+    nddata : dict
+        A dictionary of modes and their corresponding coordinates.
+    dtype : numpy.dtype, optional
+        The data type of the resulting xarray.DataArray.
+
+    Returns
+    -------
+    xarray.DataArray
+        The modes as an xarray.DataArray.
+
+    """
+    modes, coords = [], None
+
+    # we iterate over each mode
+    for mode_name, mode_coords in nddata.items():
+        # NDResult always expects to have more than one coordinate per
+        # position. If it has only one coordinate, it puts it into a
+        # collection of length 1, so that it can continue te operations.
+        if not isinstance(mode_coords, tuple):
+            mode_coords = (mode_coords,)
+
+        # we merge all the matrix of modes in a single 3D array
+        # for example if we have two coordinates
+        # x0 = [[1, 2, 3],
+        #       [4, 5, 6]]
+        # x1 = [[10, 20, 30],
+        #       [40, 50, 60]]
+        # np.dstack((x0, x1))
+        # [[[1, 10], [2, 20], [3, 30]],
+        #  [[4, 40], [5, 50], [6, 60]]]
+        # The astype is to ensure that the data type is consistent
+        nd_mode_coords = np.dstack(mode_coords).astype(dtype, copy=False)
+
+        if coords is None:  # first time we need to populate the indexes
+            # retrieve how many times, positions and
+            # position coordinates has the modes
+            times_n, positions_n, pcoords_n = np.shape(nd_mode_coords)
+
+            # we create the indexes for each dimension
+            coords = [
+                [],  # modes
+                np.arange(
+                    times_n,
+                ),  # times
+                np.arange(positions_n),  # positions
+                [f"x{idx}" for idx in range(pcoords_n)],  # pcoords
+            ]
+
+        # we add the mode name to the mode indexes
+        coords[0].append(mode_name)
+
+        # here we add the mode as the first dimension
+        final_shape = (1,) + nd_mode_coords.shape
+
+        # here we add the
+        modes.append(nd_mode_coords.reshape(final_shape))
+
+    data = (
+        np.concatenate(modes) if modes else np.array([], ndmin=len(DIMENSIONS))
+    )
+
+    da = xa.DataArray(data, coords=coords, dims=DIMENSIONS, name=XA_NAME)
+
+    return da
+
 
 # =============================================================================
 # CLASS RESULT
@@ -76,6 +199,10 @@ class NDResult:
         The parameters used for running the model.
     extra : dict
         Extra information associated with the result.
+    ensure_dtypes : numpy.dtype, optional (default=infer)
+        Force all data types to be assigned to this type.
+        This only applies to parameters that accept the dtype message
+        If None, the data types are inferred.
 
     Attributes
     ----------
@@ -99,6 +226,8 @@ class NDResult:
         The resolution of position values.
     run_params : Bunch
         The parameters used for running the model.
+    dtypes : numpy.dtype
+        The data type of the result data.
     extra_ : Bunch
         Extra information associated with the result.
     causes_ : int
@@ -111,6 +240,7 @@ class NDResult:
         The position values of the result data.
     positions_coordinates_ : numpy.ndarray
         The position coordinates of the result data.
+
 
     """
 
@@ -128,30 +258,30 @@ class NDResult:
         position_res,
         causes,
         run_params,
-        extra, *,
-        dtype=DEFAULT_FLOAT_DTYPE,
+        extra,
+        ensure_dtype=None,
     ):
         self._mname = mname
         self._mtype = mtype
         self._output_mode = output_mode
         self._nmap = dict(nmap)
-        self._time_range = np.asarray(time_range)
-        self._position_range = np.asarray(position_range)
+        self._time_range = np.asarray(time_range, dtype=ensure_dtype)
+        self._position_range = np.asarray(position_range, dtype=ensure_dtype)
         self._time_res = time_res
         self._position_res = position_res
         self._time_res = time_res
         self._position_res = position_res
-        self._run_params = Bunch("run_params", run_params)
-        self._extra = Bunch("extra", extra)
+        self._run_params = dict(run_params)
+        self._extra = dict(extra)
         self._causes = causes
+        self._nddata = (
+            _modes_to_data_array(nddata, dtype=ensure_dtype)
+            if isinstance(nddata, Mapping)
+            else nddata
+        )
 
-        # validate the dtypes
-        if isinstance(nddata, Mapping):
-            nddata = modes_to_data_array(nddata, dtype)
-        elif nddata.dtype != dtype:
-            nddata = nddata.astype(dtype, copy=False)
-
-        self._nddata = nddata
+        # Ensure that the instance variables are not dynamically added.
+        self.__dict__ = _astype(vars(self), dtype=ensure_dtype)
 
     # PROPERTIES ==============================================================
 
@@ -203,18 +333,33 @@ class NDResult:
     @property
     def run_params(self):
         """Bunch: The parameters used for running the model."""
-        return self._run_params
+        return Bunch("run_params", self._run_params)
 
     rp = run_params
 
     @property
-    def dtype(self):
-        return self._nddata.dtype
+    def dtypes(self):
+        """pd.DataFrame _containing the data types of each attribute in the \
+        NDResult object."""
+        dtypes = []
+        for a, v in self.to_dict().items():
+            dtype = "-"
+            if isinstance(v, pd.DataFrame):
+                dtype = v.dtypes
+            elif isinstance(v, _ASTYPE_TYPES):
+                dtype = v.dtype
+            dtypes.append({"attr": a, "type": type(v), "dtype": dtype})
+
+        dtypes_df = pd.DataFrame(dtypes)
+        dtypes_df.set_index("attr", inplace=True)
+        dtypes_df.name = "dtypes"
+
+        return dtypes_df
 
     @property
     def extra_(self):
         """Bunch: Extra information associated with the result."""
-        return self._extra
+        return Bunch("extra", self._extra)
 
     e_ = extra_
 
@@ -245,8 +390,6 @@ class NDResult:
 
     pcoords_ = positions_coordinates_
 
-
-
     # UTILS ===================================================================
 
     def __repr__(self):
@@ -262,10 +405,6 @@ class NDResult:
             f"times={times}, positions={pos}, "
             f"positions_coordinates={pos_coords}, causes={causes}>"
         )
-
-    def to_xarray(self):
-        """Return a copy of the result data as an xarray.DataArray."""
-        return self._nddata.copy()
 
     # ACCESSORS ===============================================================
 
@@ -433,6 +572,11 @@ class NDResult:
     get_pcoords = get_positions_coordinates
 
     # IO ======================================================================
+
+    def to_xarray(self):
+        """Return a copy of the result data as an xarray.DataArray."""
+        return self._nddata.copy()
+
     def to_dict(self):
         """Convert the NDResult object to a dictionary.
 
@@ -457,6 +601,30 @@ class NDResult:
             "nddata": self.to_xarray(),
         }
 
+    def astype(self, dtype, *, attributes=None):
+        """Return a copy of the NDResult object with the specified data type.
+
+        Parameters
+        ----------
+        dtype : data type
+            The data type to convert the NDResult object to.
+        attributes : list of str, optional
+            The names of the attributes to convert. If None, all attributes
+
+        Returns
+        -------
+        NDResult
+            The NDResult object with the specified data type.
+
+        """
+        kwargs = self.to_dict()
+        for k, v in kwargs.items():
+            if attributes is None or k in attributes:
+                kwargs[k] = _astype(v, dtype)
+
+        cls = type(self)  # get the class
+        return cls(**kwargs)  # create a new instance
+
     def to_nmsi(self, path_or_stream, metadata=None, **kwargs):
         """Store the NDResult object in NMSI format.
 
@@ -473,95 +641,3 @@ class NDResult:
         from ..io import store_ndresult  # noqa
 
         store_ndresult(path_or_stream, self, metadata=metadata, **kwargs)
-
-
-# =============================================================================
-# UTILITIES
-# =============================================================================
-
-
-def modes_to_data_array(nddata, dtype):
-    """Convert a dictionary of modes to an xarray.DataArray.
-
-    Parameters
-    ----------
-    nddata : dict
-        A dictionary of modes and their corresponding coordinates.
-    dtype : numpy.dtype, optional
-        The data type of the resulting xarray.DataArray.
-
-    Returns
-    -------
-    xarray.DataArray
-        The modes as an xarray.DataArray.
-
-    """
-    modes, coords = [], None
-
-    # we iterate over each mode
-    for mode_name, mode_coords in nddata.items():
-        # NDResult always expects to have more than one coordinate per
-        # position. If it has only one coordinate, it puts it into a
-        # collection of length 1, so that it can continue te operations.
-        if not isinstance(mode_coords, tuple):
-            mode_coords = (mode_coords,)
-
-        # we merge all the matrix of modes in a single 3D array
-        # for example if we have two coordinates
-        # x0 = [[1, 2, 3],
-        #       [4, 5, 6]]
-        # x1 = [[10, 20, 30],
-        #       [40, 50, 60]]
-        # np.dstack((x0, x1))
-        # [[[1, 10], [2, 20], [3, 30]],
-        #  [[4, 40], [5, 50], [6, 60]]]
-        # The astype is to ensure that the data type is consistent
-        nd_mode_coords = np.dstack(mode_coords).astype(dtype, copy=False)
-
-        if coords is None:  # first time we need to populate the indexes
-            # retrieve how many times, positions and
-            # position coordinates has the modes
-            times_n, positions_n, pcoords_n = np.shape(nd_mode_coords)
-
-            # we create the indexes for each dimension
-            coords = [
-                [],  # modes
-                np.arange(times_n),  # times
-                np.arange(positions_n),  # positions
-                [f"x{idx}" for idx in range(pcoords_n)],  # pcoords
-            ]
-
-        # we add the mode name to the mode indexes
-        coords[0].append(mode_name)
-
-        # here we add the mode as the first dimension
-        final_shape = (1,) + nd_mode_coords.shape
-
-        # here we add the
-        modes.append(nd_mode_coords.reshape(final_shape))
-
-    data = (
-        np.concatenate(modes) if modes else np.array([], ndmin=len(DIMENSIONS))
-    )
-
-    xa = xr.DataArray(data, coords=coords, dims=DIMENSIONS, name=XA_NAME)
-
-    return xa
-
-
-
-
-def dict_astype(d, dtype):
-    """Recursively apply astype to every np.array, xarray.DataArray or pandas.DataFrame found in the dict"""
-    d = d.copy()
-    for k, v in d.items():
-        if isinstance(v, np.ndarray):
-            d[k] = v.astype(dtype, copy=False)
-        elif isinstance(v, xr.DataArray):
-            d[k] = v.astype(dtype)
-        elif isinstance(v, pd.DataFrame):
-            d[k] = v.astype(dtype)
-        elif isinstance(v, Mapping):
-            d[k] = dict_astype(v, dtype)
-    return d
-
