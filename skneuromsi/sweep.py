@@ -12,7 +12,7 @@
 # DOCS
 # =============================================================================
 
-""""""
+"""Module for performing parameter sweeps."""
 
 # =============================================================================
 # IMPORTS
@@ -34,7 +34,7 @@ from .utils import storages
 # CONSTANTS
 # =============================================================================
 
-#: Default range for the sweep
+#: Default range of values for parameter sweeps.
 DEFAULT_RANGE = 90 + np.arange(0, 20, 2)
 
 
@@ -44,6 +44,61 @@ DEFAULT_RANGE = 90 + np.arange(0, 20, 2)
 
 
 class ParameterSweep:
+    """Sweep over a range of values for a specific parameter of a model.
+
+    Sweep over a range of values for a specific parameter of a model,
+    running the model multiple times for each value in the range and
+    storing the results in a storage (e.g., directory or memory).
+
+    TODO: Renato, explica cual es la idea cientifica de por que vale la pena
+          hacer esto.
+
+    Parameters
+    ----------
+    model : object
+        The model object that has a `run` method.
+    target : str
+        The name of the parameter to sweep over.
+    range : array-like, optional
+        The range of values to sweep over. If not provided, the default
+        range is `90 + np.arange(0, 20, 2)`.
+    repeat : int, optional
+        The number of times to repeat the run for each value in the range.
+        Default is 100.
+    n_jobs : int, optional
+        The number of jobs to run in parallel. Default is 1.
+    seed : int, optional
+        The seed for the random number generator.
+    tqdm_cls : class, optional
+        The tqdm class to use for progress bars. Default is `tqdm.auto.tqdm`.
+    storage : str, optional
+        The type of storage to use for storing the results. Default is
+        "directory".
+    storage_kws : dict, optional
+        Additional keyword arguments to pass to the storage.
+
+    Attributes
+    ----------
+    model : object
+        The model object.
+    range : ndarray
+        The range of values to sweep over.
+    repeat : int
+        The number of times to repeat the run for each value in the range.
+    n_jobs : int
+        The number of jobs to run in parallel.
+    target : str
+        The name of the parameter to sweep over.
+    seed : int or None
+        The seed for the random number generator.
+    random_ : numpy.random.Generator
+        The random number generator.
+    storage : str
+        The type of storage to use for storing the results.
+    storage_kws : dict
+        Additional keyword arguments to pass to the storage.
+
+    """
     def __init__(
         self,
         model,
@@ -82,41 +137,65 @@ class ParameterSweep:
 
     @property
     def model(self):
+        """The model object."""
         return self._model
 
     @property
     def range(self):
+        """The range of values to sweep over."""
         return self._range
 
     @property
     def repeat(self):
+        """The number of times to repeat the run for each value in the range."""
         return self._repeat
 
     @property
     def n_jobs(self):
+        """The number of jobs to run in parallel."""
         return self._n_jobs
 
     @property
     def target(self):
+        """The name of the parameter to sweep over."""
         return self._target
 
     @property
     def seed(self):
+        """The seed for the random number generator."""
         return self._seed
 
     @property
     def random_(self):
+        """The random number generator."""
         return self._random
 
     @property
     def storage(self):
+        """The type of storage to use for storing the results."""
         return self._storage
 
     @property
     def storage_kws(self):
+        """Additional keyword arguments to pass to the storage."""
         return self._storage_kws.copy()
 
     def _run_kwargs_combinations(self, run_kws):
+        """Generate combinations of parameter values and seeds for the runs.
+
+        Parameters
+        ----------
+        run_kws : dict
+            Additional keyword arguments to pass to the model's `run` method.
+
+        Returns
+        -------
+        generator
+            A generator that yields tuples of (iteration, kwargs, seed) for
+            each run.
+        int
+            The total number of runs.
+        """
         iinfo = np.iinfo(int)
 
         def combs_gen():
@@ -139,11 +218,38 @@ class ParameterSweep:
         return combs_gen(), combs_size
 
     def _run_report(self, idx, run_kws, seed, results):
+        """Run the model with the given parameters and store the results.
+
+        Parameters
+        ----------
+        idx : int
+            The index of the run.
+        run_kws : dict
+            The keyword arguments to pass to the model's `run` method.
+        seed : int
+            The seed for the random number generator.
+        results : NDResultCollection
+            The collection to store the results in.
+        """
         model = self._model
         model.set_random(np.random.default_rng(seed))
         results[idx] = model.run(**run_kws)
 
     def run(self, **run_kws):
+        """Run the sweep over the range of values for the target parameter.
+
+        Parameters
+        ----------
+        **run_kws
+            Additional keyword arguments to pass to the model's `run` method,
+            except the target parameter.
+
+        Returns
+        -------
+        NDResultCollection
+            A collection of the results from the parameter sweep.
+
+        """
         if self._target in run_kws:
             raise TypeError(
                 f"Parameter '{self._target}' "
