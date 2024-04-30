@@ -21,11 +21,7 @@
 # DOCS
 # =============================================================================
 
-""""""
-
-# =============================================================================
-# IMPORTS
-# =============================================================================
+"""Utilities for working with data types and memory usage in Python objects."""
 
 
 # =============================================================================
@@ -68,32 +64,32 @@ _SCALAR_ITERABLES = (str,)
 
 
 def is_astypeable(obj):
-    """Check if an object is astypeable."""
+    """Check if an object support the message astype."""
     return isinstance(obj, _ASTYPE_TYPES)
 
 
 def is_class_astypeable(cls):
-    """Check if a class is astypeable."""
+    """Check if object of class support the message astype."""
     return issubclass(cls, _ASTYPE_TYPES)
 
 
 def single_dtype(obj):
-    """Check if an object is a single dtype."""
+    """Check if an object has an attribute dtype."""
     return isinstance(obj, _DTYPE_TYPES)
 
 
 def single_dtype_class(cls):
-    """Chinsisinstance class is a single dtype class."""
+    """Check if object of class has an attribute dtype."""
     return issubclass(cls, _DTYPE_TYPES)
 
 
 def multiple_dtype(obj):
-    """Check if an object is a multiple dtype."""
+    """Check if an object has an attribute dtypes."""
     return isinstance(obj, _DTYPES_TYPES)
 
 
 def multiple_dtype_class(cls):
-    """Chinsisinstance class is a multiple dtype class."""
+    """Check if object of class has an attribute dtypes."""
     return issubclass(cls, _DTYPE_TYPES)
 
 
@@ -103,7 +99,23 @@ def multiple_dtype_class(cls):
 
 
 def deep_astype(obj, dtype=None):
+    """
+    Recursively cast the data type of an object and its nested objects.
 
+    Parameters
+    ----------
+    obj : object
+        The object to cast.
+    dtype : data type, optional
+        The data type to cast to. If None (default), the object is
+        returned as is.
+
+    Returns
+    -------
+    object
+        The object with the new data type.
+
+    """
     if dtype is None:
         return obj
 
@@ -130,11 +142,22 @@ def deep_astype(obj, dtype=None):
 
 @dclss.dataclass(frozen=True)
 class _MemoryUsage:
+    """Dataclass representing memory usage.
+
+   Attributes
+   ----------
+   size : int
+       The size of the memory usage in bytes.
+
+   """
 
     size: int
 
     @property
     def hsize(self):
+        """The human-readable string representation of the memory usage size.
+
+        """
         return humanize.naturalsize(self.size)
 
     def __repr__(self):
@@ -142,11 +165,33 @@ class _MemoryUsage:
 
 
 def _memory_usage(obj):
+    """Calculate the memory usage of an object."""
     size = asizeof.asizeof(obj)
     return _MemoryUsage(size=size)
 
 
 def _deep_dtypes(obj, deep, max_deep, memory_usage):
+    """Recursively get the data types and memory usage of an object and its
+    nested objects.
+
+    Parameters
+    ----------
+    obj : object
+        The object to get the data types and memory usage for.
+    deep : int
+        The current depth of recursion.
+    max_deep : int
+        The maximum depth of recursion.
+    memory_usage : bool
+        Whether to calculate the memory usage.
+
+    Returns
+    -------
+    tuple
+        A tuple containing the type of the object, the nested data types,
+        and optionally the memory usage.
+
+    """
     # Initialize the nested dtypes and the memory usage
     nested_dtypes = None
     memory = _memory_usage(obj) if memory_usage else None
@@ -191,6 +236,29 @@ def _deep_dtypes(obj, deep, max_deep, memory_usage):
 
 
 def deep_dtypes(obj, *, root="root", max_deep=2, memory_usage=False):
+    """Get the data types and optionally the memory usage of an object and \
+    its nested objects.
+
+    Parameters
+    ----------
+    obj : object
+        The object to get the data types and memory usage for.
+    root : str, optional
+        The name of the root object (default is "root").
+    max_deep : int, optional
+        The maximum depth of recursion (default is 2).
+    memory_usage : bool, optional
+        Whether to calculate the memory usage (default is False).
+
+    Returns
+    -------
+    tuple or dict
+        If memory_usage is True, a dictionary with keys representing the
+        nested objects and values representing their data types and
+        memory usage.
+        If memory_usage is False, a tuple with the nested data types.
+
+   """
     dict_obj = {root: obj}  # this add an extra level of nesting (level 0)
 
     # we extract the data types of the root object
