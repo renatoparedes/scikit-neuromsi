@@ -42,7 +42,9 @@ REQUIREMENTS = [
     "methodtools",
     "findpeaks",
     "netcdf4",
-    "custom_inherit"
+    "custom_inherit" "jinja2",
+    "huminize",
+    "pympler",
 ]
 
 with open(PATH / "skneuromsi" / "__init__.py") as fp:

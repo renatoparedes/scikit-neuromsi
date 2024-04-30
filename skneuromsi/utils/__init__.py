@@ -19,9 +19,15 @@
 # IMPORTS
 # =============================================================================
 
-from . import storages
+from . import ddtype_tools, storages
 from .accabc import AccessorABC
 from .bunch import Bunch
 from .doctools import doc_inherit
 
-__all__ = ["AccessorABC", "Bunch", "storages", "doc_inherit"]
+__all__ = [
+    "AccessorABC",
+    "Bunch",
+    "storages",
+    "doc_inherit",
+    "ddtype_tools"
+]

@@ -39,59 +39,12 @@ from .constants import (
 )
 from .plot import ResultPlotter
 from .stats import ResultStatsAccessor
-from ..utils import Bunch
+from ..utils import Bunch, ddtype_tools
+
 
 # =============================================================================
 # HELPER FUNCTIONS
 # =============================================================================
-
-#: The data types that can be type-casted.
-_ASTYPE_TYPES = (np.ndarray, pd.DataFrame, pd.Series, xa.DataArray, xa.Dataset)
-
-
-def _astype(obj, dtype=None):
-    """
-    Ensure that the given object has the specified data type.
-
-    Parameters
-    ----------
-    obj : object
-        The object to be converted to the specified data type.
-    dtype : data type, optional
-        The desired data type for the object. If None, the object is returned
-        as-is.
-
-    Returns
-    -------
-    object
-        The object with the specified data type. If the input object is a
-        mapping (dict-like), a new mapping with the same keys is returned,
-        with the values converted to the specified data type. If the input
-        object is neither a mapping nor a type that supports the `astype`
-        method, the same object is returned.
-
-    Notes
-    -----
-    This function recursively converts the values of a mapping (dict-like)
-    to the specified data type. If the input object is a type that supports
-    the `astype` method (e.g., NumPy array), it is converted using that method.
-    Otherwise, the same object is returned.
-
-    """
-    if dtype is None:
-        return obj
-
-    elif isinstance(obj, _ASTYPE_TYPES):
-        return obj.astype(dtype, copy=False)
-
-    elif isinstance(obj, Mapping):
-        original_type, new_obj = type(obj), {}
-
-        for k, v in obj.items():
-            new_obj[k] = _astype(v, dtype)
-        return original_type(new_obj)
-
-    return obj
 
 
 def _modes_to_data_array(nddata, dtype):
@@ -281,7 +234,9 @@ class NDResult:
         )
 
         # Ensure that the instance variables are not dynamically added.
-        self.__dict__ = _astype(vars(self), dtype=ensure_dtype)
+        self.__dict__ = ddtype_tools.deep_astype(
+            vars(self), dtype=ensure_dtype
+        )
 
     # PROPERTIES ==============================================================
 
@@ -337,24 +292,7 @@ class NDResult:
 
     rp = run_params
 
-    @property
-    def dtypes(self):
-        """pd.DataFrame _containing the data types of each attribute in the \
-        NDResult object."""
-        dtypes = []
-        for a, v in self.to_dict().items():
-            dtype = "-"
-            if isinstance(v, pd.DataFrame):
-                dtype = v.dtypes
-            elif isinstance(v, _ASTYPE_TYPES):
-                dtype = v.dtype
-            dtypes.append({"attr": a, "type": type(v), "dtype": dtype})
-
-        dtypes_df = pd.DataFrame(dtypes)
-        dtypes_df.set_index("attr", inplace=True)
-        dtypes_df.name = "dtypes"
-
-        return dtypes_df
+    # dtypes are at the end <===================================!!!
 
     @property
     def extra_(self):
@@ -601,6 +539,25 @@ class NDResult:
             "nddata": self.to_xarray(),
         }
 
+    def to_nmsi(self, path_or_stream, metadata=None, **kwargs):
+        """Store the NDResult object in NMSI format.
+
+        Parameters
+        ----------
+        path_or_stream : str or file-like object
+            The path or file-like object to store the NMSI data.
+        metadata : dict, optional
+            Additional metadata to include in the NMSI data.
+        **kwargs
+            Additional keyword arguments to pass to the NMSI storage function.
+
+        """
+        from ..io import store_ndresult  # noqa
+
+        store_ndresult(path_or_stream, self, metadata=metadata, **kwargs)
+
+    # DTYPES HELPS ============================================================
+
     def astype(self, dtype, *, attributes=None):
         """Return a copy of the NDResult object with the specified data type.
 
@@ -620,24 +577,61 @@ class NDResult:
         kwargs = self.to_dict()
         for k, v in kwargs.items():
             if attributes is None or k in attributes:
-                kwargs[k] = _astype(v, dtype)
+                kwargs[k] = ddtype_tools.deep_astype(v, dtype)
 
         cls = type(self)  # get the class
         return cls(**kwargs)  # create a new instance
 
-    def to_nmsi(self, path_or_stream, metadata=None, **kwargs):
-        """Store the NDResult object in NMSI format.
+    def deep_dtypes(self, *, max_deep=2, memory_usage=False):
+        """Returns the deep data types of the object.
 
         Parameters
         ----------
-        path_or_stream : str or file-like object
-            The path or file-like object to store the NMSI data.
-        metadata : dict, optional
-            Additional metadata to include in the NMSI data.
-        **kwargs
-            Additional keyword arguments to pass to the NMSI storage function.
+        max_deep : int, optional
+            The maximum depth to traverse the object. Defaults to 2.
+        memory_usage : bool, optional
+            If True, return the memory usage of the object. Defaults to False.
+
+        Returns
+        -------
+        dict
+            The deep data types of the object.
 
         """
-        from ..io import store_ndresult  # noqa
+        ddtypes = ddtype_tools.deep_dtypes(
+            self.to_dict(),
+            root="ndresult",
+            max_deep=max_deep,
+            memory_usage=memory_usage,
+        )
+        ddtypes = ddtypes[0] if memory_usage else ddtypes
+        return ddtypes["ndresult"][1]
 
-        store_ndresult(path_or_stream, self, metadata=metadata, **kwargs)
+    def dtypes(self, memory_usage=False):
+        """pd.DataFrame containing the data types of each attribute in the \
+        NDResult object."""
+        ddtypes = self.deep_dtypes(max_deep=2, memory_usage=memory_usage)
+        dtypes = []
+        for attr, obj_info in ddtypes.items():
+
+            obj_type, obj_dtype = obj_info[:2]
+            dtype = (
+                obj_dtype if ddtype_tools.single_dtype_class(obj_type) else "-"
+            )
+
+            mem = obj_info[-1].hsize if memory_usage else "?"
+
+            dtypes.append(
+                {
+                    "Attribute": attr,
+                    "Type": obj_type,
+                    "DType": dtype,
+                    "Size": mem,
+                }
+            )
+
+        dtypes_df = pd.DataFrame(dtypes)
+        dtypes_df.set_index("Attribute", inplace=True)
+        dtypes_df.name = "dtypes"
+
+        return dtypes_df
