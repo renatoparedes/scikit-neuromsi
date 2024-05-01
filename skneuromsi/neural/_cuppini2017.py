@@ -111,6 +111,8 @@ class Cuppini2017(SKNMSIMethodABC):
 
         self.set_random(np.random.default_rng(seed=seed))
 
+        self._dtype = np.float32
+
     # PROPERTY ================================================================
 
     @property
@@ -156,6 +158,10 @@ class Cuppini2017(SKNMSIMethodABC):
     @property
     def mode1(self):
         return self._mode1
+    
+    @property
+    def dtype(self):
+        return self._dtype
 
     # Model architecture methods
 
@@ -171,7 +177,7 @@ class Cuppini2017(SKNMSIMethodABC):
         excitation_scale,
         inhibition_scale,
     ):
-        the_lateral_synapses = np.zeros((self.neurons, self.neurons))
+        the_lateral_synapses = np.zeros((self.neurons, self.neurons), dtype=self.dtype)
 
         for neuron_i in range(self.neurons):
             for neuron_j in range(self.neurons):
@@ -191,7 +197,7 @@ class Cuppini2017(SKNMSIMethodABC):
         return the_lateral_synapses
 
     def stimuli_input(self, intensity, *, scale, loc):
-        the_stimuli = np.zeros(self.neurons)
+        the_stimuli = np.zeros(self.neurons, dtype=self.dtype)
 
         for neuron_j in range(self.neurons):
             distance = self.distance(neuron_j, loc)
@@ -202,7 +208,7 @@ class Cuppini2017(SKNMSIMethodABC):
         return the_stimuli
 
     def synapses(self, weight, sigma):
-        the_synapses = np.zeros((self.neurons, self.neurons))
+        the_synapses = np.zeros((self.neurons, self.neurons), dtype=self.dtype)
 
         for j in range(self.neurons):
             for k in range(self.neurons):
@@ -283,7 +289,7 @@ class Cuppini2017(SKNMSIMethodABC):
         )
 
         # Data holders
-        y_z = np.zeros(self.neurons)
+        y_z = np.zeros(self.neurons, dtype=self.dtype)
         auditory_y, visual_y, multi_y = (
             copy.deepcopy(y_z),
             copy.deepcopy(y_z),
@@ -291,7 +297,7 @@ class Cuppini2017(SKNMSIMethodABC):
         )
 
         res_z = np.zeros(
-            (int(self._time_range[1] / integrator.dt), self.neurons)
+            (int(self._time_range[1] / integrator.dt), self.neurons), dtype=self.dtype
         )
         auditory_res, visual_res, multi_res = (
             copy.deepcopy(res_z),
