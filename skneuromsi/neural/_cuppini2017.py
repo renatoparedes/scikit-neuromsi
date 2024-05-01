@@ -380,10 +380,12 @@ class Cuppini2017(SKNMSIMethodABC):
         return response, extra
 
     def calculate_causes(self, multi, causes_kind, **kwargs):
-        fp = findpeaks(method="topology", verbose=0, limit=0.15)
+        fp = findpeaks(method="topology", verbose=0)
         X = multi[-1, :]
         fp_results = fp.fit(X)
-        multi_peaks_df = fp_results["df"].query("peak==True & valley==False")
+        multi_peaks_df = fp_results["df"].query(
+            "peak==True & valley==False & score>0.15"
+        )
         peaks_size = multi_peaks_df.score.size
 
         if causes_kind == "count":
