@@ -168,8 +168,8 @@ class NDResultBiasAcc(AccessorABC):
         changing_parameter = nd_collection.coerce_parameter(changing_parameter)
         dim = nd_collection.coerce_dimension(dim)
 
-        #unchanged_parameters = ~nd_collection.changing_parameters()
-        #if not unchanged_parameters[influence_parameter]:
+        # unchanged_parameters = ~nd_collection.changing_parameters()
+        # if not unchanged_parameters[influence_parameter]:
         #    raise ValueError(
         #        f"influence_parameter {influence_parameter!r} are not fixed"
         #    )

@@ -144,20 +144,18 @@ def deep_astype(obj, dtype=None):
 class _MemoryUsage:
     """Dataclass representing memory usage.
 
-   Attributes
-   ----------
-   size : int
-       The size of the memory usage in bytes.
+    Attributes
+    ----------
+    size : int
+        The size of the memory usage in bytes.
 
-   """
+    """
 
     size: int
 
     @property
     def hsize(self):
-        """The human-readable string representation of the memory usage size.
-
-        """
+        """The human-readable string representation of the memory usage size."""
         return humanize.naturalsize(self.size)
 
     def __repr__(self):

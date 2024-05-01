@@ -99,6 +99,7 @@ class ParameterSweep:
         Additional keyword arguments to pass to the storage.
 
     """
+
     def __init__(
         self,
         model,
