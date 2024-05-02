@@ -21,7 +21,7 @@ import numpy as np
 
 from ..core import SKNMSIMethodABC
 
-from ._neural_utils import calculate_two_peaks_probability
+from ..utils.readout_tools import calculate_single_peak_probability
 
 
 @dataclass
@@ -380,41 +380,31 @@ class Cuppini2017(SKNMSIMethodABC):
         return response, extra
 
     def calculate_causes(self, multi, causes_kind, **kwargs):
-        # Find the peaks in the data using the topology method
+        # Define the topology method to identify the peaks
         fp = findpeaks(method="topology", verbose=0)
 
         # Get the last data from the multi matrix
         X = multi[-1, :]
 
-        # Fit the data to the found peaks and get a DataFrame with the results
+        # Find the peaks in the data and get a DataFrame with the results
         fp_results = fp.fit(X)
         multi_peaks_df = fp_results["df"].query(
             "peak==True & valley==False & score>0.15"
         )
 
-        # Calculate the number of peaks found
-        peaks_size = multi_peaks_df.score.size
-
         # Determine the type of cause to calculate
         if causes_kind == "count":
             # If counting the number of causes, assign the number of peaks found
-            peaks = peaks_size
+            peaks = multi_peaks_df.score.size
         elif causes_kind == "prob":
-            # If calculating the probability of causes
-            if peaks_size == 0:
-                # If no peaks were found, assign 0
-                peaks = peaks_size
-            elif peaks_size == 1:
-                # If one peak was found, assign the peak value
-                peaks = multi_peaks_df["y"].values.item()
-            else:
-                # If multiple peaks were found, calculate the probability of two peaks
-                peaks = 1 - calculate_two_peaks_probability(
-                    multi_peaks_df["y"].values
-                )
+            # If calculating the probability of a unique cause,
+            # calculate the probability of detecting a single peak
+            peaks = calculate_single_peak_probability(
+                multi_peaks_df["y"].values
+            )
         else:
             # If no valid cause type is specified, assign None
             peaks = None
 
-        # Return the calculated result
+        # Return the calculated causes
         return peaks

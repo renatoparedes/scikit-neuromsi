@@ -483,6 +483,7 @@ class Paredes2022(SKNMSIMethodABC):
         visual_stim_n=1,
         feedforward_pruning_threshold=0,
         cross_modal_pruning_threshold=0,
+        causes_kind="count",
     ):
         auditory_position = (
             int(self._position_range[1] / 2)
@@ -820,10 +821,11 @@ class Paredes2022(SKNMSIMethodABC):
             "auditory_total_input": auditory_total_inputs,
             "visual_total_input": visual_total_inputs,
             "multi_total_input": multisensory_total_inputs,
+            "causes_kind": causes_kind,
         }
 
     def calculate_causes(
-        self, multi, **kwargs
+        self, multi, causes_kind, **kwargs
     ):  # TODO Include causes for space and time
         # if dimension == "space":
 
