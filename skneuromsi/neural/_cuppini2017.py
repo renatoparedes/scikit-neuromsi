@@ -21,6 +21,8 @@ import numpy as np
 
 from ..core import SKNMSIMethodABC
 
+from ._neural_utils import calculate_two_peaks_probability
+
 
 @dataclass
 class Cuppini2017IntegratorFunction:
@@ -234,6 +236,7 @@ class Cuppini2017(SKNMSIMethodABC):
         auditory_intensity=28,
         visual_intensity=27,
         noise=False,
+        causes_kind="count",
     ):
         auditory_position = (
             int(self._position_range[1] / 2)
@@ -372,14 +375,32 @@ class Cuppini2017(SKNMSIMethodABC):
             "multi": multi_res,
         }
 
-        extra = {}
+        extra = {"causes_kind": causes_kind}
 
         return response, extra
 
-    def calculate_causes(self, multi, **kwargs):
+    def calculate_causes(self, multi, causes_kind, **kwargs):
         fp = findpeaks(method="topology", verbose=0)
         X = multi[-1, :]
-        results = fp.fit(X)
-        peaks = results["df"].query("peak==True & score>0.15").score.size
+        fp_results = fp.fit(X)
+        multi_peaks_df = fp_results["df"].query(
+            "peak==True & valley==False & score>0.15"
+        )
+        peaks_size = multi_peaks_df.score.size
+
+        if causes_kind == "count":
+            peaks = peaks_size
+
+        elif causes_kind == "prob":
+            if peaks_size == 0:
+                peaks = peaks_size
+            elif peaks_size == 1:
+                peaks = multi_peaks_df["y"].values.item()
+            else:
+                peaks = 1 - calculate_two_peaks_probability(
+                    multi_peaks_df["y"].values
+                )
+        else:
+            peaks = None
 
         return peaks

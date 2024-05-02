@@ -595,7 +595,6 @@ class NDResult:
         ddtypes = self.deep_dtypes(max_deep=2, memory_usage=memory_usage)
         dtypes = []
         for attr, obj_info in ddtypes.items():
-
             obj_type, obj_dtype = obj_info[:2]
             dtype = (
                 obj_dtype if ddtype_tools.single_dtype_class(obj_type) else "-"
