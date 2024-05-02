@@ -158,7 +158,7 @@ class Cuppini2017(SKNMSIMethodABC):
     @property
     def mode1(self):
         return self._mode1
-    
+
     @property
     def dtype(self):
         return self._dtype
@@ -177,7 +177,9 @@ class Cuppini2017(SKNMSIMethodABC):
         excitation_scale,
         inhibition_scale,
     ):
-        the_lateral_synapses = np.zeros((self.neurons, self.neurons), dtype=self.dtype)
+        the_lateral_synapses = np.zeros(
+            (self.neurons, self.neurons), dtype=self.dtype
+        )
 
         for neuron_i in range(self.neurons):
             for neuron_j in range(self.neurons):
@@ -297,7 +299,8 @@ class Cuppini2017(SKNMSIMethodABC):
         )
 
         res_z = np.zeros(
-            (int(self._time_range[1] / integrator.dt), self.neurons), dtype=self.dtype
+            (int(self._time_range[1] / integrator.dt), self.neurons),
+            dtype=self.dtype,
         )
         auditory_res, visual_res, multi_res = (
             copy.deepcopy(res_z),

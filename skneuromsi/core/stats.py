@@ -158,7 +158,7 @@ class ResultStatsAccessor(AccessorABC):
         xa = self._to_xarray(modes, times, positions, coordinates)
         return float(xa.std().to_numpy())
 
-    def min( # noqa
+    def min(  # noqa
         self, *, modes=None, times=None, positions=None, coordinates=None
     ):
         """Calculate the minimum value of the NDResult.
@@ -220,7 +220,7 @@ class ResultStatsAccessor(AccessorABC):
 
         return pd.Series(data, name="min")
 
-    def max( # noqa
+    def max(  # noqa
         self, *, modes=None, times=None, positions=None, coordinates=None
     ):  # noqa
         """Calculate the maximum value of the NDResult.

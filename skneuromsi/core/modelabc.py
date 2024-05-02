@@ -471,11 +471,11 @@ class SKNMSIRunConfig:
             run_method, input_alias_map
         )
 
-        time_range = np.array(model_instance.time_range, dtype=float)
-        position_range = np.array(model_instance.position_range, dtype=float)
+        time_range = model_instance.time_range
+        position_range = model_instance.position_range
 
-        time_res = float(model_instance.time_res)
-        position_res = float(model_instance.position_res)
+        time_res = model_instance.time_res
+        position_res = model_instance.position_res
 
         @functools.wraps(run_method)
         def run_wrapper(*args, **kwargs):
