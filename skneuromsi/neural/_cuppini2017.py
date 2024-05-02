@@ -236,7 +236,7 @@ class Cuppini2017(SKNMSIMethodABC):
         auditory_intensity=28,
         visual_intensity=27,
         noise=False,
-        causes_kind="prob",
+        causes_kind="count",
     ):
         auditory_position = (
             int(self._position_range[1] / 2)

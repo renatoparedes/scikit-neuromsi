@@ -200,8 +200,8 @@ class NDResultBiasAcc(AccessorABC):
             ).values.T[0]
             current_dim_position = max_dim_values.argmax()
 
-            bias = np.abs(current_dim_position - ref_value) / np.abs(
-                ref_value - influence_value
+            bias = np.abs(current_dim_position - influence_value) / np.abs(
+                influence_value - ref_value
             )
 
             bias_arr[idx] = bias
