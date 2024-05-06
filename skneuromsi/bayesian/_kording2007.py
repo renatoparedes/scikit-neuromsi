@@ -254,6 +254,7 @@ class Kording2007(SKNMSIMethodABC):
         prior_mu=0,
         strategy="averaging",
         noise=True,
+        causes_kind="count",
     ):
         possible_locations = np.arange(
             self._position_range[0],
@@ -333,16 +334,34 @@ class Kording2007(SKNMSIMethodABC):
         extra = {
             "mean_p_common_cause": np.average(multisensory_estimate["pc"]),
             "p_common_cause": multisensory_estimate["pc"],
+            "causes_kind": causes_kind,
         }
 
         return response, extra
 
-    def calculate_causes(self, p_common_cause, **kwargs):
-        if self.n > 1:
-            if np.average(p_common_cause) > 0.5:
-                return 1
-            return 2
+    def calculate_causes(self, p_common_cause, causes_kind, **kwargs):
+        # Determine the type of cause to calculate
+        if causes_kind == "count":
+            # If counting the number of causes, determine the number of simulations executed
+            if self.n > 1:
+                # If more than one simulation, evaluate the average probability
+                # of perciving a common cause
+                if np.average(p_common_cause) > 0.5:
+                    causes = 1
+                else:
+                    causes = 2
+            # If only one simulation, evaluate the probability of perceiving a common cause
+            else:
+                if p_common_cause > 0.5:
+                    causes = 1
+                else:
+                    causes = 2
 
-        if p_common_cause > 0.5:
-            return 1
-        return 2
+        elif causes_kind == "prob":
+            # If calculating the probability of a unique cause, assign the probability
+            # of perceiving a common cause
+            causes = p_common_cause
+        else:
+            # If no valid cause type is specified, assign None
+            causes = None
+        return causes
