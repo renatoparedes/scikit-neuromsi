@@ -326,6 +326,9 @@ class Paredes2022(SKNMSIMethodABC):
         if soa is not None:
             soa = int(soa)
 
+        if onset is not None:
+            onset = int(onset)
+
         # TODO expand for more than 2 stimuli and for different stimuli
         no_stim = np.zeros(self.neurons)
 
@@ -826,43 +829,65 @@ class Paredes2022(SKNMSIMethodABC):
             "multi_total_input": multisensory_total_inputs,
             "causes_kind": causes_kind,
             "causes_dim": causes_dim,
+            "stim_position": [auditory_position, visual_position],
         }
 
-    def calculate_causes(self, multi, causes_kind, causes_dim, **kwargs):
+    def calculate_causes(
+        self, multi, causes_kind, causes_dim, stim_position, **kwargs
+    ):
         # Define the topology method to identify the peaks
         fp = findpeaks(method="topology", verbose=0)
 
-        # Get the last data from the multi matrix
-        X = multi[-1, :]
+        if causes_dim == "space":
+            # Get the last data from the multi matrix
+            X = multi[-1, :]
 
-        # Find the peaks in the data and get a DataFrame with the results
-        fp_results = fp.fit(X)
-        multi_peaks_df = fp_results["df"].query(
-            "peak==True & valley==False & score>0.15"
-        )
-
-        # Determine the type of cause to calculate
-        if causes_kind == "count":
-            # If counting the number of causes, assign the number of peaks found
-            peaks = multi_peaks_df.score.size
-        elif causes_kind == "prob":
-            # If calculating the probability of a unique cause,
-            # calculate the probability of detecting a single peak
-            peaks = calculate_single_peak_probability(
-                multi_peaks_df["y"].values
+            # Find the peaks in the data and get a DataFrame with the results
+            fp_results = fp.fit(X)
+            multi_peaks_df = fp_results["df"].query(
+                "peak==True & valley==False & score>0.15"
             )
+
+            # Determine the type of cause to calculate
+            if causes_kind == "count":
+                # If counting the number of causes, assign the number of peaks found
+                peaks = multi_peaks_df.score.size
+            elif causes_kind == "prob":
+                # If calculating the probability of a unique cause,
+                # calculate the probability of detecting a single peak
+                peaks = calculate_single_peak_probability(
+                    multi_peaks_df["y"].values
+                )
+            else:
+                # If no valid cause type is specified, assign None
+                peaks = None
+
+        elif causes_dim == "time":
+            # Get data from stimuli position in multi matrix
+            position = int(np.mean([stim_position[0], stim_position[1]]))
+            X = multi[:, position]
+
+            # Find the peaks in the data and get a DataFrame with the results
+            fp_results = fp.fit(X)
+            multi_peaks_df = fp_results["df"].query(
+                "peak==True & valley==False & score>0.15"
+            )
+            # Determine the type of cause to calculate
+            if causes_kind == "count":
+                # If counting the number of causes, assign the number of peaks found
+                peaks = multi_peaks_df.score.size
+            elif causes_kind == "prob":
+                # If calculating the probability of a unique cause,
+                # calculate the probability of detecting a single peak
+                peaks = calculate_single_peak_probability(
+                    multi_peaks_df["y"].values
+                )
+            else:
+                # If no valid cause type is specified, assign None
+                peaks = None
+
         else:
-            # If no valid cause type is specified, assign None
             peaks = None
 
         # Return the calculated causes
         return peaks
-
-        # TODO Include causes for space and time
-        # if causes_dim == "time":
-        # fp = findpeaks(method="topology", verbose=0)
-        # position = int(self._position_range[1] / 2)
-        # X = multi[:, position]
-        # results = fp.fit(X)
-        # peaks = results["df"].query("peak==True & score>0.4").score.size
-        # return peaks
