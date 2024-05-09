@@ -17,11 +17,9 @@ import copy
 
 import numpy as np
 
-from findpeaks import findpeaks
-
 from ..core import SKNMSIMethodABC
 
-from ..utils.readout_tools import calculate_single_peak_probability
+from ..utils.readout_tools import calculate_spatiotemporal_causes_from_peaks
 
 
 @dataclass
@@ -835,59 +833,18 @@ class Paredes2022(SKNMSIMethodABC):
     def calculate_causes(
         self, multi, causes_kind, causes_dim, stim_position, **kwargs
     ):
-        # Define the topology method to identify the peaks
-        fp = findpeaks(method="topology", verbose=0)
+        # Calculate the average stimuli position
+        position = int(np.mean([stim_position[0], stim_position[1]]))
 
-        if causes_dim == "space":
-            # Get the last data from the multi matrix
-            X = multi[-1, :]
-
-            # Find the peaks in the data and get a DataFrame with the results
-            fp_results = fp.fit(X)
-            multi_peaks_df = fp_results["df"].query(
-                "peak==True & valley==False & score>0.15"
-            )
-
-            # Determine the type of cause to calculate
-            if causes_kind == "count":
-                # If counting the number of causes, assign the number of peaks found
-                peaks = multi_peaks_df.score.size
-            elif causes_kind == "prob":
-                # If calculating the probability of a unique cause,
-                # calculate the probability of detecting a single peak
-                peaks = calculate_single_peak_probability(
-                    multi_peaks_df["y"].values
-                )
-            else:
-                # If no valid cause type is specified, assign None
-                peaks = None
-
-        elif causes_dim == "time":
-            # Get data from stimuli position in multi matrix
-            position = int(np.mean([stim_position[0], stim_position[1]]))
-            X = multi[:, position]
-
-            # Find the peaks in the data and get a DataFrame with the results
-            fp_results = fp.fit(X)
-            multi_peaks_df = fp_results["df"].query(
-                "peak==True & valley==False & score>0.15"
-            )
-            # Determine the type of cause to calculate
-            if causes_kind == "count":
-                # If counting the number of causes, assign the number of peaks found
-                peaks = multi_peaks_df.score.size
-            elif causes_kind == "prob":
-                # If calculating the probability of a unique cause,
-                # calculate the probability of detecting a single peak
-                peaks = calculate_single_peak_probability(
-                    multi_peaks_df["y"].values
-                )
-            else:
-                # If no valid cause type is specified, assign None
-                peaks = None
-
-        else:
-            peaks = None
+        # Calculates the causes in the desired dimension using the specified method
+        causes = calculate_spatiotemporal_causes_from_peaks(
+            mode_spatiotemporal_activity_data=multi,
+            causes_kind=causes_kind,
+            causes_dim=causes_dim,
+            score_threshold=0.15,
+            time_point=-1,
+            spatial_point=position,
+        )
 
         # Return the calculated causes
-        return peaks
+        return causes
