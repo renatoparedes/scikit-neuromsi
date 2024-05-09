@@ -821,7 +821,8 @@ class Paredes2022(SKNMSIMethodABC):
             "visual": visual_res,
             "multi": multi_res,
         }
-        return response, {
+
+        extra = {
             "auditory_total_input": auditory_total_inputs,
             "visual_total_input": visual_total_inputs,
             "multi_total_input": multisensory_total_inputs,
@@ -829,6 +830,8 @@ class Paredes2022(SKNMSIMethodABC):
             "causes_dim": causes_dim,
             "stim_position": [auditory_position, visual_position],
         }
+
+        return response, extra
 
     def calculate_causes(
         self, multi, causes_kind, causes_dim, stim_position, **kwargs

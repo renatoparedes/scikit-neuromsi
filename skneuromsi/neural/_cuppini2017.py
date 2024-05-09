@@ -21,6 +21,12 @@ import numpy as np
 
 from ..core import SKNMSIMethodABC
 
+from ..utils.neural_tools import (
+    calculate_lateral_synapses,
+    calculate_inter_areal_synapses,
+    calculate_stimuli_input,
+)
+
 from ..utils.readout_tools import calculate_single_peak_probability
 
 
@@ -165,63 +171,6 @@ class Cuppini2017(SKNMSIMethodABC):
     def dtype(self):
         return self._dtype
 
-    # Model architecture methods
-
-    def distance(self, position_j, position_k):
-        if np.abs(position_j - position_k) <= self.neurons / 2:
-            return np.abs(position_j - position_k)
-        return self.neurons - np.abs(position_j - position_k)
-
-    def lateral_synapses(
-        self,
-        excitation_loc,
-        inhibition_loc,
-        excitation_scale,
-        inhibition_scale,
-    ):
-        the_lateral_synapses = np.zeros(
-            (self.neurons, self.neurons), dtype=self.dtype
-        )
-
-        for neuron_i in range(self.neurons):
-            for neuron_j in range(self.neurons):
-                if neuron_i == neuron_j:
-                    the_lateral_synapses[neuron_i, neuron_j] = 0
-                    continue
-
-                distance = self.distance(neuron_i, neuron_j)
-                e_gauss = excitation_loc * np.exp(
-                    -(np.square(distance)) / (2 * np.square(excitation_scale))
-                )
-                i_gauss = inhibition_loc * np.exp(
-                    -(np.square(distance)) / (2 * np.square(inhibition_scale))
-                )
-
-                the_lateral_synapses[neuron_i, neuron_j] = e_gauss - i_gauss
-        return the_lateral_synapses
-
-    def stimuli_input(self, intensity, *, scale, loc):
-        the_stimuli = np.zeros(self.neurons, dtype=self.dtype)
-
-        for neuron_j in range(self.neurons):
-            distance = self.distance(neuron_j, loc)
-            the_stimuli[neuron_j] = intensity * np.exp(
-                -(np.square(distance)) / (2 * np.square(scale))
-            )
-
-        return the_stimuli
-
-    def synapses(self, weight, sigma):
-        the_synapses = np.zeros((self.neurons, self.neurons), dtype=self.dtype)
-
-        for j in range(self.neurons):
-            for k in range(self.neurons):
-                d = self.distance(j, k)
-                the_synapses[j, k] = weight * np.exp(
-                    -(np.square(d)) / (2 * np.square(sigma))
-                )
-        return the_synapses
-
     # Model run
     def set_random(self, rng):
         self._random = rng
@@ -237,6 +186,7 @@ class Cuppini2017(SKNMSIMethodABC):
         visual_intensity=27,
         noise=False,
         causes_kind="count",
+        causes_dim="spatial",
     ):
         auditory_position = (
             int(self._position_range[1] / 2)
@@ -255,37 +205,57 @@ class Cuppini2017(SKNMSIMethodABC):
         )
 
         # Build synapses
-        auditory_latsynapses = self.lateral_synapses(
+        auditory_latsynapses = calculate_lateral_synapses(
+            neurons=self.neurons,
             excitation_loc=5,
             inhibition_loc=4,
             excitation_scale=3,
             inhibition_scale=120,
+            dtype=self.dtype,
         )
-        visual_latsynapses = self.lateral_synapses(
+        visual_latsynapses = calculate_lateral_synapses(
+            neurons=self.neurons,
             excitation_loc=5,
             inhibition_loc=4,
             excitation_scale=3,
             inhibition_scale=120,
+            dtype=self.dtype,
         )
-        multi_latsynapses = self.lateral_synapses(
+        multi_latsynapses = calculate_lateral_synapses(
+            neurons=self.neurons,
             excitation_loc=3,
             inhibition_loc=2.6,
             excitation_scale=2,
             inhibition_scale=10,
+            dtype=self.dtype,
         )
-        auditory_to_visual_synapses = self.synapses(weight=1.4, sigma=5)
-        visual_to_auditory_synapses = self.synapses(weight=1.4, sigma=5)
-        auditory_to_multi_synapses = self.synapses(weight=18, sigma=0.5)
-        visual_to_multi_synapses = self.synapses(weight=18, sigma=0.5)
+        auditory_to_visual_synapses = calculate_inter_areal_synapses(
+            neurons=self.neurons, weight=1.4, sigma=5, dtype=self.dtype
+        )
+        visual_to_auditory_synapses = calculate_inter_areal_synapses(
+            neurons=self.neurons, weight=1.4, sigma=5, dtype=self.dtype
+        )
+        auditory_to_multi_synapses = calculate_inter_areal_synapses(
+            neurons=self.neurons, weight=18, sigma=0.5, dtype=self.dtype
+        )
+        visual_to_multi_synapses = calculate_inter_areal_synapses(
+            neurons=self.neurons, weight=18, sigma=0.5, dtype=self.dtype
+        )
 
         # Generate Stimuli
-        auditory_stimuli = self.stimuli_input(
+        auditory_stimuli = calculate_stimuli_input(
+            neurons=self.neurons,
             intensity=auditory_intensity,
             scale=auditory_sigma,
             loc=auditory_position,
+            dtype=self.dtype,
         )
-        visual_stimuli = self.stimuli_input(
-            intensity=visual_intensity, scale=visual_sigma, loc=visual_position
+        visual_stimuli = calculate_stimuli_input(
+            neurons=self.neurons,
+            intensity=visual_intensity,
+            scale=visual_sigma,
+            loc=visual_position,
+            dtype=self.dtype,
         )
 
         # create the integrator
@@ -375,11 +345,16 @@ class Cuppini2017(SKNMSIMethodABC):
             "multi": multi_res,
         }
 
-        extra = {"causes_kind": causes_kind}
+        extra = {
+            "causes_kind": causes_kind,
+            "causes_dim": causes_dim,
+            "stim_position": [auditory_position, visual_position],
+            "synapses": visual_to_multi_synapses,
+        }
 
         return response, extra
 
-    def calculate_causes(self, multi, causes_kind, **kwargs):
+    def calculate_causes(self, multi, causes_kind, causes_dim, **kwargs):
         # Define the topology method to identify the peaks
         fp = findpeaks(method="topology", verbose=0)
 
