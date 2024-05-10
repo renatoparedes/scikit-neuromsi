@@ -19,6 +19,14 @@ import numpy as np
 
 from ..core import SKNMSIMethodABC
 
+from ..utils.neural_tools import (
+    calculate_lateral_synapses,
+    calculate_inter_areal_synapses,
+    calculate_stimuli_input,
+    create_unimodal_stimuli_matrix,
+    prune_synapses,
+)
+
 from ..utils.readout_tools import calculate_spatiotemporal_causes_from_peaks
 
 
@@ -268,183 +276,6 @@ class Paredes2022(SKNMSIMethodABC):
     def mode1(self):
         return self._mode1
 
-    # Model architecture methods
-
-    def distance(self, position_j, position_k):
-        if np.abs(position_j - position_k) <= self.neurons / 2:
-            return np.abs(position_j - position_k)
-        return self.neurons - np.abs(position_j - position_k)
-
-    def lateral_synapses(
-        self,
-        excitation_loc,
-        inhibition_loc,
-        excitation_scale,
-        inhibition_scale,
-    ):
-        the_lateral_synapses = np.zeros((self.neurons, self.neurons))
-
-        for neuron_i in range(self.neurons):
-            for neuron_j in range(self.neurons):
-                if neuron_i == neuron_j:
-                    the_lateral_synapses[neuron_i, neuron_j] = 0
-                    continue
-
-                distance = self.distance(neuron_i, neuron_j)
-                e_gauss = excitation_loc * np.exp(
-                    -(np.square(distance)) / (2 * np.square(excitation_scale))
-                )
-                i_gauss = inhibition_loc * np.exp(
-                    -(np.square(distance)) / (2 * np.square(inhibition_scale))
-                )
-
-                the_lateral_synapses[neuron_i, neuron_j] = e_gauss - i_gauss
-        return the_lateral_synapses
-
-    def stimuli_input(self, intensity, *, scale, loc):
-        the_stimuli = np.zeros(self.neurons)
-
-        for neuron_j in range(self.neurons):
-            distance = self.distance(neuron_j, loc)
-            the_stimuli[neuron_j] = intensity * np.exp(
-                -(np.square(distance)) / (2 * np.square(scale))
-            )
-
-        return the_stimuli
-
-    def create_unimodal_stimuli_matrix(
-        self,
-        stimuli,
-        stimuli_duration,
-        onset,
-        simulation_length,
-        stimuli_n=1,
-        soa=None,
-    ):
-        if soa is not None:
-            soa = int(soa)
-
-        if onset is not None:
-            onset = int(onset)
-
-        # TODO expand for more than 2 stimuli and for different stimuli
-        no_stim = np.zeros(self.neurons)
-
-        if stimuli_n == 0:
-            stim = np.tile(no_stim, (simulation_length, 1))
-            stimuli_matrix = np.repeat(stim, 1 / self._time_res, axis=0)
-            return stimuli_matrix
-
-        # Input before onset
-        pre_stim = np.tile(no_stim, (onset, 1))
-
-        # Input during stimulus delivery
-        stim = np.tile(stimuli, (stimuli_duration, 1))
-
-        # If two stimuli are delivered
-        if stimuli_n == 2:
-            # Input during onset asyncrhony
-            soa_stim = np.tile(no_stim, (soa - stimuli_duration, 1))
-
-            # Input after stimulation
-            post_stim_time = (
-                simulation_length
-                - onset
-                - stimuli_duration * 2
-                - (soa - stimuli_duration)
-            )
-            post_stim = np.tile(no_stim, (post_stim_time, 1))
-
-            # Input concatenation
-            complete_stim = np.vstack(
-                (pre_stim, stim, soa_stim, stim, post_stim)
-            )
-            stimuli_matrix = np.repeat(
-                complete_stim, 1 / self._integrator.dt, axis=0
-            )
-
-        elif stimuli_n == 3:
-            # Input during onset asyncrhony
-            soa_stim = np.tile(no_stim, (soa - stimuli_duration, 1))
-
-            # Input after stimulation
-            post_stim_time = (
-                simulation_length
-                - onset
-                - stimuli_duration * 3
-                - (soa - stimuli_duration) * 2
-            )
-            post_stim = np.tile(no_stim, (post_stim_time, 1))
-
-            # Input concatenation
-            complete_stim = np.vstack(
-                (pre_stim, stim, soa_stim, stim, soa_stim, stim, post_stim)
-            )
-            stimuli_matrix = np.repeat(
-                complete_stim, 1 / self._integrator.dt, axis=0
-            )
-
-        elif stimuli_n == 4:
-            # Input during onset asyncrhony
-            soa_stim = np.tile(no_stim, (soa - stimuli_duration, 1))
-
-            # Input after stimulation
-            post_stim_time = (
-                simulation_length
-                - onset
-                - stimuli_duration * 4
-                - (soa - stimuli_duration) * 3
-            )
-            post_stim = np.tile(no_stim, (post_stim_time, 1))
-
-            # Input concatenation
-            complete_stim = np.vstack(
-                (
-                    pre_stim,
-                    stim,
-                    soa_stim,
-                    stim,
-                    soa_stim,
-                    stim,
-                    soa_stim,
-                    stim,
-                    post_stim,
-                )
-            )
-            stimuli_matrix = np.repeat(
-                complete_stim, 1 / self._integrator.dt, axis=0
-            )
-
-        else:
-            # Input after stimulation
-            post_stim_time = simulation_length - onset - stimuli_duration
-            post_stim = np.tile(no_stim, (post_stim_time, 1))
-
-            # Input concatenation
-            complete_stim = np.vstack((pre_stim, stim, post_stim))
-            stimuli_matrix = np.repeat(
-                complete_stim, 1 / self._integrator.dt, axis=0
-            )
-
-        return stimuli_matrix
-
-    def synapses(self, weight, sigma):
-        the_synapses = np.zeros((self.neurons, self.neurons))
-
-        for j in range(self.neurons):
-            for k in range(self.neurons):
-                d = self.distance(j, k)
-                the_synapses[j, k] = weight * np.exp(
-                    -(np.square(d)) / (2 * np.square(sigma))
-                )
-        return the_synapses
-
-    def pruning(self, synapses_weight_matrix, pruning_threshold):
-        pruned_synpases = np.copy(synapses_weight_matrix)
-        pruned_synpases[pruned_synpases < pruning_threshold] = 0
-
-        return pruned_synpases
-
     # Model run
     def set_random(self, rng):
         self._random = rng
@@ -457,7 +288,8 @@ class Paredes2022(SKNMSIMethodABC):
     def run(
         self,
         *,
-        soa=50,
+        a_soa=50,
+        v_soa=None,
         auditory_onset=16,
         visual_onset=16,
         auditory_duration=7,
@@ -518,82 +350,96 @@ class Paredes2022(SKNMSIMethodABC):
         sim_feed_latency = int(feed_latency / self._integrator.dt)
 
         # Build synapses
-        auditory_latsynapses = self.lateral_synapses(
+        auditory_latsynapses = calculate_lateral_synapses(
+            neurons=self.neurons,
             excitation_loc=lateral_excitation,
             inhibition_loc=lateral_inhibition,
             excitation_scale=3,
             inhibition_scale=24,
         )
-        visual_latsynapses = self.lateral_synapses(
+        visual_latsynapses = calculate_lateral_synapses(
+            neurons=self.neurons,
             excitation_loc=lateral_excitation,
             inhibition_loc=lateral_inhibition,
             excitation_scale=3,
             inhibition_scale=24,
         )
-        multi_latsynapses = self.lateral_synapses(
+        multi_latsynapses = calculate_lateral_synapses(
+            neurons=self.neurons,
             excitation_loc=lateral_excitation,
             inhibition_loc=lateral_inhibition,
             excitation_scale=3,
             inhibition_scale=24,
         )
-        auditory_to_visual_synapses = self.synapses(
-            weight=cross_modal_weight, sigma=5
+        auditory_to_visual_synapses = calculate_inter_areal_synapses(
+            neurons=self.neurons, weight=cross_modal_weight, sigma=5
         )
-        visual_to_auditory_synapses = self.synapses(
-            weight=cross_modal_weight, sigma=5
+        visual_to_auditory_synapses = calculate_inter_areal_synapses(
+            neurons=self.neurons, weight=cross_modal_weight, sigma=5
         )
-        auditory_to_multi_synapses = self.synapses(
-            weight=feedforward_weight, sigma=0.5
+        auditory_to_multi_synapses = calculate_inter_areal_synapses(
+            neurons=self.neurons, weight=feedforward_weight, sigma=0.5
         )
-        visual_to_multi_synapses = self.synapses(
-            weight=feedforward_weight, sigma=0.5
+        visual_to_multi_synapses = calculate_inter_areal_synapses(
+            neurons=self.neurons, weight=feedforward_weight, sigma=0.5
         )
-        multi_to_auditory_synapses = self.synapses(
-            weight=feedback_weight, sigma=0.5
+        multi_to_auditory_synapses = calculate_inter_areal_synapses(
+            neurons=self.neurons, weight=feedback_weight, sigma=0.5
         )
-        multi_to_visual_synapses = self.synapses(
-            weight=feedback_weight, sigma=0.5
+        multi_to_visual_synapses = calculate_inter_areal_synapses(
+            neurons=self.neurons, weight=feedback_weight, sigma=0.5
         )
 
         # Prune synapses
-        auditory_to_multi_synapses = self.pruning(
+        auditory_to_multi_synapses = prune_synapses(
             auditory_to_multi_synapses, feedforward_pruning_threshold
         )
-        visual_to_multi_synapses = self.pruning(
+        visual_to_multi_synapses = prune_synapses(
             visual_to_multi_synapses, feedforward_pruning_threshold
         )
-        auditory_to_visual_synapses = self.pruning(
+        auditory_to_visual_synapses = prune_synapses(
             auditory_to_visual_synapses, cross_modal_pruning_threshold
         )
-        visual_to_auditory_synapses = self.pruning(
+        visual_to_auditory_synapses = prune_synapses(
             visual_to_auditory_synapses, cross_modal_pruning_threshold
         )
 
         # Generate Stimuli
-        point_auditory_stimuli = self.stimuli_input(
+        point_auditory_stimuli = calculate_stimuli_input(
+            neurons=self.neurons,
             intensity=auditory_intensity,
             scale=auditory_sigma,
             loc=auditory_position,
         )
-        point_visual_stimuli = self.stimuli_input(
-            intensity=visual_intensity, scale=visual_sigma, loc=visual_position
+        point_visual_stimuli = calculate_stimuli_input(
+            neurons=self.neurons,
+            intensity=visual_intensity,
+            scale=visual_sigma,
+            loc=visual_position,
         )
 
-        auditory_stimuli = self.create_unimodal_stimuli_matrix(
+        auditory_stimuli = create_unimodal_stimuli_matrix(
+            neurons=self.neurons,
             stimuli=point_auditory_stimuli,
             stimuli_duration=auditory_duration,
             onset=auditory_onset,
             simulation_length=self._time_range[1],
+            time_res=self.time_res,
+            dt=self._integrator.dt,
             stimuli_n=auditory_stim_n,
-            soa=soa,
+            soa=a_soa,
         )
 
-        visual_stimuli = self.create_unimodal_stimuli_matrix(
+        visual_stimuli = create_unimodal_stimuli_matrix(
+            neurons=self.neurons,
             stimuli=point_visual_stimuli,
             stimuli_duration=visual_duration,
             onset=visual_onset,
             simulation_length=self._time_range[1],
+            time_res=self.time_res,
+            dt=self._integrator.dt,
             stimuli_n=visual_stim_n,
+            soa=v_soa,
         )
 
         # Data holders

@@ -21,7 +21,7 @@
 import numpy as np
 
 # =============================================================================
-# TOOLS
+# ARCHITECTURE TOOLS
 # =============================================================================
 
 
@@ -148,6 +148,38 @@ def calculate_inter_areal_synapses(neurons, weight, sigma, dtype=np.float32):
     return the_synapses
 
 
+def prune_synapses(synapses_weight_matrix, pruning_threshold):
+    """
+    Prunes neural connections by assigning zero to those synapses values
+    below a given threshold.
+
+    Parameters
+    ----------
+    synapses_weight_matrix : numpy.array
+        Array containing the values of the synapses.
+    pruning_threshold: float
+        Threshold value of the pruning procedure.
+
+    Returns
+    -------
+    numpy.array
+        The value of the external stimuli for each neuron.
+
+    """
+    # Generates a copy of the array
+    pruned_synpases = np.copy(synapses_weight_matrix)
+
+    # Prunes synapses below threshold
+    pruned_synpases[pruned_synpases < pruning_threshold] = 0
+
+    return pruned_synpases
+
+
+# =============================================================================
+# STIMULI TOOLS
+# =============================================================================
+
+
 def calculate_stimuli_input(
     neurons, intensity, *, scale, loc, dtype=np.float32
 ):
@@ -196,11 +228,12 @@ def create_unimodal_stimuli_matrix(
     time_res,
     dt,
     stimuli_n=1,
+    soa=None,
     dtype=np.float32,
 ):
     """
     Creates the matrix of a unimodal stimuli for each neuron
-    at each timepoint.
+    at each timepoint. Supports up to four stimuli.
 
     Parameters
     ----------
@@ -219,7 +252,10 @@ def create_unimodal_stimuli_matrix(
     dt: float
         Model integrator dt.
     stimuli_n: int
-        Number of unimodal stimuli (0 or 1).
+        Number of unimodal stimuli.
+    soa: int
+        Stimuli onset asynchrony. Relevant for more than 1 stimuli.
+        Must be higher than stimulus_duration.
     dtype: numpy class
         Type of the array to store the values.
 
@@ -232,6 +268,12 @@ def create_unimodal_stimuli_matrix(
     if onset is not None:
         onset = int(onset)
 
+    if soa is not None:
+        soa = int(soa)
+
+    if stimuli_n is not None:
+        stimuli_n = int(stimuli_n)
+
     no_stim = np.zeros(neurons, dtype=dtype)
 
     if stimuli_n == 0:
@@ -239,21 +281,42 @@ def create_unimodal_stimuli_matrix(
         stimuli_matrix = np.repeat(stim, 1 / time_res, axis=0)
         return stimuli_matrix
 
-    elif stimuli_n == 1:
+    else:
         # Input before onset
         pre_stim = np.tile(no_stim, (onset, 1))
 
         # Input during stimulus delivery
         stim = np.tile(stimuli, (stimuli_duration, 1))
 
+        # Input during onset asynchrony
+        soa_stim = (
+            np.tile(no_stim, (soa - stimuli_duration, 1))
+            if soa is not None
+            else None
+        )
+
         # Input after stimulation
-        post_stim_time = simulation_length - onset - stimuli_duration
+        post_stim_time = (
+            simulation_length - onset - stimuli_duration * stimuli_n
+        )
+        post_stim_time = (
+            post_stim_time - (soa - stimuli_duration) * (stimuli_n - 1)
+            if soa is not None
+            else post_stim_time
+        )
+
         post_stim = np.tile(no_stim, (post_stim_time, 1))
 
         # Input concatenation
-        complete_stim = np.vstack((pre_stim, stim, post_stim))
+        stim_list = [stim, soa_stim] * (stimuli_n - 1)
+        complete_stim = np.vstack(
+            (
+                pre_stim,
+                *stim_list,
+                stim,
+                post_stim,
+            )
+        )
         stimuli_matrix = np.repeat(complete_stim, 1 / dt, axis=0)
-    else:
-        return None
 
     return stimuli_matrix
