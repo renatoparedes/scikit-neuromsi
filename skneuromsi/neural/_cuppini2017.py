@@ -25,9 +25,10 @@ from ..utils.neural_tools import (
     calculate_lateral_synapses,
     calculate_inter_areal_synapses,
     calculate_stimuli_input,
+    create_unimodal_stimuli_matrix,
 )
 
-from ..utils.readout_tools import calculate_single_peak_probability
+from ..utils.readout_tools import calculate_spatiotemporal_causes_from_peaks
 
 
 @dataclass
@@ -114,6 +115,10 @@ class Cuppini2017(SKNMSIMethodABC):
         )
         self._integrator_kws = integrator_kws
 
+        self._integrator = bp.odeint(
+            f=self._integrator_function, **self._integrator_kws
+        )
+
         self._mode0 = mode0
         self._mode1 = mode1
 
@@ -184,6 +189,12 @@ class Cuppini2017(SKNMSIMethodABC):
         visual_sigma=4,
         auditory_intensity=28,
         visual_intensity=27,
+        auditory_duration=None,
+        auditory_onset=0,
+        auditory_stim_n=1,
+        visual_duration=None,
+        visual_onset=0,
+        visual_stim_n=1,
         noise=False,
         causes_kind="count",
         causes_dim="spatial",
@@ -198,6 +209,16 @@ class Cuppini2017(SKNMSIMethodABC):
             int(self._position_range[1] / 2)
             if visual_position is None
             else visual_position
+        )
+
+        auditory_duration = (
+            self._time_range[1]
+            if auditory_duration is None
+            else auditory_duration
+        )
+
+        visual_duration = (
+            self._time_range[1] if visual_duration is None else visual_duration
         )
 
         hist_times = np.arange(
@@ -243,14 +264,14 @@ class Cuppini2017(SKNMSIMethodABC):
         )
 
         # Generate Stimuli
-        auditory_stimuli = calculate_stimuli_input(
+        point_auditory_stimuli = calculate_stimuli_input(
             neurons=self.neurons,
             intensity=auditory_intensity,
             scale=auditory_sigma,
             loc=auditory_position,
             dtype=self.dtype,
         )
-        visual_stimuli = calculate_stimuli_input(
+        point_visual_stimuli = calculate_stimuli_input(
             neurons=self.neurons,
             intensity=visual_intensity,
             scale=visual_sigma,
@@ -258,9 +279,26 @@ class Cuppini2017(SKNMSIMethodABC):
             dtype=self.dtype,
         )
 
-        # create the integrator
-        integrator = bp.odeint(
-            f=self._integrator_function, **self._integrator_kws
+        auditory_stimuli = create_unimodal_stimuli_matrix(
+            neurons=self.neurons,
+            stimuli=point_auditory_stimuli,
+            stimuli_duration=auditory_duration,
+            onset=auditory_onset,
+            simulation_length=self._time_range[1],
+            time_res=self.time_res,
+            dt=self._integrator.dt,
+            stimuli_n=auditory_stim_n,
+        )
+
+        visual_stimuli = create_unimodal_stimuli_matrix(
+            neurons=self.neurons,
+            stimuli=point_visual_stimuli,
+            stimuli_duration=visual_duration,
+            onset=visual_onset,
+            simulation_length=self._time_range[1],
+            time_res=self.time_res,
+            dt=self._integrator.dt,
+            stimuli_n=visual_stim_n,
         )
 
         # Data holders
@@ -272,7 +310,7 @@ class Cuppini2017(SKNMSIMethodABC):
         )
 
         res_z = np.zeros(
-            (int(self._time_range[1] / integrator.dt), self.neurons),
+            (int(self._time_range[1] / self._integrator.dt), self.neurons),
             dtype=self.dtype,
         )
         auditory_res, visual_res, multi_res = (
@@ -300,8 +338,8 @@ class Cuppini2017(SKNMSIMethodABC):
             )
 
             # Compute external input
-            auditory_input = auditory_stimuli + auditory_cm_input
-            visual_input = visual_stimuli + visual_cm_input
+            auditory_input = auditory_stimuli[i] + auditory_cm_input
+            visual_input = visual_stimuli[i] + visual_cm_input
             multi_input = np.sum(
                 auditory_to_multi_synapses * auditory_y, axis=1
             ) + np.sum(visual_to_multi_synapses * visual_y, axis=1)
@@ -323,7 +361,7 @@ class Cuppini2017(SKNMSIMethodABC):
             u_m = lm + multi_input
 
             # Compute neurons activity
-            auditory_y, visual_y, multi_y = integrator(
+            auditory_y, visual_y, multi_y = self._integrator(
                 y_a=auditory_y,
                 y_v=visual_y,
                 y_m=multi_y,
@@ -354,32 +392,21 @@ class Cuppini2017(SKNMSIMethodABC):
 
         return response, extra
 
-    def calculate_causes(self, multi, causes_kind, causes_dim, **kwargs):
-        # Define the topology method to identify the peaks
-        fp = findpeaks(method="topology", verbose=0)
+    def calculate_causes(
+        self, multi, causes_kind, causes_dim, stim_position, **kwargs
+    ):
+        # Calculate the average stimuli position
+        position = int(np.mean([stim_position[0], stim_position[1]]))
 
-        # Get the last data from the multi matrix
-        X = multi[-1, :]
-
-        # Find the peaks in the data and get a DataFrame with the results
-        fp_results = fp.fit(X)
-        multi_peaks_df = fp_results["df"].query(
-            "peak==True & valley==False & score>0.15"
+        # Calculates the causes in the desired dimension using the specified method
+        causes = calculate_spatiotemporal_causes_from_peaks(
+            mode_spatiotemporal_activity_data=multi,
+            causes_kind=causes_kind,
+            causes_dim=causes_dim,
+            score_threshold=0.15,
+            time_point=-1,
+            spatial_point=position,
         )
 
-        # Determine the type of cause to calculate
-        if causes_kind == "count":
-            # If counting the number of causes, assign the number of peaks found
-            peaks = multi_peaks_df.score.size
-        elif causes_kind == "prob":
-            # If calculating the probability of a unique cause,
-            # calculate the probability of detecting a single peak
-            peaks = calculate_single_peak_probability(
-                multi_peaks_df["y"].values
-            )
-        else:
-            # If no valid cause type is specified, assign None
-            peaks = None
-
         # Return the calculated causes
-        return peaks
+        return causes

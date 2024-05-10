@@ -185,3 +185,75 @@ def calculate_stimuli_input(
         )
 
     return the_stimuli
+
+
+def create_unimodal_stimuli_matrix(
+    neurons,
+    stimuli,
+    stimuli_duration,
+    onset,
+    simulation_length,
+    time_res,
+    dt,
+    stimuli_n=1,
+    dtype=np.float32,
+):
+    """
+    Creates the matrix of a unimodal stimuli for each neuron
+    at each timepoint.
+
+    Parameters
+    ----------
+    neurons : int
+        The number of neurons to be stimulated.
+    stimuli: numpy.array
+        Array with the values of the stimuli for each neuron.
+    stimuli_duration: float
+        Duration of the stimuli in model time units.
+    onset: float
+        Onset of the unimodal stimuli in model time units.
+    simulation_length: float
+        Total duration of the model run in model time units.
+    time_res: float
+        Temporal resolution of the model.
+    dt: float
+        Model integrator dt.
+    stimuli_n: int
+        Number of unimodal stimuli (0 or 1).
+    dtype: numpy class
+        Type of the array to store the values.
+
+    Returns
+    -------
+    numpy.array
+        The value of the external stimuli for each neuron.
+
+    """
+    if onset is not None:
+        onset = int(onset)
+
+    no_stim = np.zeros(neurons, dtype=dtype)
+
+    if stimuli_n == 0:
+        stim = np.tile(no_stim, (simulation_length, 1))
+        stimuli_matrix = np.repeat(stim, 1 / time_res, axis=0)
+        return stimuli_matrix
+
+    elif stimuli_n == 1:
+        # Input before onset
+        pre_stim = np.tile(no_stim, (onset, 1))
+
+        # Input during stimulus delivery
+        stim = np.tile(stimuli, (stimuli_duration, 1))
+
+        # Input after stimulation
+        post_stim_time = simulation_length - onset - stimuli_duration
+        post_stim = np.tile(no_stim, (post_stim_time, 1))
+
+        # Input concatenation
+        complete_stim = np.vstack((pre_stim, stim, post_stim))
+        stimuli_matrix = np.repeat(complete_stim, 1 / dt, axis=0)
+    else:
+        return None
+
+    return stimuli_matrix
