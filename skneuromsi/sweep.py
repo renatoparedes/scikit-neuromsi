@@ -27,7 +27,6 @@ import numpy as np
 
 from tqdm.auto import tqdm
 
-from .core import NDResultCollection
 from .utils import storages
 
 # =============================================================================
@@ -39,66 +38,30 @@ DEFAULT_RANGE = 90 + np.arange(0, 20, 2)
 
 
 # =============================================================================
+# SWEEP VISITOR
+# =============================================================================
+
+class Visitor:
+
+    def setup(self):
+        ...
+
+    def teardown(self):
+        ...
+
+    def process(self, result):
+        return result
+
+    def reduce(self, results):
+        return results
+
+# =============================================================================
 # CLASS
 # =============================================================================
 
 
 class ParameterSweep:
-    """Sweep over a range of values for a specific parameter of a model.
 
-    Sweep over a range of values for a specific parameter of a model,
-    running the model multiple times for each value in the range and
-    storing the results in a storage (e.g., directory or memory).
-
-    TODO: Renato, explica cual es la idea cientifica de por que vale la pena
-          hacer esto.
-
-    Parameters
-    ----------
-    model : object
-        The model object that has a `run` method.
-    target : str
-        The name of the parameter to sweep over.
-    range : array-like, optional
-        The range of values to sweep over. If not provided, the default
-        range is `90 + np.arange(0, 20, 2)`.
-    repeat : int, optional
-        The number of times to repeat the run for each value in the range.
-        Default is 100.
-    n_jobs : int, optional
-        The number of jobs to run in parallel. Default is 1.
-    seed : int, optional
-        The seed for the random number generator.
-    tqdm_cls : class, optional
-        The tqdm class to use for progress bars. Default is `tqdm.auto.tqdm`.
-    storage : str, optional
-        The type of storage to use for storing the results. Default is
-        "directory".
-    storage_kws : dict, optional
-        Additional keyword arguments to pass to the storage.
-
-    Attributes
-    ----------
-    model : object
-        The model object.
-    range : ndarray
-        The range of values to sweep over.
-    repeat : int
-        The number of times to repeat the run for each value in the range.
-    n_jobs : int
-        The number of jobs to run in parallel.
-    target : str
-        The name of the parameter to sweep over.
-    seed : int or None
-        The seed for the random number generator.
-    random_ : numpy.random.Generator
-        The random number generator.
-    storage : str
-        The type of storage to use for storing the results.
-    storage_kws : dict
-        Additional keyword arguments to pass to the storage.
-
-    """
     def __init__(
         self,
         model,
@@ -269,27 +232,16 @@ class ParameterSweep:
                 )
             )
 
-        # Prepare to run
-        storage_type = self._storage
-        size = runs_total
-        tag = type(self).__name__
-        storage_kws = self._storage_kws
-
-        with storages.storage(
-            storage_type, size=size, tag=tag, **storage_kws
-        ) as results:
-            # execute the first iteration synchronous so if some configuration
-            # fails we can catch it here
-            cit, rkw, rkw_seed = next(rkw_combs)
-            self._run_report(cit, rkw, rkw_seed, results)
-
+        # creamos la clase visitor que se va a encargar de
+        # gestionar como procesar los resultados
+        with self._visitor_cls() as visitor:
             with joblib.Parallel(n_jobs=self._n_jobs) as Parallel:
                 drun = joblib.delayed(self._run_report)
-                Parallel(
-                    drun(cit, rkw, rkw_seed, results)
+                results = Parallel(
+                    drun(cit, rkw, rkw_seed)
                     for cit, rkw, rkw_seed in rkw_combs
                 )
 
-        result = NDResultCollection(tag, results, tqdm_cls=self._tqdm_cls)
+        result = visitor.reduce(results)
 
         return result
