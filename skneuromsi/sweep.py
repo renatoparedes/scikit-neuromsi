@@ -18,8 +18,10 @@
 # IMPORTS
 # =============================================================================
 
+import abc
 import inspect
 import itertools as it
+import contextlib
 
 import joblib
 
@@ -27,8 +29,11 @@ import numpy as np
 
 from tqdm.auto import tqdm
 
+==== BASE ====
+from .core import NDResultCollection
 from .utils import storages
 
+==== BASE ====
 # =============================================================================
 # CONSTANTS
 # =============================================================================
@@ -38,29 +43,129 @@ DEFAULT_RANGE = 90 + np.arange(0, 20, 2)
 
 
 # =============================================================================
-# SWEEP VISITOR
+# SWEEP STRATEGY
 # =============================================================================
 
-class Visitor:
+
+class SweepStrategyABC(contextlib.AbstractAsyncContextManager):
+    """Abstract base class for sweep strategies.
+
+    Defines the interface for processing and aggregating results during
+    parameter sweeps.
+
+    """
+
+    def __enter__(self):
+        self.setup()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.teardown()
 
     def setup(self):
-        ...
+        """Set up the strategy before the sweep starts."""
 
     def teardown(self):
-        ...
+        """Clean up the strategy after the sweep ends."""
 
-    def process(self, result):
+    @abc.abstractmethod
+    def process_result(self, result):
+        """Process a single result from a parameter sweep run.
+
+        Parameters
+        ----------
+        result : object
+            The result object to process.
+
+        Returns
+        -------
+        object
+            The processed result.
+
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def aggregate_results(self, results):
+        """Aggregate the processed results from all parameter sweep runs.
+
+        Parameters
+        ----------
+        results : list
+            A list of processed results.
+
+        Returns
+        -------
+        object
+            The aggregated results.
+
+        """
+        raise NotImplementedError()
+
+
+class DefaultSweepStrategy(SweepStrategyABC):
+    """Default sweep strategy that simply returns the results as-is."""
+
+    def process_result(self, result):
+        """Return the result unchanged.
+
+        Parameters
+        ----------
+        result : object
+            The result object to process.
+
+        Returns
+        -------
+        object
+            The unmodified result.
+        """
         return result
 
-    def reduce(self, results):
+    def aggregate_results(self, results):
+        """Return the list of results unchanged.
+
+        Parameters
+        ----------
+        results : Iterable
+            A Iterable of processed results.
+
+        Returns
+        -------
+        Iterable
+            The unmodified Iterable of results.
+        """
         return results
 
+
 # =============================================================================
-# CLASS
+# PARAMETER SWEEP
 # =============================================================================
 
 
 class ParameterSweep:
+    """Perform a parameter sweep over a range of values for a target parameter.
+
+    Parameters
+    ----------
+    model : object
+        The model object to run the parameter sweep on.
+    target : str
+        The name of the parameter to sweep over.
+    range : array-like, optional
+        The range of values to sweep over. Defaults to `DEFAULT_RANGE`.
+    repeat : int, optional
+        The number of times to repeat each run. Defaults to 100.
+    n_jobs : int, optional
+        The number of jobs to run in parallel. Defaults to 1.
+    seed : int, optional
+        The seed for the random number generator. Defaults to None.
+    strategy_cls : class, optional
+        The class to use for the sweep strategy. Defaults to
+        `DefaultSweepStrategy`.
+    tqdm_cls : class, optional
+        The class to use for progress bars. Defaults to `tqdm`.
+
+    """
 
     def __init__(
         self,
@@ -71,12 +176,24 @@ class ParameterSweep:
         repeat=100,
         n_jobs=1,
         seed=None,
+        strategy_cls=DefaultSweepStrategy,
         tqdm_cls=tqdm,
-        storage="directory",
-        storage_kws=None,
     ):
+        # VALIDATIONS =========================================================
         if repeat < 1:
-            raise ValueError("'repeat must be >= 1'")
+            raise ValueError("'repeat' must be >= 1")
+
+        run_signature = inspect.signature(model.run)
+        if str(target) not in run_signature.parameters:
+            mdl_name = type(model).__name__
+            raise TypeError(
+                f"Model '{mdl_name}.run()' has no '{target}' parameter"
+            )
+        if not issubclass(strategy_cls, SweepStrategyABC):
+            raise TypeError(
+                f"Expected 'strategy_cls' to be a subclass of "
+                f"'SweepStrategyABC', got {strategy_cls.__qualname__}"
+            )
 
         self._model = model
         self._range = (
@@ -87,16 +204,8 @@ class ParameterSweep:
         self._target = str(target)
         self._seed = seed
         self._random = np.random.default_rng(seed)
+        self._strategy_cls = strategy_cls
         self._tqdm_cls = tqdm_cls
-        self._storage = storage
-        self._storage_kws = {} if storage_kws is None else dict(storage_kws)
-
-        run_signature = inspect.signature(model.run)
-        if self._target not in run_signature.parameters:
-            mdl_name = type(model).__name__
-            raise TypeError(
-                f"Model '{mdl_name}.run()' has no '{self._target}' parameter"
-            )
 
     @property
     def model(self):
@@ -110,7 +219,7 @@ class ParameterSweep:
 
     @property
     def repeat(self):
-        """The number of times to repeat the run for each value in the range."""
+        """The number of times to repeat each run."""
         return self._repeat
 
     @property
@@ -134,14 +243,8 @@ class ParameterSweep:
         return self._random
 
     @property
-    def storage(self):
-        """The type of storage to use for storing the results."""
-        return self._storage
-
-    @property
-    def storage_kws(self):
-        """Additional keyword arguments to pass to the storage."""
-        return self._storage_kws.copy()
+    def strategy_cls(self):
+        return self._strategy_cls
 
     def _run_kwargs_combinations(self, run_kws):
         """Generate combinations of parameter values and seeds for the runs.
@@ -158,6 +261,7 @@ class ParameterSweep:
             each run.
         int
             The total number of runs.
+
         """
         iinfo = np.iinfo(int)
 
@@ -180,8 +284,9 @@ class ParameterSweep:
 
         return combs_gen(), combs_size
 
-    def _run_report(self, idx, run_kws, seed, results):
-        """Run the model with the given parameters and store the results.
+    def _run_report(self, *, idx, model, run_kws, seed, strategy):
+        """Run the model with the given parameters and process the result \
+        using the strategy.
 
         Parameters
         ----------
@@ -191,12 +296,12 @@ class ParameterSweep:
             The keyword arguments to pass to the model's `run` method.
         seed : int
             The seed for the random number generator.
-        results : NDResultCollection
-            The collection to store the results in.
+        strategy : SweepStrategyABC
+            The sweep strategy to use for processing the result.
         """
-        model = self._model
         model.set_random(np.random.default_rng(seed))
-        results[idx] = model.run(**run_kws)
+        result = model.run(**run_kws)
+        return strategy.process_result(result)
 
     def run(self, **run_kws):
         """Run the sweep over the range of values for the target parameter.
@@ -209,20 +314,24 @@ class ParameterSweep:
 
         Returns
         -------
-        NDResultCollection
-            A collection of the results from the parameter sweep.
+        object
+            The aggregated results from all runs, as processed by the sweep
+            strategy.
 
         """
         if self._target in run_kws:
             raise TypeError(
-                f"Parameter '{self._target}' "
-                f"are under control of {type(self)!r} instance"
+                f"Parameter '{self._target}' is under control of "
+                f"{type(self)!r} instance"
             )
+
+        # copy model to easy write
+        model = self._model
 
         # get all the configurations
         rkw_combs, runs_total = self._run_kwargs_combinations(run_kws)
 
-        # if we need to add a progress bar we extract the iterable from it
+        # if we need to add a progress bar, we extract the iterable from it
         if self._tqdm_cls:
             rkw_combs = iter(
                 self._tqdm_cls(
@@ -232,16 +341,22 @@ class ParameterSweep:
                 )
             )
 
-        # creamos la clase visitor que se va a encargar de
-        # gestionar como procesar los resultados
-        with self._visitor_cls() as visitor:
+        # create the sweep strategy instance to process and aggregate results
+        with self._strategy_cls() as strategy:
             with joblib.Parallel(n_jobs=self._n_jobs) as Parallel:
                 drun = joblib.delayed(self._run_report)
                 results = Parallel(
-                    drun(cit, rkw, rkw_seed)
+                    drun(
+                        idx=cit,
+                        model=model,
+                        run_kws=rkw,
+                        seed=rkw_seed,
+                        strategy=strategy,
+                    )
                     for cit, rkw, rkw_seed in rkw_combs
                 )
 
-        result = visitor.reduce(results)
+        # aggregate all the processed results into a single object
+        final_result = strategy.aggregate_results(results)
 
-        return result
+        return final_result
