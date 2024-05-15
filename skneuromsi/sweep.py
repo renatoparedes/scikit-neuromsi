@@ -29,11 +29,9 @@ import numpy as np
 
 from tqdm.auto import tqdm
 
-==== BASE ====
-from .core import NDResultCollection
-from .utils import storages
 
-==== BASE ====
+from .core import NDResultCollection
+
 # =============================================================================
 # CONSTANTS
 # =============================================================================
