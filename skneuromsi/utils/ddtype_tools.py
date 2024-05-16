@@ -8,15 +8,6 @@
 # Full Text:
 #     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
 
-# This code was ripped of from scikit-criteria on 2022-March-22.
-# https://github.com/quatrope/scikit-criteria/blob/7f61c98/skcriteria/utils/accabc.py
-# Util this point the copytight is
-
-# License: BSD-3 (https://tldrlegal.com/license/bsd-3-clause-license-(revised))
-# Copyright (c) 2016-2021, Cabral, Juan; Luczywo, Nadia
-# Copyright (c) 2022, QuatroPe
-# All rights reserved.
-
 # =============================================================================
 # DOCS
 # =============================================================================
@@ -29,7 +20,7 @@
 # =============================================================================
 
 import dataclasses as dclss
-from typing import Iterable, Mapping
+from collections.abc import Iterable, Mapping
 
 import humanize
 
@@ -46,13 +37,13 @@ import xarray as xa
 # =============================================================================
 
 #: Typess to inspect dtypes with .dtypes
-_DTYPES_TYPES = (pd.DataFrame, xa.Dataset)
+_MULTIPLE_DTYPES_TYPES = (pd.DataFrame, xa.Dataset)
 
 #: Typess to inspect dtypes with .dtype
-_DTYPE_TYPES = (np.ndarray, pd.Series, xa.DataArray)
+_SINGLE_DTYPE_TYPES = (np.ndarray, pd.Series, xa.DataArray)
 
 #: dtype casteable types
-_ASTYPE_TYPES = _DTYPES_TYPES + _DTYPE_TYPES
+_ASTYPE_TYPES = _MULTIPLE_DTYPES_TYPES + _SINGLE_DTYPE_TYPES
 
 #: Scalar iterables
 _SCALAR_ITERABLES = (str,)
@@ -75,22 +66,22 @@ def is_class_astypeable(cls):
 
 def single_dtype(obj):
     """Check if an object has an attribute dtype."""
-    return isinstance(obj, _DTYPE_TYPES)
+    return isinstance(obj, _SINGLE_DTYPE_TYPES)
 
 
 def single_dtype_class(cls):
     """Check if object of class has an attribute dtype."""
-    return issubclass(cls, _DTYPE_TYPES)
+    return cls in _SINGLE_DTYPE_TYPES
 
 
 def multiple_dtype(obj):
     """Check if an object has an attribute dtypes."""
-    return isinstance(obj, _DTYPES_TYPES)
+    return isinstance(obj, _MULTIPLE_DTYPES_TYPES)
 
 
 def multiple_dtype_class(cls):
     """Check if object of class has an attribute dtypes."""
-    return issubclass(cls, _DTYPE_TYPES)
+    return cls in _MULTIPLE_DTYPES_TYPES
 
 
 # =============================================================================
@@ -130,7 +121,7 @@ def deep_astype(obj, dtype=None):
 
     elif isinstance(obj, Iterable) and not isinstance(obj, _SCALAR_ITERABLES):
         original_type = type(obj)
-        return original_type([deep_astype(e) for e in obj])
+        return original_type([deep_astype(e, dtype) for e in obj])
 
     return obj
 
@@ -141,23 +132,22 @@ def deep_astype(obj, dtype=None):
 
 
 @dclss.dataclass(frozen=True)
-class _MemoryUsage:
+class MemoryUsage:
     """Dataclass representing memory usage.
 
-   Attributes
-   ----------
-   size : int
-       The size of the memory usage in bytes.
+    Attributes
+    ----------
+    size : int
+        The size of the memory usage in bytes.
 
-   """
+    """
 
     size: int
 
     @property
     def hsize(self):
-        """The human-readable string representation of the memory usage size.
-
-        """
+        """The human-readable string representation of the memory \
+        usage size."""
         return humanize.naturalsize(self.size)
 
     def __repr__(self):
@@ -167,7 +157,7 @@ class _MemoryUsage:
 def _memory_usage(obj):
     """Calculate the memory usage of an object."""
     size = asizeof.asizeof(obj)
-    return _MemoryUsage(size=size)
+    return MemoryUsage(size=size)
 
 
 def _deep_dtypes(obj, deep, max_deep, memory_usage):
@@ -201,11 +191,11 @@ def _deep_dtypes(obj, deep, max_deep, memory_usage):
         pass
 
     # Check if obj is has the .dtypes accessor
-    elif isinstance(obj, _DTYPES_TYPES):
+    elif isinstance(obj, _MULTIPLE_DTYPES_TYPES):
         nested_dtypes = obj.dtypes
 
     # Check if obj is has the .dtype accessor
-    elif isinstance(obj, _DTYPE_TYPES):
+    elif isinstance(obj, _SINGLE_DTYPE_TYPES):
         nested_dtypes = obj.dtype
 
     # If obj is a dictionary-like object
@@ -268,4 +258,4 @@ def deep_dtypes(obj, *, root="root", max_deep=2, memory_usage=False):
     )
 
     # remove the added dict of (dict, {root: obj}, [memusage])
-    return ddtypes[1:] if memory_usage else ddtypes[1]
+    return ddtypes[1]
