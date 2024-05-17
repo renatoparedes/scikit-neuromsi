@@ -18,6 +18,8 @@
 # IMPORTS
 # =============================================================================
 
+import functools
+
 import numpy as np
 
 import pytest
@@ -81,3 +83,45 @@ def random_dataarray():
         )
 
     return maker
+
+
+@pytest.fixture(scope="session")
+def random_ndresult():
+
+    model_idx = -1
+
+    def make(
+        mname=None,
+        mtype=None,
+        nmap=None,
+        min_input_modes = 2,
+        max_input_modes = 3,
+        time_range=None,
+        position_range=None,
+        time_res=None,
+        position_res=None,
+        causes=None,
+        run_params=None,
+        extra=None,
+        ensure_dtype=None,
+        seed=None,
+    ):
+
+        if min_input_modes < 1:
+            raise ValueError("min_input_mode must be >= 1")
+
+        model_idx += 1
+        random = np.random.default_rng(seed)
+
+        mname = f"TestModel{model_idx}" if mname is None else mname
+
+
+
+        # modes
+        modes = ["mode_{}" mode_idx for mode in range(modes)]
+        output_mode ["output_mode"]
+
+
+
+
+    return make
