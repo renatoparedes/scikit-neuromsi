@@ -42,8 +42,9 @@ REQUIREMENTS = [
     "methodtools",
     "findpeaks",
     "netcdf4",
-    "custom_inherit" "jinja2",
-    "huminize",
+    "custom_inherit",
+    "jinja2",
+    "humanize",
     "pympler",
 ]
 

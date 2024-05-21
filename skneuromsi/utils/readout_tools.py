@@ -104,7 +104,7 @@ def calculate_single_peak_probability(peaks_values):
 
 
 def calculate_causes_from_peaks(
-    mode_activity_data, causes_kind="count", score_threshold=0.15
+    mode_activity_data, causes_kind="count", peak_threshold=0.15
 ):
     """
     Computes the number of causes from peaks found in modal activity.
@@ -121,8 +121,8 @@ def calculate_causes_from_peaks(
 
         - 'count' : counts the number of peaks (default)
         - 'prob' : takes the height of the peaks as probability values.
-    score_threshold : float
-        The minimum persistence score to detect peaks.
+    peak_threshold : float
+        The minimum peak height to detect peaks.
 
     Returns
     -------
@@ -131,13 +131,15 @@ def calculate_causes_from_peaks(
 
     """
     # Define the topology method to identify the peaks
-    fp = findpeaks(method="topology", verbose=0)
+    fp = findpeaks(
+        method="topology", verbose=0, interpolate=15, limit=0.000001
+    )
 
     # Find the peaks in the data and get a DataFrame with the results
     fp_results = fp.fit(mode_activity_data)
     mode_peaks_df = fp_results["df"].query("peak==True & valley==False")
     mode_peaks_above_threshold_df = mode_peaks_df[
-        mode_peaks_df["score"] > score_threshold
+        mode_peaks_df["y"] > peak_threshold
     ]
 
     # Determine the type of cause to calculate
@@ -163,7 +165,7 @@ def calculate_spatiotemporal_causes_from_peaks(
     causes_dim="space",
     time_point=-1,
     spatial_point=0,
-    score_threshold=0.15,
+    peak_threshold=0.15,
 ):
     """
     Computes the number of causes from peaks found in modal activity.
@@ -215,7 +217,7 @@ def calculate_spatiotemporal_causes_from_peaks(
     causes = calculate_causes_from_peaks(
         mode_activity_data=mode_activity_data,
         causes_kind=causes_kind,
-        score_threshold=score_threshold,
+        peak_threshold=peak_threshold,
     )
 
     # Return the calculated causes

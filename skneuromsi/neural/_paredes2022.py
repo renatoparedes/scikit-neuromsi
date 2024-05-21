@@ -288,8 +288,8 @@ class Paredes2022(SKNMSIMethodABC):
     def run(
         self,
         *,
-        a_soa=50,
-        v_soa=None,
+        auditory_soa=50,
+        visual_soa=None,
         auditory_onset=16,
         visual_onset=16,
         auditory_duration=7,
@@ -427,7 +427,7 @@ class Paredes2022(SKNMSIMethodABC):
             time_res=self.time_res,
             dt=self._integrator.dt,
             stimuli_n=auditory_stim_n,
-            soa=a_soa,
+            soa=auditory_soa,
         )
 
         visual_stimuli = create_unimodal_stimuli_matrix(
@@ -439,7 +439,7 @@ class Paredes2022(SKNMSIMethodABC):
             time_res=self.time_res,
             dt=self._integrator.dt,
             stimuli_n=visual_stim_n,
-            soa=v_soa,
+            soa=visual_soa,
         )
 
         # Data holders
@@ -690,7 +690,7 @@ class Paredes2022(SKNMSIMethodABC):
             mode_spatiotemporal_activity_data=multi,
             causes_kind=causes_kind,
             causes_dim=causes_dim,
-            score_threshold=0.15,
+            peak_threshold=0.15,
             time_point=-1,
             spatial_point=position,
         )

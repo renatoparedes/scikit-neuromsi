@@ -197,7 +197,7 @@ class Cuppini2017(SKNMSIMethodABC):
         visual_stim_n=1,
         noise=False,
         causes_kind="count",
-        causes_dim="spatial",
+        causes_dim="space",
     ):
         auditory_position = (
             int(self._position_range[1] / 2)
@@ -403,7 +403,7 @@ class Cuppini2017(SKNMSIMethodABC):
             mode_spatiotemporal_activity_data=multi,
             causes_kind=causes_kind,
             causes_dim=causes_dim,
-            score_threshold=0.15,
+            peak_threshold=0.15,
             time_point=-1,
             spatial_point=position,
         )
