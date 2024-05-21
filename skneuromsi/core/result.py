@@ -214,6 +214,7 @@ class NDResult:
         extra,
         ensure_dtype=None,
     ):
+        # deberia validad las cosas aca
         self._mname = mname
         self._mtype = mtype
         self._output_mode = output_mode
