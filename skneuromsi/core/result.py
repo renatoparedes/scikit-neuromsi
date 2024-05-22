@@ -93,9 +93,7 @@ def _modes_to_data_array(nddata, dtype):
             # we create the indexes for each dimension
             coords = [
                 [],  # modes
-                np.arange(
-                    times_n,
-                ),  # times
+                np.arange(times_n),  # times
                 np.arange(positions_n),  # positions
                 [f"x{idx}" for idx in range(pcoords_n)],  # pcoords
             ]
@@ -215,6 +213,8 @@ class NDResult:
         ensure_dtype=None,
     ):
         # deberia validad las cosas aca
+        # hay que validar las resoluciones y los rangos
+        
         self._mname = mname
         self._mtype = mtype
         self._output_mode = output_mode
@@ -235,9 +235,10 @@ class NDResult:
         )
 
         # Ensure that the instance variables are not dynamically added.
-        self.__dict__ = ddtype_tools.deep_astype(
-            vars(self), dtype=ensure_dtype
-        )
+        if ensure_dtype is not None:
+            self.__dict__ = ddtype_tools.deep_astype(
+                vars(self), dtype=ensure_dtype
+            )
 
     # PROPERTIES ==============================================================
 
