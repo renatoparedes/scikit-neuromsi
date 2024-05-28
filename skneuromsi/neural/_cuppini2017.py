@@ -196,6 +196,8 @@ class Cuppini2017(SKNMSIMethodABC):
         visual_onset=0,
         visual_stim_n=1,
         noise=False,
+        feedforward_weight=18,
+        cross_modal_weight=1.4,
         causes_kind="count",
         causes_dim="space",
     ):
@@ -251,16 +253,28 @@ class Cuppini2017(SKNMSIMethodABC):
             dtype=self.dtype,
         )
         auditory_to_visual_synapses = calculate_inter_areal_synapses(
-            neurons=self.neurons, weight=1.4, sigma=5, dtype=self.dtype
+            neurons=self.neurons,
+            weight=cross_modal_weight,
+            sigma=5,
+            dtype=self.dtype,
         )
         visual_to_auditory_synapses = calculate_inter_areal_synapses(
-            neurons=self.neurons, weight=1.4, sigma=5, dtype=self.dtype
+            neurons=self.neurons,
+            weight=cross_modal_weight,
+            sigma=5,
+            dtype=self.dtype,
         )
         auditory_to_multi_synapses = calculate_inter_areal_synapses(
-            neurons=self.neurons, weight=18, sigma=0.5, dtype=self.dtype
+            neurons=self.neurons,
+            weight=feedforward_weight,
+            sigma=0.5,
+            dtype=self.dtype,
         )
         visual_to_multi_synapses = calculate_inter_areal_synapses(
-            neurons=self.neurons, weight=18, sigma=0.5, dtype=self.dtype
+            neurons=self.neurons,
+            weight=feedforward_weight,
+            sigma=0.5,
+            dtype=self.dtype,
         )
 
         # Generate Stimuli
