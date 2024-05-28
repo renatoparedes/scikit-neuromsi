@@ -131,9 +131,7 @@ def calculate_causes_from_peaks(
 
     """
     # Define the topology method to identify the peaks
-    fp = findpeaks(
-        method="topology", verbose=0, interpolate=15, limit=0.000001
-    )
+    fp = findpeaks(method="peakdetect", verbose=0)
 
     # Find the peaks in the data and get a DataFrame with the results
     fp_results = fp.fit(mode_activity_data)
@@ -145,7 +143,7 @@ def calculate_causes_from_peaks(
     # Determine the type of cause to calculate
     if causes_kind == "count":
         # If counting the number of causes, assign the number of peaks found
-        causes = mode_peaks_above_threshold_df.score.size
+        causes = mode_peaks_above_threshold_df.y.size
     elif causes_kind == "prob":
         # If calculating the probability of a unique cause,
         # calculate the probability of detecting a single peak

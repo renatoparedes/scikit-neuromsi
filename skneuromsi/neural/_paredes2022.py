@@ -320,6 +320,7 @@ class Paredes2022(SKNMSIMethodABC):
         cross_modal_pruning_threshold=0,
         causes_kind="count",
         causes_dim="space",
+        causes_peak_threshold=0.80,
     ):
         auditory_position = (
             int(self._position_range[1] / 2)
@@ -674,13 +675,20 @@ class Paredes2022(SKNMSIMethodABC):
             "multi_total_input": multisensory_total_inputs,
             "causes_kind": causes_kind,
             "causes_dim": causes_dim,
+            "causes_peak_threshold": causes_peak_threshold,
             "stim_position": [auditory_position, visual_position],
         }
 
         return response, extra
 
     def calculate_causes(
-        self, multi, causes_kind, causes_dim, stim_position, **kwargs
+        self,
+        multi,
+        causes_kind,
+        causes_dim,
+        causes_peak_threshold,
+        stim_position,
+        **kwargs,
     ):
         # Calculate the average stimuli position
         position = int(np.mean([stim_position[0], stim_position[1]]))
@@ -690,7 +698,7 @@ class Paredes2022(SKNMSIMethodABC):
             mode_spatiotemporal_activity_data=multi,
             causes_kind=causes_kind,
             causes_dim=causes_dim,
-            peak_threshold=0.15,
+            peak_threshold=causes_peak_threshold,
             time_point=-1,
             spatial_point=position,
         )
