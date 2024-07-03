@@ -20,7 +20,7 @@
 
 from .modelabc import ParameterAliasTemplate, SKNMSIMethodABC, SKNMSIRunConfig
 from .ndcollection import NDResultCollection
-from .result import NDResult
+from .result import NDResult, compress_ndresult, decompress_ndresult
 
 # =============================================================================
 # ALL
@@ -28,6 +28,8 @@ from .result import NDResult
 
 
 __all__ = [
+    "compress_ndresult",
+    "decompress_ndresult",
     "ParameterAliasTemplate",
     "SKNMSIRunConfig",
     "SKNMSIMethodABC",
