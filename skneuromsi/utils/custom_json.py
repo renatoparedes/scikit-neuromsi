@@ -85,10 +85,10 @@ class CustomJSONEncoder(json.JSONEncoder):
         object
             The JSON-serializable representation of the object.
         """
-        for nptype, converter in self.CONVERTERS.items():
-            if isinstance(obj, nptype):
-                return converter(obj)
-        return super(CustomJSONEncoder, self).default(obj)
+        obj_type = type(obj)
+        super_default = super(CustomJSONEncoder, self).default
+        converter = self.CONVERTERS.get(obj_type, super_default)
+        return converter(obj)
 
 
 # =============================================================================
