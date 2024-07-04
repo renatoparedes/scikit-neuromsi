@@ -29,8 +29,9 @@ import numpy as np
 
 from tqdm.auto import tqdm
 
+import xarray as xa
 
-from .core import NDResultCollection
+from .core import NDResultCollection, compress_ndresult, decompress_ndresult
 
 # =============================================================================
 # CONSTANTS
@@ -41,98 +42,30 @@ DEFAULT_RANGE = 90 + np.arange(0, 20, 2)
 
 
 # =============================================================================
-# SWEEP STRATEGY
+# PARALLEL FUNCTIONS
 # =============================================================================
 
 
-class SweepStrategyABC(contextlib.AbstractAsyncContextManager):
-    """Abstract base class for sweep strategies.
-
-    Defines the interface for processing and aggregating results during
-    parameter sweeps.
-
-    """
-
-    def __enter__(self):
-        self.setup()
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.teardown()
-
-    def setup(self):
-        """Set up the strategy before the sweep starts."""
-
-    def teardown(self):
-        """Clean up the strategy after the sweep ends."""
-
-    @abc.abstractmethod
-    def process_result(self, result):
-        """Process a single result from a parameter sweep run.
+def _run_report(*, idx, model, run_kws, seed):
+    """Run the model with the given parameters and process the result \
+        using the strategy.
 
         Parameters
         ----------
-        result : object
-            The result object to process.
-
-        Returns
-        -------
-        object
-            The processed result.
-
+        idx : int
+            The index of the run.
+        run_kws : dict
+            The keyword arguments to pass to the model's `run` method.
+        seed : int
+            The seed for the random number generator.
+        strategy : SweepStrategyABC
+            The sweep strategy to use for processing the result.
         """
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def aggregate_results(self, results):
-        """Aggregate the processed results from all parameter sweep runs.
-
-        Parameters
-        ----------
-        results : list
-            A list of processed results.
-
-        Returns
-        -------
-        object
-            The aggregated results.
-
-        """
-        raise NotImplementedError()
-
-
-class DefaultSweepStrategy(SweepStrategyABC):
-    """Default sweep strategy that simply returns the results as-is."""
-
-    def process_result(self, result):
-        """Return the result unchanged.
-
-        Parameters
-        ----------
-        result : object
-            The result object to process.
-
-        Returns
-        -------
-        object
-            The unmodified result.
-        """
-        return result
-
-    def aggregate_results(self, results):
-        """Return the list of results unchanged.
-
-        Parameters
-        ----------
-        results : Iterable
-            A Iterable of processed results.
-
-        Returns
-        -------
-        Iterable
-            The unmodified Iterable of results.
-        """
-        return results
+    model.set_random(np.random.default_rng(seed))
+    result = model.run(**run_kws)
+    compressed = compress_ndresult(result)
+    del result
+    return compressed
 
 
 # =============================================================================
@@ -174,7 +107,6 @@ class ParameterSweep:
         repeat=100,
         n_jobs=1,
         seed=None,
-        strategy_cls=DefaultSweepStrategy,
         tqdm_cls=tqdm,
     ):
         # VALIDATIONS =========================================================
@@ -187,11 +119,6 @@ class ParameterSweep:
             raise TypeError(
                 f"Model '{mdl_name}.run()' has no '{target}' parameter"
             )
-        if not issubclass(strategy_cls, SweepStrategyABC):
-            raise TypeError(
-                f"Expected 'strategy_cls' to be a subclass of "
-                f"'SweepStrategyABC', got {strategy_cls.__qualname__}"
-            )
 
         self._model = model
         self._range = (
@@ -202,7 +129,6 @@ class ParameterSweep:
         self._target = str(target)
         self._seed = seed
         self._random = np.random.default_rng(seed)
-        self._strategy_cls = strategy_cls
         self._tqdm_cls = tqdm_cls
 
     @property
@@ -240,9 +166,12 @@ class ParameterSweep:
         """The random number generator."""
         return self._random
 
-    @property
-    def strategy_cls(self):
-        return self._strategy_cls
+    def __repr__(self):
+        cls_name = type(self).__name__
+        model_name = type(self.model).__name__
+        target = self._target
+        repeat = self._repeat
+        return f"<{cls_name} model={model_name!r} target={target!r} repeat={repeat}>"
 
     def _run_kwargs_combinations(self, run_kws):
         """Generate combinations of parameter values and seeds for the runs.
@@ -282,25 +211,6 @@ class ParameterSweep:
 
         return combs_gen(), combs_size
 
-    def _run_report(self, *, idx, model, run_kws, seed, strategy):
-        """Run the model with the given parameters and process the result \
-        using the strategy.
-
-        Parameters
-        ----------
-        idx : int
-            The index of the run.
-        run_kws : dict
-            The keyword arguments to pass to the model's `run` method.
-        seed : int
-            The seed for the random number generator.
-        strategy : SweepStrategyABC
-            The sweep strategy to use for processing the result.
-        """
-        model.set_random(np.random.default_rng(seed))
-        result = model.run(**run_kws)
-        return strategy.process_result(result)
-
     def run(self, **run_kws):
         """Run the sweep over the range of values for the target parameter.
 
@@ -339,22 +249,15 @@ class ParameterSweep:
                 )
             )
 
-        # create the sweep strategy instance to process and aggregate results
-        with self._strategy_cls() as strategy:
-            with joblib.Parallel(n_jobs=self._n_jobs) as Parallel:
-                drun = joblib.delayed(self._run_report)
-                results = Parallel(
-                    drun(
-                        idx=cit,
-                        model=model,
-                        run_kws=rkw,
-                        seed=rkw_seed,
-                        strategy=strategy,
-                    )
-                    for cit, rkw, rkw_seed in rkw_combs
-                )
+        #
+        with joblib.Parallel(n_jobs=self._n_jobs) as Parallel:
+            drun = joblib.delayed(_run_report)
+            results = Parallel(
+                drun(idx=cit, model=model, run_kws=rkw, seed=rkw_seed)
+                for cit, rkw, rkw_seed in rkw_combs
+            )
 
         # aggregate all the processed results into a single object
-        final_result = strategy.aggregate_results(results)
+        final_result = None  # strategy.aggregate_results(results)
 
         return final_result

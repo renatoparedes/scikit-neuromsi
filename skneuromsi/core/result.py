@@ -21,6 +21,7 @@ multidimensional array."""
 # IMPORTS
 # =============================================================================
 
+import dataclasses as dclss
 from typing import Iterable, Mapping
 
 import numpy as np
@@ -39,7 +40,7 @@ from .constants import (
 )
 from .plot import ResultPlotter
 from .stats import ResultStatsAccessor
-from ..utils import Bunch, ddtype_tools
+from ..utils import Bunch, ddtype_tools, numcompress
 
 
 # =============================================================================
@@ -93,9 +94,7 @@ def _modes_to_data_array(nddata, dtype):
             # we create the indexes for each dimension
             coords = [
                 [],  # modes
-                np.arange(
-                    times_n,
-                ),  # times
+                np.arange(times_n),  # times
                 np.arange(positions_n),  # positions
                 [f"x{idx}" for idx in range(pcoords_n)],  # pcoords
             ]
@@ -215,6 +214,8 @@ class NDResult:
         ensure_dtype=None,
     ):
         # deberia validad las cosas aca
+        # hay que validar las resoluciones y los rangos
+
         self._mname = mname
         self._mtype = mtype
         self._output_mode = output_mode
@@ -235,9 +236,10 @@ class NDResult:
         )
 
         # Ensure that the instance variables are not dynamically added.
-        self.__dict__ = ddtype_tools.deep_astype(
-            vars(self), dtype=ensure_dtype
-        )
+        if ensure_dtype is not None:
+            self.__dict__ = ddtype_tools.deep_astype(
+                vars(self), dtype=ensure_dtype
+            )
 
     # PROPERTIES ==============================================================
 
@@ -636,3 +638,63 @@ class NDResult:
         dtypes_df.name = "dtypes"
 
         return dtypes_df
+
+
+# =============================================================================
+# COMPRESSION
+# =============================================================================
+
+
+@dclss.dataclass(slots=True, frozen=True)
+class _CompressedEntry:
+    data: object
+
+
+def compress_ndresult(ndres):
+    ndresult_dict = ndres.to_dict()
+
+    # all the parts without compression
+    compressed_ndresult_dict = {
+        k: v for k, v in ndresult_dict.items() if k not in ("nddata", "extra")
+    }
+
+    # compress nddata
+    compressed_ndresult_dict["nddata"] = _CompressedEntry(
+        data=numcompress.compress_dataarray(ndresult_dict["nddata"])
+    )
+
+    # compress extra
+    cextra = {}
+    for k, v in ndresult_dict["extra"].items():
+        if isinstance(v, np.ndarray):
+            v = _CompressedEntry(data=numcompress.compress_ndarray(v))
+        cextra[k] = v
+
+    compressed_ndresult_dict["extra"] = cextra
+
+    return compressed_ndresult_dict
+
+
+def decompress_ndresult(compressed_ndresult_dict):
+    # all the parts without compression
+    ndresult_dict = {
+        k: v
+        for k, v in compressed_ndresult_dict.items()
+        if k not in ("nddata", "extra")
+    }
+
+    # uncompress data
+    ndresult_dict["nddata"] = numcompress.decompress_dataarray(
+        compressed_ndresult_dict["nddata"].data
+    )
+
+    # uncompress extra
+    extra = {}
+    for k, v in compressed_ndresult_dict["extra"].items():
+        if isinstance(v, _CompressedEntry):
+            v = numcompress.decompress_ndarray(v.data)
+        extra[k] = v
+
+    ndresult_dict["extra"] = extra
+
+    return NDResult(**ndresult_dict)

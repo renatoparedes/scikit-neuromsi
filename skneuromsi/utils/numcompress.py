@@ -327,3 +327,13 @@ def decompress_ndarray(text):
     )
     series = decompress(series_text)
     return np.array(series).reshape(*shape)
+
+
+def compress_dataarray(da, precision=3):
+    series = da.to_numpy()
+    return (compress_ndarray(series), da.modes.copy())
+
+def decompress_dataarray(text_and_modes):
+    text, modes = text_and_modes
+    import ipdb; ipdb.set_trace()
+
