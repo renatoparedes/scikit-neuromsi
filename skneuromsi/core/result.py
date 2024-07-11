@@ -40,7 +40,7 @@ from .constants import (
 )
 from .plot import ResultPlotter
 from .stats import ResultStatsAccessor
-from ..utils import Bunch, ddtype_tools, numcompress
+from ..utils import Bunch, ddtype_tools, numcompress as numc
 
 
 # =============================================================================
@@ -641,13 +641,29 @@ class NDResult:
 
 
 # =============================================================================
-# COMPRESSION
+# COMPRESSION & DECOMPRESSION ROUTINES
 # =============================================================================
 
 
 @dclss.dataclass(slots=True, frozen=True)
 class _CompressedEntry:
+    cls: type
     data: object
+
+
+_COMP_DECOMP_FUNCTIONS = {
+    np.ndarray: (numc.compress_ndarray, numc.decompress_ndarray),
+    xa.DataArray: (numc.compress_dataarray, numc.decompress_dataarray),
+}
+
+
+# COMPRESSION =================================================================
+def _compress_entry_if_needed(obj):
+    cls = type(obj)
+    compressor, _ = _COMP_DECOMP_FUNCTIONS.get(cls, (None, None))
+    if compressor is not None:
+        return _CompressedEntry(cls=cls, data=compressor(obj))
+    return obj
 
 
 def compress_ndresult(ndres):
@@ -659,20 +675,28 @@ def compress_ndresult(ndres):
     }
 
     # compress nddata
-    compressed_ndresult_dict["nddata"] = _CompressedEntry(
-        data=numcompress.compress_dataarray(ndresult_dict["nddata"])
+    compressed_ndresult_dict["nddata"] = _compress_entry_if_needed(
+        ndresult_dict["nddata"]
     )
 
     # compress extra
     cextra = {}
     for k, v in ndresult_dict["extra"].items():
-        if isinstance(v, np.ndarray):
-            v = _CompressedEntry(data=numcompress.compress_ndarray(v))
-        cextra[k] = v
-
+        cextra[k] = _compress_entry_if_needed(v)
     compressed_ndresult_dict["extra"] = cextra
 
     return compressed_ndresult_dict
+
+
+# DECOMPRESSION ===============================================================
+
+
+def _decompress_entry_if_needed(obj):
+    if isinstance(obj, _CompressedEntry):
+        cls = obj.cls
+        _, decompressor, _ = _COMP_DECOMP_FUNCTIONS.get(cls, (None, None))
+        return decompressor(obj)
+    return obj
 
 
 def decompress_ndresult(compressed_ndresult_dict):
@@ -684,16 +708,14 @@ def decompress_ndresult(compressed_ndresult_dict):
     }
 
     # uncompress data
-    ndresult_dict["nddata"] = numcompress.decompress_dataarray(
+    ndresult_dict["nddata"] = _decompress_entry_if_needed(
         compressed_ndresult_dict["nddata"].data
     )
 
     # uncompress extra
     extra = {}
     for k, v in compressed_ndresult_dict["extra"].items():
-        if isinstance(v, _CompressedEntry):
-            v = numcompress.decompress_ndarray(v.data)
-        extra[k] = v
+        extra[k] = _decompress_entry_if_needed(v)
 
     ndresult_dict["extra"] = extra
 
