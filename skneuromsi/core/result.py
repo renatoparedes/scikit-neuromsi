@@ -647,26 +647,68 @@ class NDResult:
 
 @dclss.dataclass(slots=True, frozen=True)
 class _CompressedEntry:
+    """
+    A dataclass for storing compressed entries.
+
+    Attributes
+    ----------
+    cls : type
+        The class type of the original data.
+    data : object
+        The compressed data.
+    """
+
     cls: type
     data: object
 
 
-_COMP_DECOMP_FUNCTIONS = {
+COMP_DECOMP_FUNCTIONS = {
     np.ndarray: (numc.compress_ndarray, numc.decompress_ndarray),
     xa.DataArray: (numc.compress_dataarray, numc.decompress_dataarray),
 }
 
-
 # COMPRESSION =================================================================
-def _compress_entry_if_needed(obj):
+
+
+def compress_entry_if_needed(obj):
+    """
+    Compress an object if a suitable compressor is available.
+
+    Parameters
+    ----------
+    obj : object
+        The object to potentially compress.
+
+    Returns
+    -------
+    object or _CompressedEntry
+        The compressed entry if compression was possible, otherwise the
+        original object.
+    """
     cls = type(obj)
-    compressor, _ = _COMP_DECOMP_FUNCTIONS.get(cls, (None, None))
+    compressor, _ = COMP_DECOMP_FUNCTIONS.get(cls, (None, None))
     if compressor is not None:
         return _CompressedEntry(cls=cls, data=compressor(obj))
     return obj
 
 
 def compress_ndresult(ndres):
+    """
+    Compress an NDResult object.
+
+    This function compresses the 'nddata' and 'extra' fields of an NDResult
+    object using appropriate compression functions.
+
+    Parameters
+    ----------
+    ndres : NDResult
+        The NDResult object to compress.
+
+    Returns
+    -------
+    dict
+        A dictionary containing the compressed NDResult data.
+    """
     ndresult_dict = ndres.to_dict()
 
     # all the parts without compression
@@ -675,14 +717,14 @@ def compress_ndresult(ndres):
     }
 
     # compress nddata
-    compressed_ndresult_dict["nddata"] = _compress_entry_if_needed(
+    compressed_ndresult_dict["nddata"] = compress_entry_if_needed(
         ndresult_dict["nddata"]
     )
 
     # compress extra
     cextra = {}
     for k, v in ndresult_dict["extra"].items():
-        cextra[k] = _compress_entry_if_needed(v)
+        cextra[k] = compress_entry_if_needed(v)
     compressed_ndresult_dict["extra"] = cextra
 
     return compressed_ndresult_dict
@@ -691,15 +733,45 @@ def compress_ndresult(ndres):
 # DECOMPRESSION ===============================================================
 
 
-def _decompress_entry_if_needed(obj):
+def decompress_entry_if_needed(obj):
+    """Decompress an entry if it's a _CompressedEntry.
+
+    Parameters
+    ----------
+    obj : object or _CompressedEntry
+        The object to potentially decompress.
+
+    Returns
+    -------
+    object
+        The decompressed object if decompression was possible, otherwise the
+        original object.
+
+    """
     if isinstance(obj, _CompressedEntry):
         cls = obj.cls
-        _, decompressor, _ = _COMP_DECOMP_FUNCTIONS.get(cls, (None, None))
+        _, decompressor = COMP_DECOMP_FUNCTIONS[cls]
         return decompressor(obj)
     return obj
 
 
 def decompress_ndresult(compressed_ndresult_dict):
+    """
+    Decompress a compressed NDResult dictionary.
+
+    This function decompresses the 'nddata' and 'extra' fields of a
+    compressed NDResult dictionary.
+
+    Parameters
+    ----------
+    compressed_ndresult_dict : dict
+        A dictionary containing the compressed NDResult data.
+
+    Returns
+    -------
+    NDResult
+        The decompressed NDResult object.
+    """
     # all the parts without compression
     ndresult_dict = {
         k: v
@@ -708,15 +780,14 @@ def decompress_ndresult(compressed_ndresult_dict):
     }
 
     # uncompress data
-    ndresult_dict["nddata"] = _decompress_entry_if_needed(
+    ndresult_dict["nddata"] = decompress_entry_if_needed(
         compressed_ndresult_dict["nddata"].data
     )
 
     # uncompress extra
     extra = {}
     for k, v in compressed_ndresult_dict["extra"].items():
-        extra[k] = _decompress_entry_if_needed(v)
-
+        extra[k] = decompress_entry_if_needed(v)
     ndresult_dict["extra"] = extra
 
     return NDResult(**ndresult_dict)
