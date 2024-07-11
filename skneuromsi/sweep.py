@@ -104,8 +104,8 @@ class ParameterSweep:
         target,
         *,
         range=None,
-        repeat=100,
-        n_jobs=1,
+        repeat=10,
+        n_jobs=-1,
         seed=None,
         tqdm_cls=tqdm,
     ):
@@ -171,7 +171,10 @@ class ParameterSweep:
         model_name = type(self.model).__name__
         target = self._target
         repeat = self._repeat
-        return f"<{cls_name} model={model_name!r} target={target!r} repeat={repeat}>"
+        return (
+            f"<{cls_name} model={model_name!r} "
+            f"target={target!r} repeat={repeat}>"
+        )
 
     def _run_kwargs_combinations(self, run_kws):
         """Generate combinations of parameter values and seeds for the runs.
@@ -258,6 +261,6 @@ class ParameterSweep:
             )
 
         # aggregate all the processed results into a single object
-        final_result = None  # strategy.aggregate_results(results)
+        final_result = NDResultCollection("Sweep", results)
 
         return final_result

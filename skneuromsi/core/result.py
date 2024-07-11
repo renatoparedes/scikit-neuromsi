@@ -662,10 +662,47 @@ class _CompressedEntry:
     data: object
 
 
+#: A dictionary mapping data types to their compression and decompression
+#: functions.
+#:
+#: Keys are the types of data that can be compressed, and values are tuples
+#: containing the compression and decompression functions respectively.
+#:
+#: Current supported types:
+#: - numpy.ndarray
+#: - xarray.DataArray
 COMP_DECOMP_FUNCTIONS = {
     np.ndarray: (numc.compress_ndarray, numc.decompress_ndarray),
     xa.DataArray: (numc.compress_dataarray, numc.decompress_dataarray),
 }
+
+
+def is_entry_compressed(obj):
+    """Check if an object is a compressed entry.
+
+    This function determines whether the given object is an instance of the
+    _CompressedEntry class, indicating that it contains compressed data.
+
+    Parameters
+    ----------
+    obj : object
+        The object to check.
+
+    Returns
+    -------
+    bool
+        True if the object is a compressed entry, False otherwise.
+
+    Examples
+    --------
+    >>> compressed = _CompressedEntry(np.ndarray, b'compressed_data')
+    >>> is_entry_compressed(compressed)
+    True
+    >>> is_entry_compressed([1, 2, 3])
+    False
+    """
+    return isinstance(obj, _CompressedEntry)
+
 
 # COMPRESSION =================================================================
 
@@ -748,10 +785,9 @@ def decompress_entry_if_needed(obj):
         original object.
 
     """
-    if isinstance(obj, _CompressedEntry):
-        cls = obj.cls
-        _, decompressor = COMP_DECOMP_FUNCTIONS[cls]
-        return decompressor(obj)
+    if is_entry_compressed(obj):
+        _, decompressor = COMP_DECOMP_FUNCTIONS[obj.cls]
+        return decompressor(obj.data)
     return obj
 
 
