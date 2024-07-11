@@ -110,8 +110,6 @@ def _make_metadata_cache(ndresults, progress_cls):
             Position resolutions associated with each NDResult.
         - run_parameters_values : ndarray
             Run parameter values for each NDResult.
-        - extras : ndarray
-            Extra information for each NDResult.
         - causes : ndarray
             Causes information for each NDResult.
         - modes_variances_sum : pandas.Series
@@ -128,7 +126,6 @@ def _make_metadata_cache(ndresults, progress_cls):
     time_resolutions = []
     position_resolutions = []
     run_parameters_values = []
-    extras = []
     causes = []
     modes_variances = []
 
@@ -146,9 +143,7 @@ def _make_metadata_cache(ndresults, progress_cls):
         time_resolutions.append(ndres.time_res)
         position_resolutions.append(ndres.position_res)
         run_parameters_values.append(ndres.run_params.to_dict())
-        extras.append(ndres.extra_.to_dict())
         causes.append(ndres.causes_)
-
         modes_describe_dict = _modes_describe(ndres)
         modes_variances.append(modes_describe_dict["var"])
 
@@ -178,7 +173,6 @@ def _make_metadata_cache(ndresults, progress_cls):
             "time_resolutions": np.asarray(time_resolutions),
             "position_resolutions": np.asarray(position_resolutions),
             "run_parameters_values": np.asarray(run_parameters_values),
-            "extras": np.asarray(extras),
             "causes": np.asarray(causes),
             "modes_variances_sum": modes_variances_sum,
             "dims": dims,
@@ -211,9 +205,6 @@ class NDResultCollection(Sequence):
         self._name = str(name)
         self._ndresults = results
         self._tqdm_cls = tqdm_cls
-        self._metadata_cache = _make_metadata_cache(
-            results, progress_cls=tqdm_cls
-        )
 
     # Because is a Sequence ==================================================
 
