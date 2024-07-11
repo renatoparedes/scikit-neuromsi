@@ -154,7 +154,7 @@ class MemoryUsage:
         return f"<MemoryUsage {self.hsize!r}>"
 
 
-def _memory_usage(obj):
+def memory_usage(obj):
     """Calculate the memory usage of an object."""
     size = asizeof.asizeof(obj)
     return MemoryUsage(size=size)
@@ -184,7 +184,7 @@ def _deep_dtypes(obj, deep, max_deep, memory_usage):
     """
     # Initialize the nested dtypes and the memory usage
     nested_dtypes = None
-    memory = _memory_usage(obj) if memory_usage else None
+    memory = memory_usage(obj) if memory_usage else None
 
     # if we exeed the deep, return its type and None for the data type
     if deep > max_deep:

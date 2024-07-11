@@ -61,7 +61,7 @@ class AlaisBurr2004(SKNMSIMethodABC):
         position_res=0.01,
         time_range=(1, 1),
         time_res=1,
-        seed=None
+        seed=None,
     ):
         self._mode0 = mode0
         self._mode1 = mode1

@@ -463,8 +463,8 @@ class Paredes2022(SKNMSIMethodABC):
         visual_position=None,
         auditory_intensity=2.4,
         visual_intensity=1.4,
-        auditory_sigma = 32,
-        visual_sigma = 4,
+        auditory_sigma=32,
+        visual_sigma=4,
         noise=False,
         noise_level=0.40,
         temporal_noise=False,
@@ -566,7 +566,9 @@ class Paredes2022(SKNMSIMethodABC):
 
         # Generate Stimuli
         point_auditory_stimuli = self.stimuli_input(
-            intensity=auditory_intensity, scale=auditory_sigma, loc=auditory_position
+            intensity=auditory_intensity,
+            scale=auditory_sigma,
+            loc=auditory_position,
         )
         point_visual_stimuli = self.stimuli_input(
             intensity=visual_intensity, scale=visual_sigma, loc=visual_position

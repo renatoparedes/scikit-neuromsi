@@ -86,7 +86,15 @@ True
 # IMPORTS
 # =============================================================================
 
+import copy
+
+import numba
+from numba.extending import as_numba_type
+
+
 import numpy as np
+
+import xarray as xa
 
 # =============================================================================
 # CONSTANTS
@@ -115,42 +123,69 @@ class Separators:
 # PRIVATE
 # =============================================================================
 
+# we cant paralelize this with joblib :(
+# @numba.njit(
+#     (numba.types.List(as_numba_type(float), True), as_numba_type(int)),
+# )
+def _numba_compress(series, precision):
+    """Helper function to compress a list of number into a string.
 
-def _coerce_precision(precision):
+    This function is numba.jitted to improve performance.
 
-    # type
-    try:
-        precision = int(precision)
-    except ValueError:
-        raise ValueError("Precision parameter needs to be a number.")
+    Parameters
+    ----------
+    series : list
+        The list of numbers to be compressed.
+    precision : int
+        The precision to use when compressing the data.
 
-    # check bounds
-    lower, upper = _PRECISION_LIMIT
-    in_bound = lower <= precision <= upper
-    if not in_bound:
-        raise ValueError(
-            f"Precision must be between {lower} to {upper} decimal places. "
-            f"Found {precision}"
-        )
+    Returns
+    -------
+    str
+        The compressed string representation of the input series.
 
-    return precision
+    """
+    # Store precision value at the beginning of the compressed text
+    result = chr(precision + 63)
+
+    # Store the last number in the series
+    last_num = 0
+
+    for num in series:
+
+        diff = num - last_num
+        diff = int(round(diff * (10.0**precision)))
+        diff = ~(diff << 1) if diff < 0 else diff << 1
+
+        while diff >= 0x20:
+            result += chr((0x20 | (diff & 0x1F)) + 63)
+            diff >>= 5
+
+        result += chr(diff + 63)
+        last_num = num
+
+    return result
 
 
-def _decompress_number(text, index):
-    """Helper function to decompress a single number from the compressed \
-    string.
+@numba.njit((as_numba_type(str), as_numba_type(int)))
+def _numba_decompress_number(text, index):
+    """Helper function to decompress a number from the compressed string.
+
+    This function is numba.jitted to improve performance.
 
     Parameters
     ----------
     text : str
-        The compressed string representation.
+        The compressed string to be decompressed.
     index : int
-        The current index in the string.
+        The index of the current character in the string.
 
     Returns
     -------
-    tuple
-        A tuple containing the updated index and the decompressed number.
+    int
+        The index of the next character in the string.
+    int
+        The decompressed number.
 
     """
     result = 1
@@ -168,12 +203,87 @@ def _decompress_number(text, index):
     return index, (~result >> 1) if (result & 1) != 0 else (result >> 1)
 
 
+@numba.njit((as_numba_type(str), as_numba_type(int), as_numba_type(int)))
+def _numba_decompress(text, index, precision):
+    """Helper function to decompress a list of number from the compressed \
+    string.
+
+    This function is numba.jitted to improve performance.
+
+    Parameters
+    ----------
+    text : str
+        The compressed string to be decompressed.
+    index : int
+        The index of the current character in the string.
+    precision : int
+        The precision to use when decompressing the data.
+
+    Returns
+    -------
+    list
+        The decompressed list.
+
+    """
+    last_num, result = 0, []
+
+    # precision facor
+    factor = 10.0 ** (-precision)
+
+    while index < len(text):
+        index, diff = _numba_decompress_number(text, index)
+        last_num += diff
+
+        number = round(last_num * factor, precision)
+        result.append(number)
+
+    return result
+
+
 # =============================================================================
-# LIST
+# HIGH-LEVEL API
 # =============================================================================
 
 
-def compress(series, precision=3):
+def coerce_precision(precision):
+    """Helper function to coerce the precision parameter.
+
+    Parameters
+    ----------
+    precision : int
+        The precision parameter to be coerced.
+
+    Returns
+    -------
+    int
+        The coerced precision parameter.
+
+    Raises
+    ------
+    ValueError
+        If the precision parameter is not an integer or out of bounds.
+
+    """
+
+    # check type
+    try:
+        precision = int(precision)
+    except ValueError:
+        raise ValueError("Precision parameter needs to be a number.")
+
+    # check bounds
+    lower, upper = _PRECISION_LIMIT
+    in_bound = lower <= precision <= upper
+    if not in_bound:
+        raise ValueError(
+            f"Precision must be between {lower} to {upper} decimal places. "
+            f"Found {precision}"
+        )
+
+    return precision
+
+
+def compress(series, precision=5):
     """
     Compress a list of numbers into a string representation.
 
@@ -183,7 +293,7 @@ def compress(series, precision=3):
         The list of numbers to be compressed.
     precision : int, optional
         The number of decimal places to preserve in the compressed
-        representation. Default is 3.
+        representation. Default is 5.
 
     Returns
     -------
@@ -200,35 +310,17 @@ def compress(series, precision=3):
     if not isinstance(series, list):
         raise ValueError("Input to compress should be of type list.")
 
-    precision = _coerce_precision(precision)
+    precision = coerce_precision(precision)
 
     if not len(series):
         return ""
 
-    # Store precision value at the beginning of the compressed text
-    result = chr(precision + 63)
+    if not all(isinstance(num, (int, float)) for num in series):
+        raise ValueError(
+            "All input list items should either be of type int or float."
+        )
 
-    # Store the last number in the series
-    last_num = 0
-
-    for num in series:
-        if not isinstance(num, (int, float)):
-            raise ValueError(
-                "All input list items should either be of type int or float."
-            )
-
-        diff = num - last_num
-        diff = int(round(diff * (10**precision)))
-        diff = ~(diff << 1) if diff < 0 else diff << 1
-
-        while diff >= 0x20:
-            result += chr((0x20 | (diff & 0x1F)) + 63)
-            diff >>= 5
-
-        result += chr(diff + 63)
-        last_num = num
-
-    return result
+    return _numba_compress(series, precision)
 
 
 def decompress(text):
@@ -251,42 +343,30 @@ def decompress(text):
         If the input is not a string or if the string is invalid or inaccurate.
 
     """
-    result = []
-    index = last_num = 0
+    index = 0
 
     if not isinstance(text, str):
         raise ValueError("Input to decompress should be of type str.")
 
     if not text:
-        return result
+        return []
 
     # Decode precision value
     precision = ord(text[index]) - 63
     index += 1
 
     try:
-        precision = _coerce_precision(precision)
+        precision = coerce_precision(precision)
     except ValueError:
         raise ValueError(
             "Invalid string sent to decompress. "
             "Please check the string for accuracy."
         )
 
-    while index < len(text):
-        index, diff = _decompress_number(text, index)
-        last_num += diff
-        result.append(last_num)
-
-    result = [round(item * (10 ** (-precision)), precision) for item in result]
-    return result
+    return _numba_decompress(text, index, precision)
 
 
-# =============================================================================
-# NDARRAY
-# =============================================================================
-
-
-def compress_ndarray(series, precision=3):
+def compress_ndarray(series, precision=5):
     """Compress a NumPy ndarray into a string representation.
 
     Parameters
@@ -295,7 +375,7 @@ def compress_ndarray(series, precision=3):
         The NumPy ndarray to be compressed.
     precision : int, optional
         The number of decimal places to preserve in the compressed
-        representation. Default is 3.
+        representation. Default is 5.
 
     Returns
     -------
@@ -329,11 +409,46 @@ def decompress_ndarray(text):
     return np.array(series).reshape(*shape)
 
 
-def compress_dataarray(da, precision=3):
+def compress_dataarray(da, precision=5):
+    """Compress a DataArray into a string representation.
+
+    Parameters
+    ----------
+    da : xarray.DataArray
+        The DataArray to be compressed.
+    precision : int, optional
+        The number of decimal places to preserve in the compressed
+        representation. Default is 5.
+
+    Returns
+    -------
+    str
+        The compressed string representation of the input DataArray.
+    """
     series = da.to_numpy()
-    return (compress_ndarray(series), da.modes.copy())
+    text = compress_ndarray(series, precision=precision)
+    coords = copy.deepcopy(dict(da.coords))
+    text_and_coords = (text, coords)
+    return text_and_coords
 
-def decompress_dataarray(text_and_modes):
-    text, modes = text_and_modes
-    import ipdb; ipdb.set_trace()
 
+def decompress_dataarray(text_and_coords):
+    """Decompress a string representation of a DataArray back into a \
+    DataArray.
+
+    Parameters
+    ----------
+    text_and_coords : tuple
+        A tuple containing the compressed string representation and the
+        coordinates of the DataArray.
+
+    Returns
+    -------
+    xarray.DataArray
+        The decompressed DataArray.
+
+    """
+    text_and_coords = copy.deepcopy(text_and_coords)
+    text, coords = text_and_coords
+    series = decompress_ndarray(text)
+    return xa.DataArray(series, coords=coords)

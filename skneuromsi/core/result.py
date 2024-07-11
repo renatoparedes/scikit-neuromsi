@@ -40,7 +40,7 @@ from .constants import (
 )
 from .plot import ResultPlotter
 from .stats import ResultStatsAccessor
-from ..utils import Bunch, ddtype_tools, numcompress as numc
+from ..utils import Bunch, ddtype_tools, numcompress
 
 
 # =============================================================================
@@ -644,6 +644,26 @@ class NDResult:
 # COMPRESSION & DECOMPRESSION ROUTINES
 # =============================================================================
 
+#: A dictionary mapping data types to their compression and decompression
+#: functions.
+#:
+#: Keys are the types of data that can be compressed, and values are tuples
+#: containing the compression and decompression functions respectively.
+#:
+#: Current supported types:
+#: - numpy.ndarray
+#: - xarray.DataArray
+COMP_DECOMP_FUNCTIONS = {
+    np.ndarray: (
+        numcompress.compress_ndarray,
+        numcompress.decompress_ndarray,
+    ),
+    xa.DataArray: (
+        numcompress.compress_dataarray,
+        numcompress.decompress_dataarray,
+    ),
+}
+
 
 @dclss.dataclass(slots=True, frozen=True)
 class _CompressedEntry:
@@ -662,52 +682,46 @@ class _CompressedEntry:
     data: object
 
 
-#: A dictionary mapping data types to their compression and decompression
-#: functions.
-#:
-#: Keys are the types of data that can be compressed, and values are tuples
-#: containing the compression and decompression functions respectively.
-#:
-#: Current supported types:
-#: - numpy.ndarray
-#: - xarray.DataArray
-COMP_DECOMP_FUNCTIONS = {
-    np.ndarray: (numc.compress_ndarray, numc.decompress_ndarray),
-    xa.DataArray: (numc.compress_dataarray, numc.decompress_dataarray),
-}
-
-
-def is_entry_compressed(obj):
-    """Check if an object is a compressed entry.
-
-    This function determines whether the given object is an instance of the
-    _CompressedEntry class, indicating that it contains compressed data.
-
-    Parameters
-    ----------
-    obj : object
-        The object to check.
-
-    Returns
-    -------
-    bool
-        True if the object is a compressed entry, False otherwise.
-
-    Examples
-    --------
-    >>> compressed = _CompressedEntry(np.ndarray, b'compressed_data')
-    >>> is_entry_compressed(compressed)
-    True
-    >>> is_entry_compressed([1, 2, 3])
-    False
+@dclss.dataclass(slots=True, frozen=True)
+class CompressedNDResult:
     """
-    return isinstance(obj, _CompressedEntry)
+    A dataclass for storing compressed NDResults.
+
+    Attributes
+    ----------
+    cls : type
+        The class type of the original data.
+    data : object
+        The compressed data.
+    """
+
+    data: dict
+    original_memory_usage: ddtype_tools.MemoryUsage
+    compressed_memory_usage: ddtype_tools.MemoryUsage
+
+    @property
+    def compression(self):
+        """Return the compression ratio."""
+        return (
+            self.compressed_memory_usage.size / self.original_memory_usage.size
+        )
+
+    def __repr__(self):
+        """Return a string representation of the CompressedNDResult object."""
+        cls_name = type(self).__name__
+
+        compressed_size = self.compressed_memory_usage.hsize
+        compression_percentage = self.compression * 100
+
+        return (
+            f"<{cls_name} {compressed_size!r} ({compression_percentage:.2f}%)>"
+        )
 
 
 # COMPRESSION =================================================================
 
 
-def compress_entry_if_needed(obj):
+def _compress_entry_if_needed(obj, precision):
     """
     Compress an object if a suitable compressor is available.
 
@@ -715,6 +729,8 @@ def compress_entry_if_needed(obj):
     ----------
     obj : object
         The object to potentially compress.
+    precision : int
+        The precision to use when compressing the data.
 
     Returns
     -------
@@ -725,28 +741,33 @@ def compress_entry_if_needed(obj):
     cls = type(obj)
     compressor, _ = COMP_DECOMP_FUNCTIONS.get(cls, (None, None))
     if compressor is not None:
-        return _CompressedEntry(cls=cls, data=compressor(obj))
+        compressed = compressor(obj, precision=precision)
+        return _CompressedEntry(cls=cls, data=compressed)
+
     return obj
 
 
-def compress_ndresult(ndres):
+def compress_ndresult(ndresult, precision=5):
     """
     Compress an NDResult object.
 
-    This function compresses the 'nddata' and 'extra' fields of an NDResult
-    object using appropriate compression functions.
-
     Parameters
     ----------
-    ndres : NDResult
+    ndresult : NDResult
         The NDResult object to compress.
+    precision : int, optional
+        The precision to use when compressing the data. Default is 5.
 
     Returns
     -------
-    dict
-        A dictionary containing the compressed NDResult data.
+    CompressedNDResult
+        The compressed NDResult object.
+
     """
-    ndresult_dict = ndres.to_dict()
+    if not isinstance(ndresult, NDResult):
+        raise TypeError("Not an NDResult")
+
+    ndresult_dict = ndresult.to_dict()
 
     # all the parts without compression
     compressed_ndresult_dict = {
@@ -754,23 +775,32 @@ def compress_ndresult(ndres):
     }
 
     # compress nddata
-    compressed_ndresult_dict["nddata"] = compress_entry_if_needed(
-        ndresult_dict["nddata"]
+    compressed_ndresult_dict["nddata"] = _compress_entry_if_needed(
+        ndresult_dict["nddata"], precision=precision
     )
 
     # compress extra
     cextra = {}
     for k, v in ndresult_dict["extra"].items():
-        cextra[k] = compress_entry_if_needed(v)
+        cextra[k] = _compress_entry_if_needed(v, precision=precision)
     compressed_ndresult_dict["extra"] = cextra
 
-    return compressed_ndresult_dict
+    original_memory_usage = ddtype_tools.memory_usage(ndresult)
+    compressed_memory_usage = ddtype_tools.memory_usage(
+        compressed_ndresult_dict
+    )
+
+    return CompressedNDResult(
+        data=compressed_ndresult_dict,
+        original_memory_usage=original_memory_usage,
+        compressed_memory_usage=compressed_memory_usage,
+    )
 
 
 # DECOMPRESSION ===============================================================
 
 
-def decompress_entry_if_needed(obj):
+def _decompress_entry_if_needed(obj):
     """Decompress an entry if it's a _CompressedEntry.
 
     Parameters
@@ -785,29 +815,33 @@ def decompress_entry_if_needed(obj):
         original object.
 
     """
-    if is_entry_compressed(obj):
+    if isinstance(obj, _CompressedEntry):
         _, decompressor = COMP_DECOMP_FUNCTIONS[obj.cls]
         return decompressor(obj.data)
+
     return obj
 
 
-def decompress_ndresult(compressed_ndresult_dict):
-    """
-    Decompress a compressed NDResult dictionary.
-
-    This function decompresses the 'nddata' and 'extra' fields of a
-    compressed NDResult dictionary.
+def decompress_ndresult(compressed_ndresult):
+    """Decompress an NDResult object.
 
     Parameters
     ----------
-    compressed_ndresult_dict : dict
-        A dictionary containing the compressed NDResult data.
+    compressed_ndresult : CompressedNDResult
+        The compressed NDResult object to decompress.
 
     Returns
     -------
     NDResult
         The decompressed NDResult object.
+
     """
+
+    if not isinstance(compressed_ndresult, CompressedNDResult):
+        raise TypeError("Not a compressed NDResult")
+
+    compressed_ndresult_dict = compressed_ndresult.data
+
     # all the parts without compression
     ndresult_dict = {
         k: v
@@ -816,14 +850,14 @@ def decompress_ndresult(compressed_ndresult_dict):
     }
 
     # uncompress data
-    ndresult_dict["nddata"] = decompress_entry_if_needed(
-        compressed_ndresult_dict["nddata"].data
+    ndresult_dict["nddata"] = _decompress_entry_if_needed(
+        compressed_ndresult_dict["nddata"]
     )
 
     # uncompress extra
     extra = {}
     for k, v in compressed_ndresult_dict["extra"].items():
-        extra[k] = decompress_entry_if_needed(v)
+        extra[k] = _decompress_entry_if_needed(v)
     ndresult_dict["extra"] = extra
 
     return NDResult(**ndresult_dict)

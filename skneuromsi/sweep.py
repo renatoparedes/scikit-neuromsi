@@ -31,7 +31,8 @@ from tqdm.auto import tqdm
 
 import xarray as xa
 
-from .core import NDResultCollection, compress_ndresult, decompress_ndresult
+from .core import NDResultCollection, compress_ndresult
+from .utils import numcompress
 
 # =============================================================================
 # CONSTANTS
@@ -46,24 +47,33 @@ DEFAULT_RANGE = 90 + np.arange(0, 20, 2)
 # =============================================================================
 
 
-def _run_report(*, idx, model, run_kws, seed):
+def _run_report(*, idx, model, run_kws, seed, precision):
     """Run the model with the given parameters and process the result \
         using the strategy.
 
-        Parameters
-        ----------
-        idx : int
-            The index of the run.
-        run_kws : dict
-            The keyword arguments to pass to the model's `run` method.
-        seed : int
-            The seed for the random number generator.
-        strategy : SweepStrategyABC
-            The sweep strategy to use for processing the result.
-        """
+    Parameters
+    ----------
+    idx : int
+        The index of the run.
+    model : object
+        The model object to run the parameter sweep on.
+    run_kws : dict
+        The keyword arguments to pass to the model's `run` method.
+    seed : int
+        The seed for the random number generator.
+    precision : int
+        The number of decimal places to round the results to.
+
+    Returns
+    -------
+    object
+        The aggregated results from all runs, as processed by the sweep
+        strategy.
+
+    """
     model.set_random(np.random.default_rng(seed))
     result = model.run(**run_kws)
-    compressed = compress_ndresult(result)
+    compressed = compress_ndresult(result, precision=precision)
     del result
     return compressed
 
@@ -95,6 +105,8 @@ class ParameterSweep:
         `DefaultSweepStrategy`.
     tqdm_cls : class, optional
         The class to use for progress bars. Defaults to `tqdm`.
+    precision : int, optional
+        The number of decimal places to round the results to. Defaults to 5.
 
     """
 
@@ -104,10 +116,11 @@ class ParameterSweep:
         target,
         *,
         range=None,
-        repeat=10,
-        n_jobs=-1,
+        repeat=2,
+        n_jobs=1,
         seed=None,
         tqdm_cls=tqdm,
+        precision=5,
     ):
         # VALIDATIONS =========================================================
         if repeat < 1:
@@ -130,6 +143,7 @@ class ParameterSweep:
         self._seed = seed
         self._random = np.random.default_rng(seed)
         self._tqdm_cls = tqdm_cls
+        self._precision = numcompress.coerce_precision(precision)
 
     @property
     def model(self):
@@ -165,6 +179,11 @@ class ParameterSweep:
     def random_(self):
         """The random number generator."""
         return self._random
+
+    @property
+    def precision(self):
+        """The number of decimal places to round the results to."""
+        return self._precision
 
     def __repr__(self):
         cls_name = type(self).__name__
@@ -236,8 +255,8 @@ class ParameterSweep:
                 f"{type(self)!r} instance"
             )
 
-        # copy model to easy write
-        model = self._model
+        # copy model and precision to easy write the code
+        model, precision = self._model, self._precision
 
         # get all the configurations
         rkw_combs, runs_total = self._run_kwargs_combinations(run_kws)
@@ -253,10 +272,18 @@ class ParameterSweep:
             )
 
         #
-        with joblib.Parallel(n_jobs=self._n_jobs) as Parallel:
+        with joblib.Parallel(
+            n_jobs=self._n_jobs, backend="multiprocessing"
+        ) as Parallel:
             drun = joblib.delayed(_run_report)
             results = Parallel(
-                drun(idx=cit, model=model, run_kws=rkw, seed=rkw_seed)
+                drun(
+                    idx=cit,
+                    model=model,
+                    run_kws=rkw,
+                    seed=rkw_seed,
+                    precision=precision,
+                )
                 for cit, rkw, rkw_seed in rkw_combs
             )
 
