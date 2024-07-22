@@ -29,6 +29,7 @@ from .compress import (
     CompressedNDResult,
     compress_ndresult,
     decompress_ndresult,
+    validate_compression_params,
 )
 from .result import NDResult
 
@@ -42,4 +43,5 @@ __all__ = [
     "CompressedNDResult",
     "compress_ndresult",
     "decompress_ndresult",
+    "validate_compression_params",
 ]

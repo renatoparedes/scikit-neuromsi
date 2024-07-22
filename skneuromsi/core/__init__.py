@@ -26,6 +26,7 @@ from .ndresult import (
     CompressedNDResult,
     compress_ndresult,
     decompress_ndresult,
+    validate_compression_params,
 )
 
 # =============================================================================
@@ -43,4 +44,5 @@ __all__ = [
     "SKNMSIRunConfig",
     "compress_ndresult",
     "decompress_ndresult",
+    "validate_compression_params",
 ]

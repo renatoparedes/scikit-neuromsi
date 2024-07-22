@@ -105,17 +105,19 @@ class CompressedNDResult:
         )
 
 
-# COMPRESSION =================================================================
+# =============================================================================
+# COMPRESSION
+# =============================================================================
 
 
-def _compress(obj, compress_params):
+def _compress(obj, compression_params):
     """Compress an object using joblib.
 
     Parameters
     ----------
     obj : object
         The object to compress.
-    compress_params : tuple
+    compression_params : tuple
         Compression parameters for joblib.dump.
 
     Returns
@@ -124,19 +126,38 @@ def _compress(obj, compress_params):
         The compressed object.
     """
     stream = io.BytesIO()
-    joblib.dump(obj, stream, compress=compress_params)
+    joblib.dump(obj, stream, compress=compression_params)
     return stream.getvalue()
 
 
-def compress_ndresult(ndresult, compress_params=DEFAULT_COMPRESSION_PARAMS):
+def validate_compression_params(compression_params):
+    """Validate the compression parameters.
+
+    Parameters
+    ----------
+    compression_params : tuple
+        Compression parameters for joblib.dump.
+
+    Raises
+    ------
+    ValueError
+        If the compression parameters are not valid.
+    """
+    try:
+        _compress(None, compression_params=compression_params)
+    except ValueError as err:
+        raise ValueError(str(err)) from err
+
+
+def compress_ndresult(ndresult, compression_params=DEFAULT_COMPRESSION_PARAMS):
     """Compress an NDResult object.
 
     Parameters
     ----------
     ndresult : NDResult
         The NDResult object to compress.
-    compress_params : tuple, optional
-        Compression parameters for joblib.dump (default is
+    compression_params : tuple, optional
+        Compression parameters for joblib.dumpc compress argument (default is
         DEFAULT_COMPRESSION_PARAMS).
 
     Returns
@@ -148,9 +169,13 @@ def compress_ndresult(ndresult, compress_params=DEFAULT_COMPRESSION_PARAMS):
     ------
     TypeError
         If the input is not an NDResult object.
+    ValueError
+        If the compression parameters are not valid.
+
     """
     if not isinstance(ndresult, NDResult):
         raise TypeError("Not an NDResult")
+    validate_compression_params(compression_params)
 
     ndresult_dict = ndresult.to_dict()
 
@@ -161,7 +186,7 @@ def compress_ndresult(ndresult, compress_params=DEFAULT_COMPRESSION_PARAMS):
 
     # compress nddata
     compressed_ndresult_dict["nddata"] = _compress(
-        ndresult_dict["nddata"], compress_params=compress_params
+        ndresult_dict["nddata"], compression_params=compression_params
     )
 
     # compress extra
@@ -170,7 +195,7 @@ def compress_ndresult(ndresult, compress_params=DEFAULT_COMPRESSION_PARAMS):
     for k, v in ndresult_dict["extra"].items():
 
         if isinstance(v, _COMPRESS_TYPES):
-            v = _compress(v, compress_params=compress_params)
+            v = _compress(v, compression_params=compression_params)
             compressed_extra_keys.add(k)
 
         compressed_extra[k] = v

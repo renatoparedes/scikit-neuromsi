@@ -18,10 +18,10 @@
 # IMPORTS
 # =============================================================================
 
-import abc
+
 import inspect
 import itertools as it
-import contextlib
+
 
 import joblib
 
@@ -29,9 +29,7 @@ import numpy as np
 
 from tqdm.auto import tqdm
 
-import xarray as xa
-
-from .core import NDResultCollection, compress_ndresult
+from . import core
 from .utils import numcompress
 
 # =============================================================================
@@ -47,7 +45,7 @@ DEFAULT_RANGE = 90 + np.arange(0, 20, 2)
 # =============================================================================
 
 
-def _run_report(*, idx, model, run_kws, seed, precision):
+def _run_report(*, idx, model, run_kws, seed, compression_params):
     """Run the model with the given parameters and process the result \
         using the strategy.
 
@@ -61,8 +59,8 @@ def _run_report(*, idx, model, run_kws, seed, precision):
         The keyword arguments to pass to the model's `run` method.
     seed : int
         The seed for the random number generator.
-    precision : int
-        The number of decimal places to round the results to.
+    compression_params : tuple
+        The compression parameters for joblib.dump.
 
     Returns
     -------
@@ -73,7 +71,7 @@ def _run_report(*, idx, model, run_kws, seed, precision):
     """
     model.set_random(np.random.default_rng(seed))
     result = model.run(**run_kws)
-    compressed = compress_ndresult(result, precision=precision)
+    compressed = core.compress_ndresult(result)
     del result
     return compressed
 
@@ -100,13 +98,11 @@ class ParameterSweep:
         The number of jobs to run in parallel. Defaults to 1.
     seed : int, optional
         The seed for the random number generator. Defaults to None.
-    strategy_cls : class, optional
-        The class to use for the sweep strategy. Defaults to
-        `DefaultSweepStrategy`.
+    compression_params : tuple, optional
+        The compression parameters for joblib.dump. Defaults to
+        `skneuromsi.core.DEFAULT_COMPRESSION_PARAMS`.
     tqdm_cls : class, optional
         The class to use for progress bars. Defaults to `tqdm`.
-    precision : int, optional
-        The number of decimal places to round the results to. Defaults to 5.
 
     """
 
@@ -119,8 +115,8 @@ class ParameterSweep:
         repeat=2,
         n_jobs=1,
         seed=None,
+        compression_params=core.DEFAULT_COMPRESSION_PARAMS,
         tqdm_cls=tqdm,
-        precision=5,
     ):
         # VALIDATIONS =========================================================
         if repeat < 1:
@@ -132,6 +128,7 @@ class ParameterSweep:
             raise TypeError(
                 f"Model '{mdl_name}.run()' has no '{target}' parameter"
             )
+        core.validate_compression_params(compression_params)
 
         self._model = model
         self._range = (
@@ -143,7 +140,11 @@ class ParameterSweep:
         self._seed = seed
         self._random = np.random.default_rng(seed)
         self._tqdm_cls = tqdm_cls
-        self._precision = numcompress.coerce_precision(precision)
+        self._compression_params = (
+            compression_params
+            if isinstance(compression_params, int)
+            else tuple(compression_params)
+        )
 
     @property
     def model(self):
@@ -181,18 +182,18 @@ class ParameterSweep:
         return self._random
 
     @property
-    def precision(self):
-        """The number of decimal places to round the results to."""
-        return self._precision
+    def compression_params(self):
+        return self._compression_params
 
     def __repr__(self):
         cls_name = type(self).__name__
         model_name = type(self.model).__name__
         target = self._target
         repeat = self._repeat
+        cp = self._compression_params
         return (
             f"<{cls_name} model={model_name!r} "
-            f"target={target!r} repeat={repeat}>"
+            f"target={target!r} repeat={repeat} compression_params={cp!r}>"
         )
 
     def _run_kwargs_combinations(self, run_kws):
@@ -256,7 +257,7 @@ class ParameterSweep:
             )
 
         # copy model and precision to easy write the code
-        model, precision = self._model, self._precision
+        model, compression_params = self._model, self._compression_params
 
         # get all the configurations
         rkw_combs, runs_total = self._run_kwargs_combinations(run_kws)
@@ -272,9 +273,7 @@ class ParameterSweep:
             )
 
         #
-        with joblib.Parallel(
-            n_jobs=self._n_jobs, backend="multiprocessing"
-        ) as Parallel:
+        with joblib.Parallel(n_jobs=self._n_jobs) as Parallel:
             drun = joblib.delayed(_run_report)
             results = Parallel(
                 drun(
@@ -282,12 +281,12 @@ class ParameterSweep:
                     model=model,
                     run_kws=rkw,
                     seed=rkw_seed,
-                    precision=precision,
+                    compression_params=compression_params,
                 )
                 for cit, rkw, rkw_seed in rkw_combs
             )
 
         # aggregate all the processed results into a single object
-        final_result = NDResultCollection("Sweep", results)
+        final_result = core.NDResultCollection("Sweep", results)
 
         return final_result
