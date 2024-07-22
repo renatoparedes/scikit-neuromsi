@@ -211,9 +211,12 @@ class NDResultCollection(Sequence):
             raise ValueError("Not all results are CompressedNDResult objects")
 
     @classmethod
-    def from_ndresults(cls, name, results, precision=5):
+    def from_ndresults(
+        cls, name, results, compression_params=core.DEFAULT_COMPRESSION_PARAMS
+    ):
         generator = (
-            core.compress_ndresult(r, precision=precision) for r in results
+            core.compress_ndresult(r, compression_params=compression_params)
+            for r in results
         )
         compressed_results = np.fromiter(generator, dtype=object)
         return cls(name, compressed_results)

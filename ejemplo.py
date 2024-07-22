@@ -20,15 +20,17 @@ model =  Paredes2022()
 # res = model.run()
 
 
-sweep = ParameterSweep(model, target="auditory_position", n_jobs=15, repeat=2)
+sweep = ParameterSweep(model, target="auditory_position", n_jobs=-1, repeat=2)
 result = sweep.run()
 
-import ipdb; ipdb.set_trace()
+
 
 # import statprof
 # statprof.start()
 # try:
-#     result[0]
+#     for r in result:
+#        del r
+
 # finally:
 #     statprof.stop()
 #     statprof.display()
