@@ -44,7 +44,7 @@ from .result import NDResult
 DEFAULT_COMPRESSION_PARAMS = ("zlib", 9)
 
 #: Types that can be compressed.
-COMPRESS_TYPES = (np.ndarray, xa.DataArray, pd.DataFrame, pd.Series)
+_COMPRESS_TYPES = (np.ndarray, xa.DataArray, pd.DataFrame, pd.Series)
 
 
 # =============================================================================
@@ -70,9 +70,9 @@ class CompressedNDResult:
     """
 
     data: dict
+    compressed_extra_keys: frozenset
     original_memory_usage: ddtype_tools.MemoryUsage
     compressed_memory_usage: ddtype_tools.MemoryUsage
-    compressed_extra_keys: frozenset
 
     @property
     def compression(self):
@@ -169,7 +169,7 @@ def compress_ndresult(ndresult, compress_params=DEFAULT_COMPRESSION_PARAMS):
     compressed_extra_keys = set()
     for k, v in ndresult_dict["extra"].items():
 
-        if isinstance(v, COMPRESS_TYPES):
+        if isinstance(v, _COMPRESS_TYPES):
             v = _compress(v, compress_params=compress_params)
             compressed_extra_keys.add(k)
 
