@@ -38,7 +38,7 @@ from bidict import frozenbidict
 
 import numpy as np
 
-from . import result
+from .ndresult import NDResult
 
 # =============================================================================
 # CONSTANTS
@@ -152,7 +152,7 @@ class SKNMSIRunConfig:
 
     _input: tuple
     _output: tuple
-    _result_cls: result.NDResult
+    _result_cls: NDResult
     _model_name: str
     _model_type: str
     _output_mode: str
@@ -649,7 +649,7 @@ TO_REDEFINE = [
 ]
 
 REDEFINE_WITH_DEFAULT = [
-    ("_run_result", result.NDResult),
+    ("_run_result", NDResult),
 ]
 
 

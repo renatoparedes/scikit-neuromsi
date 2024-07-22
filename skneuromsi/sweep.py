@@ -20,12 +20,16 @@
 
 import inspect
 import itertools as it
+import warnings
+
 import joblib
+
 import numpy as np
+
 from tqdm.auto import tqdm
 
-from . import core
-from .utils import numcompress
+from . import core, ndcollection
+from .utils import memtools
 
 # =============================================================================
 # CONSTANTS
@@ -35,8 +39,25 @@ from .utils import numcompress
 DEFAULT_RANGE = 90 + np.arange(0, 20, 2)
 
 # =============================================================================
+# ERRORS AND WARNINGS
+# =============================================================================
+
+
+class MaybeTooBigForAvailableMemoryWarning(UserWarning):
+    """Warning raised when the result is potentially too big for \
+    the available memory.
+
+    """
+
+
+class ToBigForAvailableMemoryError(MemoryError):
+    """Error raised when the result is too big for the available memory."""
+
+
+# =============================================================================
 # PARALLEL FUNCTIONS
 # =============================================================================
+
 
 def _run_report(*, idx, model, run_kws, seed, compression_params):
     """Run the model with given parameters and process the result.
@@ -65,9 +86,11 @@ def _run_report(*, idx, model, run_kws, seed, compression_params):
     del result
     return compressed
 
+
 # =============================================================================
 # PARAMETER SWEEP
 # =============================================================================
+
 
 class ParameterSweep:
     """Perform a parameter sweep over a range of values for a target parameter.
@@ -110,14 +133,25 @@ class ParameterSweep:
         The random number generator.
     compression_params : tuple
         The compression parameters for joblib.dump.
+    mem_warning_ratio : float
+        The ratio of available memory to warn about.
+    mem_error_ratio : float
+        The ratio of available memory to raise an error.
+    tqdm_cls : class
+        The class to use for progress bars.
 
     Raises
     ------
-    ValueError
-        If `repeat` is less than 1.
     TypeError
-        If the model's `run` method doesn't have the specified `target`
-        parameter.
+        If the target parameter is not in the model's `run` method.
+    ValueError
+        If `repeat` is less than 1, mem_warning_ratio is not in [0, 1],
+        mem_error_ratio is not in [0, 1] and the compression parameters are
+        not valid.
+
+    Notes
+    -----
+    The parameter sweep is performed in parallel using joblib.
 
     """
 
@@ -131,19 +165,34 @@ class ParameterSweep:
         n_jobs=1,
         seed=None,
         compression_params=core.DEFAULT_COMPRESSION_PARAMS,
+        mem_warning_ratio=0.8,
+        mem_error_ratio=1.0,
         tqdm_cls=tqdm,
     ):
         # VALIDATIONS =========================================================
         if repeat < 1:
             raise ValueError("'repeat' must be >= 1")
 
+        # check if the model has the target parameter in the run method
         run_signature = inspect.signature(model.run)
         if str(target) not in run_signature.parameters:
             mdl_name = type(model).__name__
             raise TypeError(
                 f"Model '{mdl_name}.run()' has no '{target}' parameter"
             )
+
+        # validate compression params
         core.validate_compression_params(compression_params)
+
+        # mem warning and error ratio
+        if not (0 <= mem_warning_ratio <= 1):
+            raise ValueError("'mem_warning_ratio' must be in [0, 1]")
+        if not (0 <= mem_error_ratio <= 1):
+            raise ValueError("'mem_error_ratio' must be in [0, 1]")
+        if mem_warning_ratio > mem_error_ratio:
+            raise ValueError(
+                "'mem_warning_ratio' must be <= 'mem_error_ratio'"
+            )
 
         self._model = model
         self._range = (
@@ -154,12 +203,14 @@ class ParameterSweep:
         self._target = str(target)
         self._seed = seed
         self._random = np.random.default_rng(seed)
-        self._tqdm_cls = tqdm_cls
+        self._mem_warning_ratio = float(mem_warning_ratio)
+        self._mem_error_ratio = float(mem_error_ratio)
         self._compression_params = (
             compression_params
             if isinstance(compression_params, int)
             else tuple(compression_params)
         )
+        self._tqdm_cls = tqdm_cls
 
     @property
     def model(self):
@@ -201,6 +252,22 @@ class ParameterSweep:
         """The compression parameters for joblib.dump."""
         return self._compression_params
 
+    @property
+    def tqdm_cls(self):
+        """The class to use for progress bars."""
+        return self._tqdm_cls
+
+    @property
+    def mem_warning_ratio(self):
+        """The memory warning ratio."""
+        return self._mem_warning_ratio
+
+    @property
+    def mem_error_ratio(self):
+        """The memory error ratio."""
+        return self._mem_error_ratio
+
+    # REPRESENTATION ==========================================================
     def __repr__(self):
         cls_name = type(self).__name__
         model_name = type(self.model).__name__
@@ -212,6 +279,7 @@ class ParameterSweep:
             f"target={target!r} repeat={repeat} compression_params={cp!r}>"
         )
 
+    # GENERATE ALL THE EXPERIMENT COMBINATIONS ================================
     def _run_kwargs_combinations(self, run_kws):
         """Generate combinations of parameter values and seeds for the runs.
 
@@ -250,6 +318,30 @@ class ParameterSweep:
 
         return combs_gen(), combs_size
 
+    def _check_if_it_fit_in_memory(self, result, results_total):
+        """Check if 'results_total' of the result fits in memory."""
+        memimpact = memtools.memory_impact(result, num_objects=results_total)
+
+        if memimpact.total_ratio >= self.mem_error_ratio:
+            total_perc = memimpact.total_ratio * 100
+            mem_error_perc = self.mem_error_ratio * 100
+            havailable_memory = memimpact.havailable_memory
+            raise ToBigForAvailableMemoryError(
+                f"Result is {total_perc:.2f}% "
+                f"exceeding the {mem_error_perc:.2f}% of the "
+                f"memory available, which is {havailable_memory!r}% "
+            )
+        if memimpact.total_ratio >= self.mem_warning_ratio:
+            total_perc = memimpact.total_ratio * 100
+            mem_warning_perc = self.mem_warning_ratio * 100
+            havailable_memory = memimpact.havailable_memory
+            warnings.warn(
+                f"Result is {total_perc:.2f}% "
+                f"exceeding the {mem_warning_perc:.2f}% of the "
+                f"memory available, which is {havailable_memory!r}% ",
+                category=MaybeTooBigForAvailableMemoryWarning,
+            )
+
     def run(self, **run_kws):
         """Run the sweep over the range of values for the target parameter.
 
@@ -265,10 +357,17 @@ class ParameterSweep:
             The aggregated results from all runs, as processed by the sweep
             strategy.
 
+        Warnings
+        --------
+        ToBigForAvailableMemoryError
+            If the result exeeds the available memory by the specified ratio.
+
         Raises
         ------
         TypeError
             If the target parameter is included in run_kws.
+        ToBigForAvailableMemoryError
+            If the result exeeds the available memory by the specified ratio.
 
         """
         if self._target in run_kws:
@@ -304,9 +403,10 @@ class ParameterSweep:
             compression_params=compression_params,
         )
 
-        !!!!ddtype_tools.memory_impact(first_result)
+        # check if the memory is sufficient
+        self._check_if_it_fit_in_memory(first_result, runs_total)
 
-
+        # run the rest of the iterations in parallel
         with joblib.Parallel(n_jobs=self._n_jobs) as Parallel:
             drun = joblib.delayed(_run_report)
             results = Parallel(
@@ -324,6 +424,6 @@ class ParameterSweep:
         results.insert(0, first_result)
 
         # aggregate all the processed results into a single object
-        final_result = core.NDResultCollection("Sweep", results)
+        final_result = ndcollection.NDResultCollection("Sweep", results)
 
         return final_result

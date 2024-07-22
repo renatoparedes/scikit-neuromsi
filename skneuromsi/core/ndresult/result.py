@@ -29,7 +29,7 @@ import pandas as pd
 
 import xarray as xa
 
-from .constants import (
+from ..constants import (
     DIMENSIONS,
     D_MODES,
     D_POSITIONS,
@@ -37,9 +37,9 @@ from .constants import (
     D_TIMES,
     XA_NAME,
 )
-from .plot import ResultPlotter
-from .stats import ResultStatsAccessor
-from ..utils import Bunch, ddtype_tools
+from .plot_acc import ResultPlotter
+from .stats_acc import ResultStatsAccessor
+from ...utils import Bunch, ddtype_tools
 
 
 # =============================================================================

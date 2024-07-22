@@ -21,8 +21,8 @@
 
 import pandas as pd
 
-from .constants import DIMENSIONS
-from ..utils import AccessorABC
+from ..constants import DIMENSIONS
+from ...utils import AccessorABC
 
 # =============================================================================
 # STATS ACCESSOR

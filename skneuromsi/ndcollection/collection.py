@@ -32,12 +32,9 @@ import numpy as np
 
 import pandas as pd
 
-from tqdm.auto import tqdm
-
+from .. import core
+from ..utils import Bunch
 from . import bias_acc, causes_acc, plot_acc
-from .. import constants as cons
-from .. import result
-from ...utils import Bunch
 
 
 # =============================================================================
@@ -208,7 +205,7 @@ class NDResultCollection(Sequence):
             cls_name = type(self).__name__
             raise ValueError(f"Empty {cls_name} not allowed")
         if not all(
-            isinstance(ndr, result.CompressedNDResult)
+            isinstance(ndr, core.CompressedNDResult)
             for ndr in self._cndresults
         ):
             raise ValueError("Not all results are CompressedNDResult objects")
@@ -216,7 +213,7 @@ class NDResultCollection(Sequence):
     @classmethod
     def from_ndresults(cls, name, results, precision=5):
         generator = (
-            result.compress_ndresult(r, precision=precision) for r in results
+            core.compress_ndresult(r, precision=precision) for r in results
         )
         compressed_results = np.fromiter(generator, dtype=object)
         return cls(name, compressed_results)
@@ -231,10 +228,10 @@ class NDResultCollection(Sequence):
         """Return the NDResult object at the given index."""
 
         cndresults = self._cndresults.__getitem__(slicer)
-        if isinstance(cndresults, result.CompressedNDResult):
-            return result.decompress_ndresult(cndresults)
+        if isinstance(cndresults, core.CompressedNDResult):
+            return core.decompress_ndresult(cndresults)
 
-        generator = (result.decompress_ndresult(cr) for cr in cndresults)
+        generator = (core.decompress_ndresult(cr) for cr in cndresults)
         ndresults = np.fromiter(generator, dtype=object)
         return ndresults
 
@@ -457,7 +454,7 @@ class NDResultCollection(Sequence):
 
         """
         if prefer is None:
-            prefer = cons.D_TIMES
+            prefer = core.constants.D_TIMES
         elif prefer not in self.dims_:
             raise ValueError(f"Unknow dimension {prefer}")
         return prefer

@@ -16,7 +16,7 @@ def dictsizes(d):
         print(k, f"({type(v)}) ->", get_size(v))
 
 
-model = Kording2007()  # Cuppini2014()  # AlaisBurr2004()  # Paredes2022()
+model =  Paredes2022()
 # res = model.run()
 
 

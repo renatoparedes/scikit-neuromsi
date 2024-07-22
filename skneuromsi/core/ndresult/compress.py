@@ -32,7 +32,7 @@ import pandas as pd
 
 import xarray as xa
 
-from ..utils import ddtype_tools
+from ...utils import memtools
 from .result import NDResult
 
 
@@ -61,9 +61,9 @@ class CompressedNDResult:
     ----------
     data : dict
         The compressed data.
-    original_memory_usage : ddtype_tools.MemoryUsage
+    original_memory_usage :
         Memory usage of the original NDResult.
-    compressed_memory_usage : ddtype_tools.MemoryUsage
+    compressed_memory_usage :
         Memory usage of the compressed NDResult.
     compressed_extra_keys : frozenset
         Keys of compressed extra data.
@@ -71,8 +71,8 @@ class CompressedNDResult:
 
     data: dict
     compressed_extra_keys: frozenset
-    original_memory_usage: ddtype_tools.MemoryUsage
-    compressed_memory_usage: ddtype_tools.MemoryUsage
+    original_memory_usage: object
+    compressed_memory_usage: object
 
     @property
     def compression(self):
@@ -202,10 +202,8 @@ def compress_ndresult(ndresult, compression_params=DEFAULT_COMPRESSION_PARAMS):
 
     compressed_ndresult_dict["extra"] = compressed_extra
 
-    original_memory_usage = ddtype_tools.memory_usage(ndresult)
-    compressed_memory_usage = ddtype_tools.memory_usage(
-        compressed_ndresult_dict
-    )
+    original_memory_usage = memtools.memory_usage(ndresult)
+    compressed_memory_usage = memtools.memory_usage(compressed_ndresult_dict)
 
     return CompressedNDResult(
         data=compressed_ndresult_dict,

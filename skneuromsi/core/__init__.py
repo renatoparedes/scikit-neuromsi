@@ -19,7 +19,6 @@
 # =============================================================================
 
 from .modelabc import ParameterAliasTemplate, SKNMSIMethodABC, SKNMSIRunConfig
-from .ndcollection import NDResultCollection
 from .ndresult import (
     DEFAULT_COMPRESSION_PARAMS,
     NDResult,
@@ -38,7 +37,6 @@ __all__ = [
     "DEFAULT_COMPRESSION_PARAMS",
     "CompressedNDResult",
     "NDResult",
-    "NDResultCollection",
     "ParameterAliasTemplate",
     "SKNMSIMethodABC",
     "SKNMSIRunConfig",

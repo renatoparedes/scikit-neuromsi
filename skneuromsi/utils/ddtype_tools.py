@@ -19,20 +19,15 @@
 # IMPORTS
 # =============================================================================
 
-import dataclasses as dclss
 from collections.abc import Iterable, Mapping
-
-import humanize
 
 import numpy as np
 
 import pandas as pd
 
-import psutil
-
-from pympler import asizeof
-
 import xarray as xa
+
+from . import memtools
 
 # =============================================================================
 # CONSTANTS
@@ -129,76 +124,6 @@ def deep_astype(obj, dtype=None):
 
 
 # =============================================================================
-# MEMORY USAGE
-# =============================================================================
-
-
-@dclss.dataclass(frozen=True)
-class MemoryUsage:
-    """Dataclass representing memory usage.
-
-    Attributes
-    ----------
-    size : int
-        The size of the memory usage in bytes.
-
-    """
-
-    size: int
-
-    @property
-    def hsize(self):
-        """The human-readable string representation of the memory \
-        usage size."""
-        return humanize.naturalsize(self.size)
-
-    def __repr__(self):
-        return f"<MemoryUsage {self.hsize!r}>"
-
-
-def memory_usage(obj):
-    """Calculate the memory usage of an object."""
-    size = asizeof.asizeof(obj)
-    return MemoryUsage(size=size)
-
-
-# =============================================================================
-# MEMORY IMPACT
-# =============================================================================
-@dclss.dataclass(frozen=True, slots=True)
-class _MemoryImpact:
-    total_ratio: float
-    available_ratio: float
-    expected_size: int
-
-    @property
-    def hexpected_size(self):
-        return humanize.naturalsize(self.object_size_bytes)
-
-    def __repr__(self):
-        return (
-            f"<memimpact expected_size={self.hexpected_size!r}, "
-            f"total_ratio={self.total_ratio}, "
-            f"available_ratio={self.available_ratio}>"
-        )
-
-
-def calculate_object_memory_impact(obj, num_objects=1):
-    obj_memory = memory_usage(obj)
-    total_object_memory = obj_memory.size * num_objects
-    vmem = psutil.virtual_memory()
-
-    total_ratio = total_object_memory / vmem.total
-    available_ratio = total_object_memory / vmem.available
-
-    return _MemoryImpact(
-        total_ratio=total_ratio,
-        available_ratio=available_ratio,
-        object_size_bytes=total_object_memory,
-    )
-
-
-# =============================================================================
 # DEEP DTYPES
 # =============================================================================
 
@@ -227,7 +152,7 @@ def _deep_dtypes(obj, deep, max_deep, memory_usage):
     """
     # Initialize the nested dtypes and the memory usage
     nested_dtypes = None
-    memory = memory_usage(obj) if memory_usage else None
+    memory = memtools.memory_usage(obj) if memory_usage else None
 
     # if we exeed the deep, return its type and None for the data type
     if deep > max_deep:

@@ -31,7 +31,7 @@ import numpy as np
 
 import pandas as pd
 
-from ...utils import AccessorABC
+from ..utils import AccessorABC
 
 # =============================================================================
 # BIAS ACC
