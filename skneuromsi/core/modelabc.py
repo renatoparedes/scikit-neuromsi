@@ -597,7 +597,7 @@ class SKNMSIRunConfig:
         """
         state = dict(instance.__dict__)
 
-        # becase the run instance method is a clojure we can't serialize this
+        # becase the run instance method is a clousure we can't serialize this
         # and we only store the context
         state["run"] = dict(instance.run.__skneuromsi_run_template_context__)
 
