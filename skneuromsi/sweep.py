@@ -18,15 +18,10 @@
 # IMPORTS
 # =============================================================================
 
-
 import inspect
 import itertools as it
-
-
 import joblib
-
 import numpy as np
-
 from tqdm.auto import tqdm
 
 from . import core
@@ -39,35 +34,30 @@ from .utils import numcompress
 #: Default range of values for parameter sweeps.
 DEFAULT_RANGE = 90 + np.arange(0, 20, 2)
 
-
 # =============================================================================
 # PARALLEL FUNCTIONS
 # =============================================================================
 
-
 def _run_report(*, idx, model, run_kws, seed, compression_params):
-    """Run the model with the given parameters and process the result \
-        using the strategy.
+    """Run the model with given parameters and process the result.
 
     Parameters
     ----------
     idx : int
-        The index of the run.
+        Index of the run.
     model : object
-        The model object to run the parameter sweep on.
+        Model object to run the parameter sweep on.
     run_kws : dict
-        The keyword arguments to pass to the model's `run` method.
+        Keyword arguments to pass to the model's `run` method.
     seed : int
-        The seed for the random number generator.
+        Seed for the random number generator.
     compression_params : tuple
-        The compression parameters for joblib.dump.
+        Compression parameters for joblib.dump.
 
     Returns
     -------
     object
-        The aggregated results from all runs, as processed by the sweep
-        strategy.
-
+        Compressed results from the run.
     """
     model.set_random(np.random.default_rng(seed))
     result = model.run(**run_kws)
@@ -75,11 +65,9 @@ def _run_report(*, idx, model, run_kws, seed, compression_params):
     del result
     return compressed
 
-
 # =============================================================================
 # PARAMETER SWEEP
 # =============================================================================
-
 
 class ParameterSweep:
     """Perform a parameter sweep over a range of values for a target parameter.
@@ -87,22 +75,49 @@ class ParameterSweep:
     Parameters
     ----------
     model : object
-        The model object to run the parameter sweep on.
+        Model object to run the parameter sweep on.
     target : str
-        The name of the parameter to sweep over.
+        Name of the parameter to sweep over.
     range : array-like, optional
-        The range of values to sweep over. Defaults to `DEFAULT_RANGE`.
+        Range of values to sweep over. Default is `DEFAULT_RANGE`.
     repeat : int, optional
-        The number of times to repeat each run. Defaults to 100.
+        Number of times to repeat each run. Default is 100.
     n_jobs : int, optional
-        The number of jobs to run in parallel. Defaults to 1.
+        Number of jobs to run in parallel. Default is 1.
     seed : int, optional
-        The seed for the random number generator. Defaults to None.
+        Seed for the random number generator. Default is None.
     compression_params : tuple, optional
-        The compression parameters for joblib.dump. Defaults to
+        Compression parameters for joblib.dump. Default is
         `skneuromsi.core.DEFAULT_COMPRESSION_PARAMS`.
     tqdm_cls : class, optional
-        The class to use for progress bars. Defaults to `tqdm`.
+        Class to use for progress bars. Default is `tqdm`.
+
+    Attributes
+    ----------
+    model : object
+        The model object.
+    range : ndarray
+        The range of values to sweep over.
+    repeat : int
+        The number of times to repeat each run.
+    n_jobs : int
+        The number of jobs to run in parallel.
+    target : str
+        The name of the parameter to sweep over.
+    seed : int or None
+        The seed for the random number generator.
+    random_ : numpy.random.Generator
+        The random number generator.
+    compression_params : tuple
+        The compression parameters for joblib.dump.
+
+    Raises
+    ------
+    ValueError
+        If `repeat` is less than 1.
+    TypeError
+        If the model's `run` method doesn't have the specified `target`
+        parameter.
 
     """
 
@@ -183,6 +198,7 @@ class ParameterSweep:
 
     @property
     def compression_params(self):
+        """The compression parameters for joblib.dump."""
         return self._compression_params
 
     def __repr__(self):
@@ -249,6 +265,11 @@ class ParameterSweep:
             The aggregated results from all runs, as processed by the sweep
             strategy.
 
+        Raises
+        ------
+        TypeError
+            If the target parameter is included in run_kws.
+
         """
         if self._target in run_kws:
             raise TypeError(
@@ -272,7 +293,20 @@ class ParameterSweep:
                 )
             )
 
-        #
+        # run the first iteration sequentially to check if the memory is
+        # sufficient
+        cit, rkw, rkw_seed = next(rkw_combs)
+        first_result = _run_report(
+            idx=cit,
+            model=model,
+            run_kws=rkw,
+            seed=rkw_seed,
+            compression_params=compression_params,
+        )
+
+        !!!!ddtype_tools.memory_impact(first_result)
+
+
         with joblib.Parallel(n_jobs=self._n_jobs) as Parallel:
             drun = joblib.delayed(_run_report)
             results = Parallel(
@@ -285,6 +319,9 @@ class ParameterSweep:
                 )
                 for cit, rkw, rkw_seed in rkw_combs
             )
+
+        # add the first iteration to the results
+        results.insert(0, first_result)
 
         # aggregate all the processed results into a single object
         final_result = core.NDResultCollection("Sweep", results)
