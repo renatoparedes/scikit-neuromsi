@@ -23,6 +23,7 @@
 import copy
 import dataclasses as dclss
 import io
+import warnings
 
 import joblib
 
@@ -35,13 +36,23 @@ import xarray as xa
 from ...utils import memtools
 from .result import NDResult
 
+try:
+    import lz4
+except ImportError:
+    warnings.warn(
+        "`lz4` module not found. "
+        "For better default performance please install it "
+        "(pip install lz4)."
+    )
+    lz4 = None
+
 
 # =============================================================================
 # CONSTANTS
 # =============================================================================
 
 #: Default compression parameters. (see joblib.dump)
-DEFAULT_COMPRESSION_PARAMS = ("zlib", 9)
+DEFAULT_COMPRESSION_PARAMS = ("lz4", 9) if lz4 else ("zlib", 9)
 
 #: Types that can be compressed.
 _COMPRESS_TYPES = (np.ndarray, xa.DataArray, pd.DataFrame, pd.Series)
@@ -125,15 +136,9 @@ def _compress(obj, compression_params):
     bytes
         The compressed object.
     """
-    #stream = io.BytesIO()
-    #joblib.dump(obj, stream, compress=compression_params)
-    import larch.pickle, zlib
-
-    serialized = larch.pickle.dumps(obj)
-    return zlib.compress(serialized, 9)
-
-
-    #return stream.getvalue()
+    stream = io.BytesIO()
+    joblib.dump(obj, stream, compress=compression_params)
+    return stream.getvalue()
 
 
 def validate_compression_params(compression_params):
@@ -221,7 +226,7 @@ def compress_ndresult(ndresult, compression_params=DEFAULT_COMPRESSION_PARAMS):
 
 # DECOMPRESSION ===============================================================
 
-import larch.pickle, zlib
+
 def _decompress(compressed_bytes):
     """
     Decompress an object using joblib.
@@ -250,13 +255,8 @@ def _decompress(compressed_bytes):
     >>> compressed_data = b'...'  # Some compressed bytes
     >>> decompressed_obj = decompress(compressed_data)
     """
-    # stream = io.BytesIO(compressed_bytes)
-    # return joblib.load(stream)
-
-
-
-    serialized = zlib.decompress(compressed_bytes)
-    return larch.pickle.loads(serialized)
+    stream = io.BytesIO(compressed_bytes)
+    return joblib.load(stream)
 
 
 def decompress_ndresult(compressed_ndresult):

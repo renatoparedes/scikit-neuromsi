@@ -20,7 +20,7 @@ model =  Paredes2022()
 # res = model.run()
 
 
-sweep = ParameterSweep(model, target="auditory_position", n_jobs=-1, repeat=2)
+sweep = ParameterSweep(model, target="auditory_position", n_jobs=15, repeat=2)
 result = sweep.run()
 
 
