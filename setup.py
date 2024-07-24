@@ -45,6 +45,7 @@ REQUIREMENTS = [
     "custom_inherit",
     "humanize",
     "pympler",
+    "lz4",
 ]
 
 with open(PATH / "skneuromsi" / "__init__.py") as fp:
