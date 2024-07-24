@@ -27,6 +27,8 @@ import warnings
 
 import joblib
 
+import lz4
+
 import numpy as np
 
 import pandas as pd
@@ -36,23 +38,13 @@ import xarray as xa
 from ...utils import memtools
 from .result import NDResult
 
-try:
-    import lz4
-except ImportError:
-    warnings.warn(
-        "`lz4` module not found. "
-        "For better default performance please install it "
-        "(pip install lz4)."
-    )
-    lz4 = None
-
 
 # =============================================================================
 # CONSTANTS
 # =============================================================================
 
 #: Default compression parameters. (see joblib.dump)
-DEFAULT_COMPRESSION_PARAMS = ("lz4", 9) if lz4 else ("zlib", 9)
+DEFAULT_COMPRESSION_PARAMS = ("lz4", 9)
 
 #: Types that can be compressed.
 _COMPRESS_TYPES = (np.ndarray, xa.DataArray, pd.DataFrame, pd.Series)
