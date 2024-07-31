@@ -32,6 +32,8 @@ import numpy as np
 
 import pandas as pd
 
+import tqdm
+
 from .. import core
 from ..utils import Bunch
 from . import bias_acc, causes_acc, plot_acc
@@ -66,7 +68,45 @@ def _modes_describe(ndres):
     return {"var": modes.var()}
 
 
-def _make_metadata_cache(ndresults, progress_cls):
+def _from_one_cache(ndresult):
+    """Create a metadata cache from a single NDResult object.
+
+    This function creates a metadata cache from a single NDResult object.
+
+    Parameters
+    ----------
+    ndresult : NDResult
+        The NDResult object for which to create the metadata cache.
+
+    Returns
+    -------
+    cache : dict
+        A dictionary containing the metadata cache.
+
+    Notes
+    -----
+    The metadata cache contains the following keys:
+
+    - 'modes' : array-like
+        Modes associated with the NDResult.
+    - 'output_mode' : str
+        Output mode of the NDResult.
+    - 'run_parameters' : tuple
+        Tuple representing the run parameters of the NDResult.
+    - 'dims' : tuple
+        Tuple representing the dimensions of the NDResult.
+
+    """
+    cache = {
+        "modes": ndresult.modes_,
+        "output_mode": ndresult.output_mode,
+        "run_parameters": tuple(ndresult.run_params.to_dict()),
+        "dims": ndresult.dims,
+    }
+    return cache
+
+
+def _make_metadata_cache(ndresults):
     """Create a metadata cache from a collection of NDResult objects.
 
     This function iterates over a collection of NDResult objects and extracts
@@ -76,9 +116,6 @@ def _make_metadata_cache(ndresults, progress_cls):
     ----------
     ndresults : iterable
         Iterable containing NDResult objects.
-    progress_cls : class or None
-        Class to use for tqdm progress bar or None if no progress bar
-        is needed.
 
     Returns
     -------
@@ -127,11 +164,6 @@ def _make_metadata_cache(ndresults, progress_cls):
     causes = []
     modes_variances = []
 
-    if progress_cls:
-        ndresults = progress_cls(
-            iterable=ndresults, desc="Collecting metadata"
-        )
-
     for ndres in ndresults:
         mnames.append(ndres.mname)
         mtypes.append(ndres.mtype)
@@ -145,37 +177,27 @@ def _make_metadata_cache(ndresults, progress_cls):
         modes_describe_dict = _modes_describe(ndres)
         modes_variances.append(modes_describe_dict["var"])
 
-    # all the run_parameters/modes are the same, so lets take the last one
-    modes = ndres.modes_
-    output_mode = ndres.output_mode
-    run_parameters = tuple(ndres.run_params.to_dict())
-    dims = ndres.dims
-
     # Resume the series collection into a single one we use sum instead of
     # numpy sum, because we want a pandas.Series and not a numpy array.
     # Also we assign the name to the Series.
     modes_variances_sum = sum(modes_variances)
     modes_variances_sum.name = "VarSum"
 
-    cache = Bunch(
-        "ndcollection_metadata_cache",
-        {
-            "modes": modes,
-            "run_parameters": run_parameters,
-            "mnames": np.asarray(mnames),
-            "mtypes": np.asarray(mtypes),
-            "output_mode": output_mode,
-            "nmaps": np.asarray(nmaps),
-            "time_ranges": np.asarray(time_ranges),
-            "position_ranges": np.asarray(position_ranges),
-            "time_resolutions": np.asarray(time_resolutions),
-            "position_resolutions": np.asarray(position_resolutions),
-            "run_parameters_values": np.asarray(run_parameters_values),
-            "causes": np.asarray(causes),
-            "modes_variances_sum": modes_variances_sum,
-            "dims": dims,
-        },
-    )
+    cache = {
+        "mnames": np.asarray(mnames),
+        "mtypes": np.asarray(mtypes),
+        "nmaps": np.asarray(nmaps),
+        "time_ranges": np.asarray(time_ranges),
+        "position_ranges": np.asarray(position_ranges),
+        "time_resolutions": np.asarray(time_resolutions),
+        "position_resolutions": np.asarray(position_resolutions),
+        "run_parameters_values": np.asarray(run_parameters_values),
+        "causes": np.asarray(causes),
+        "modes_variances_sum": modes_variances_sum,
+    }
+
+    # all the run_parameters/modes are the same, so lets take the last one
+    cache.update(_from_one_cache(ndres))
 
     return cache
 
@@ -188,6 +210,9 @@ class NDResultCollection(Sequence):
     This is why the compressed_results parameter is an iterable of
     CompressedNDResult objects.
 
+    Check ``NDResultCollection.from_ndresults`` if you want to create an
+    instance from a list of uncompressed NDResult objects.
+
     Parameters
     ----------
     name : str
@@ -197,13 +222,23 @@ class NDResultCollection(Sequence):
 
     """
 
-    def __init__(self, name, compressed_results):
+    def __init__(self, name, compressed_results, *, tqdm_cls=None):
         self._name = str(name)
         self._cndresults = np.asarray(compressed_results)
+        self._tqdm_cls = tqdm_cls
+
+        # this is where we cache all the cpu intensive stuff
+        self._cache = None
 
         if not len(self._cndresults):
             cls_name = type(self).__name__
             raise ValueError(f"Empty {cls_name} not allowed")
+        if not (
+            self._tqdm_cls is None or isinstance(self._tqdm_cls, tqdm.tqdm)
+        ):
+            raise TypeError(
+                "tqdm_cls must be an instance of tqdm.tqdm or None"
+            )
         if not all(
             isinstance(ndr, core.CompressedNDResult)
             for ndr in self._cndresults
@@ -214,6 +249,25 @@ class NDResultCollection(Sequence):
     def from_ndresults(
         cls, name, results, compression_params=core.DEFAULT_COMPRESSION_PARAMS
     ):
+        """Create an instance of NDResultCollection from a list of \
+        NDResult objects.
+
+        Parameters
+        ----------
+        name : str
+            The name of the NDResultCollection.
+        results : List[NDResult]
+            The list of NDResult objects to be compressed and stored in the
+            collection.
+        compression_params : Tuple[str, int], optional
+            The compression parameters for the NDResult objects. Defaults to
+             core.DEFAULT_COMPRESSION_PARAMS.
+
+        Returns
+        -------
+        NDResultCollection
+            An instance of NDResultCollection containing the compressed NDResult objects.
+        """
         generator = (
             core.compress_ndresult(r, compression_params=compression_params)
             for r in results
@@ -240,6 +294,23 @@ class NDResultCollection(Sequence):
 
     # PROPERTIES =============================================================
 
+    def _get_from_cache(self, key):
+        if self._cache is None:
+            ndresult = self[0]
+            cache = _from_one_cache(ndresult)
+            self._cache = Bunch("_cache", cache)
+        if key not in self._cache:
+            ndresults = iter(self)
+            if self._tqdm_cls:
+                ndresults = self._tqdm_cls(
+                    iterable=ndresults,
+                    total=len(ndresults),
+                    desc="Collecting metadata",
+                )
+            cache = _make_metadata_cache(ndresults)
+            self._cache = Bunch("_cache", cache)
+        return self._cache[key]
+
     @property
     def name(self):
         """Name of the NDResultCollection."""
@@ -265,17 +336,6 @@ class NDResultCollection(Sequence):
         """
         candidates = self.modes_
         return candidates[~(candidates == self.output_mode_)]
-
-    @property
-    def run_parameters_(self):
-        """Array with all the run parameters of each result in the \
-        NDResultCollection."""
-        return self._metadata_cache.run_parameters
-
-    @property
-    def dims_(self):
-        """Dimensions of all the results in the NDResultCollection."""
-        return self._metadata_cache.dims
 
     def __repr__(self):
         """x.__repr__() <==> repr(x)."""
