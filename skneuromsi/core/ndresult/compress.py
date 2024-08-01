@@ -193,7 +193,6 @@ def compress_ndresult(ndresult, compression_params=DEFAULT_COMPRESSION_PARAMS):
     compressed_extra = {}
     compressed_extra_keys = set()
     for k, v in ndresult_dict["extra"].items():
-
         if isinstance(v, _COMPRESS_TYPES):
             v = _compress(v, compression_params=compression_params)
             compressed_extra_keys.add(k)

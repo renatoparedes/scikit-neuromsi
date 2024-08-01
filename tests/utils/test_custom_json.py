@@ -38,7 +38,6 @@ from skneuromsi.utils import custom_json as cjson
 # TESTS
 # =============================================================================
 def test_custom_json_encoder():
-
     data = {
         "tuple": (1, 2, 3),
         "set": {1, 2, 3},
@@ -67,7 +66,6 @@ def test_custom_json_fail():
 
 
 def test_custom_json_dump_and_load(tmp_path):
-
     data = {"key": "value", "list": [1, 2, 3]}
 
     file_path = tmp_path / "test.json"
@@ -81,7 +79,6 @@ def test_custom_json_dump_and_load(tmp_path):
 
 
 def test_custom_json_dumps_and_loads():
-
     data = {"key": "value", "list": [1, 2, 3]}
 
     json_string = cjson.dumps(data)

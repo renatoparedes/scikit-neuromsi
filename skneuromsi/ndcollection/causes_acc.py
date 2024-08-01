@@ -81,9 +81,8 @@ class NDResultCausesAcc(AccessorABC):
 
         parameter = nd_collection.coerce_parameter(parameter)
 
-        cache = nd_collection._metadata_cache
-        run_params_values = cache.run_parameters_values
-        causes = cache.causes
+        run_params_values = nd_collection.run_parameters_values
+        causes = nd_collection.causes_
 
         columns = defaultdict(list)
         for rp_value, causes in zip(run_params_values, causes):

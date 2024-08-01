@@ -357,6 +357,24 @@ class NDResultCollection(Sequence):
         return self._get_from_cache("output_mode")
 
     @property
+    def run_parameters_(self):
+        """Run parameters of all the results in the \
+        NDResultCollection."""
+        return self._get_from_cache("run_parameters")
+
+    @property
+    def causes_(self):
+        """Causes of all the results in the \
+        NDResultCollection."""
+        return self._get_from_cache("causes")
+
+    @property
+    def run_parameters_values(self):
+        """Run parameters values of all the results in the \
+        NDResultCollection."""
+        return self._get_from_cache("run_parameters_values")
+
+    @property
     def input_modes_(self):
         """Input modes of all the results in the NDResultCollection.
 
