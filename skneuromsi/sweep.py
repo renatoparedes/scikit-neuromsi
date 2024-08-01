@@ -20,6 +20,7 @@
 
 import inspect
 import itertools as it
+import warnings
 
 import joblib
 
@@ -27,8 +28,8 @@ import numpy as np
 
 from tqdm.auto import tqdm
 
-from .core import NDResultCollection
-from .utils import storages
+from . import core, ndcollection
+from .utils import memtools
 
 # =============================================================================
 # CONSTANTS
@@ -37,45 +38,82 @@ from .utils import storages
 #: Default range of values for parameter sweeps.
 DEFAULT_RANGE = 90 + np.arange(0, 20, 2)
 
+# =============================================================================
+# ERRORS AND WARNINGS
+# =============================================================================
+
+
+class MaybeTooBigForAvailableMemoryWarning(UserWarning):
+    """Warning raised when the result is potentially too big for \
+    the available memory.
+
+    """
+
+
+class ToBigForAvailableMemoryError(MemoryError):
+    """Error raised when the result is too big for the available memory."""
+
 
 # =============================================================================
-# CLASS
+# PARALLEL FUNCTIONS
+# =============================================================================
+
+
+def _run_report(*, idx, model, run_kws, seed, compression_params):
+    """Run the model with given parameters and process the result.
+
+    Parameters
+    ----------
+    idx : int
+        Index of the run.
+    model : object
+        Model object to run the parameter sweep on.
+    run_kws : dict
+        Keyword arguments to pass to the model's `run` method.
+    seed : int
+        Seed for the random number generator.
+    compression_params : tuple
+        Compression parameters for joblib.dump.
+
+    Returns
+    -------
+    object
+        Compressed results from the run.
+    """
+    model.set_random(np.random.default_rng(seed))
+    result = model.run(**run_kws)
+    compressed = core.compress_ndresult(result)
+    del result
+    return compressed
+
+
+# =============================================================================
+# PARAMETER SWEEP
 # =============================================================================
 
 
 class ParameterSweep:
-    """Sweep over a range of values for a specific parameter of a model.
-
-    Sweep over a range of values for a specific parameter of a model,
-    running the model multiple times for each value in the range and
-    storing the results in a storage (e.g., directory or memory).
-
-    TODO: Renato, explica cual es la idea cientifica de por que vale la pena
-          hacer esto.
+    """Perform a parameter sweep over a range of values for a target parameter.
 
     Parameters
     ----------
     model : object
-        The model object that has a `run` method.
+        Model object to run the parameter sweep on.
     target : str
-        The name of the parameter to sweep over.
+        Name of the parameter to sweep over.
     range : array-like, optional
-        The range of values to sweep over. If not provided, the default
-        range is `90 + np.arange(0, 20, 2)`.
+        Range of values to sweep over. Default is `DEFAULT_RANGE`.
     repeat : int, optional
-        The number of times to repeat the run for each value in the range.
-        Default is 100.
+        Number of times to repeat each run. Default is 100.
     n_jobs : int, optional
-        The number of jobs to run in parallel. Default is 1.
+        Number of jobs to run in parallel. Default is 1.
     seed : int, optional
-        The seed for the random number generator.
+        Seed for the random number generator. Default is None.
+    compression_params : tuple, optional
+        Compression parameters for joblib.dump. Default is
+        `skneuromsi.core.DEFAULT_COMPRESSION_PARAMS`.
     tqdm_cls : class, optional
-        The tqdm class to use for progress bars. Default is `tqdm.auto.tqdm`.
-    storage : str, optional
-        The type of storage to use for storing the results. Default is
-        "directory".
-    storage_kws : dict, optional
-        Additional keyword arguments to pass to the storage.
+        Class to use for progress bars. Default is `tqdm`.
 
     Attributes
     ----------
@@ -84,7 +122,7 @@ class ParameterSweep:
     range : ndarray
         The range of values to sweep over.
     repeat : int
-        The number of times to repeat the run for each value in the range.
+        The number of times to repeat each run.
     n_jobs : int
         The number of jobs to run in parallel.
     target : str
@@ -93,10 +131,27 @@ class ParameterSweep:
         The seed for the random number generator.
     random_ : numpy.random.Generator
         The random number generator.
-    storage : str
-        The type of storage to use for storing the results.
-    storage_kws : dict
-        Additional keyword arguments to pass to the storage.
+    compression_params : tuple
+        The compression parameters for joblib.dump.
+    mem_warning_ratio : float
+        The ratio of available memory to warn about.
+    mem_error_ratio : float
+        The ratio of available memory to raise an error.
+    tqdm_cls : class
+        The class to use for progress bars.
+
+    Raises
+    ------
+    TypeError
+        If the target parameter is not in the model's `run` method.
+    ValueError
+        If `repeat` is less than 1, mem_warning_ratio is not in [0, 1],
+        mem_error_ratio is not in [0, 1] and the compression parameters are
+        not valid.
+
+    Notes
+    -----
+    The parameter sweep is performed in parallel using joblib.
 
     """
 
@@ -106,15 +161,38 @@ class ParameterSweep:
         target,
         *,
         range=None,
-        repeat=100,
+        repeat=2,
         n_jobs=1,
         seed=None,
+        compression_params=core.DEFAULT_COMPRESSION_PARAMS,
+        mem_warning_ratio=0.8,
+        mem_error_ratio=1.0,
         tqdm_cls=tqdm,
-        storage="directory",
-        storage_kws=None,
     ):
+        # VALIDATIONS =========================================================
         if repeat < 1:
-            raise ValueError("'repeat must be >= 1'")
+            raise ValueError("'repeat' must be >= 1")
+
+        # check if the model has the target parameter in the run method
+        run_signature = inspect.signature(model.run)
+        if str(target) not in run_signature.parameters:
+            mdl_name = type(model).__name__
+            raise TypeError(
+                f"Model '{mdl_name}.run()' has no '{target}' parameter"
+            )
+
+        # validate compression params
+        core.validate_compression_params(compression_params)
+
+        # mem warning and error ratio
+        if not (0 <= mem_warning_ratio <= 1):
+            raise ValueError("'mem_warning_ratio' must be in [0, 1]")
+        if not (0 <= mem_error_ratio <= 1):
+            raise ValueError("'mem_error_ratio' must be in [0, 1]")
+        if mem_warning_ratio > mem_error_ratio:
+            raise ValueError(
+                "'mem_warning_ratio' must be <= 'mem_error_ratio'"
+            )
 
         self._model = model
         self._range = (
@@ -125,16 +203,14 @@ class ParameterSweep:
         self._target = str(target)
         self._seed = seed
         self._random = np.random.default_rng(seed)
+        self._mem_warning_ratio = float(mem_warning_ratio)
+        self._mem_error_ratio = float(mem_error_ratio)
+        self._compression_params = (
+            compression_params
+            if isinstance(compression_params, int)
+            else tuple(compression_params)
+        )
         self._tqdm_cls = tqdm_cls
-        self._storage = storage
-        self._storage_kws = {} if storage_kws is None else dict(storage_kws)
-
-        run_signature = inspect.signature(model.run)
-        if self._target not in run_signature.parameters:
-            mdl_name = type(model).__name__
-            raise TypeError(
-                f"Model '{mdl_name}.run()' has no '{self._target}' parameter"
-            )
 
     @property
     def model(self):
@@ -148,7 +224,7 @@ class ParameterSweep:
 
     @property
     def repeat(self):
-        """The number of times to repeat the run for each value in the range."""
+        """The number of times to repeat each run."""
         return self._repeat
 
     @property
@@ -172,15 +248,38 @@ class ParameterSweep:
         return self._random
 
     @property
-    def storage(self):
-        """The type of storage to use for storing the results."""
-        return self._storage
+    def compression_params(self):
+        """The compression parameters for joblib.dump."""
+        return self._compression_params
 
     @property
-    def storage_kws(self):
-        """Additional keyword arguments to pass to the storage."""
-        return self._storage_kws.copy()
+    def tqdm_cls(self):
+        """The class to use for progress bars."""
+        return self._tqdm_cls
 
+    @property
+    def mem_warning_ratio(self):
+        """The memory warning ratio."""
+        return self._mem_warning_ratio
+
+    @property
+    def mem_error_ratio(self):
+        """The memory error ratio."""
+        return self._mem_error_ratio
+
+    # REPRESENTATION ==========================================================
+    def __repr__(self):
+        cls_name = type(self).__name__
+        model_name = type(self.model).__name__
+        target = self._target
+        repeat = self._repeat
+        cp = self._compression_params
+        return (
+            f"<{cls_name} model={model_name!r} "
+            f"target={target!r} repeat={repeat} compression_params={cp!r}>"
+        )
+
+    # GENERATE ALL THE EXPERIMENT COMBINATIONS ================================
     def _run_kwargs_combinations(self, run_kws):
         """Generate combinations of parameter values and seeds for the runs.
 
@@ -196,6 +295,7 @@ class ParameterSweep:
             each run.
         int
             The total number of runs.
+
         """
         iinfo = np.iinfo(int)
 
@@ -218,23 +318,29 @@ class ParameterSweep:
 
         return combs_gen(), combs_size
 
-    def _run_report(self, idx, run_kws, seed, results):
-        """Run the model with the given parameters and store the results.
+    def _check_if_it_fit_in_memory(self, result, results_total):
+        """Check if 'results_total' of the result fits in memory."""
+        memimpact = memtools.memory_impact(result, num_objects=results_total)
 
-        Parameters
-        ----------
-        idx : int
-            The index of the run.
-        run_kws : dict
-            The keyword arguments to pass to the model's `run` method.
-        seed : int
-            The seed for the random number generator.
-        results : NDResultCollection
-            The collection to store the results in.
-        """
-        model = self._model
-        model.set_random(np.random.default_rng(seed))
-        results[idx] = model.run(**run_kws)
+        if memimpact.total_ratio >= self.mem_error_ratio:
+            total_perc = memimpact.total_ratio * 100
+            mem_error_perc = self.mem_error_ratio * 100
+            havailable_memory = memimpact.havailable_memory
+            raise ToBigForAvailableMemoryError(
+                f"Result is {total_perc:.2f}% "
+                f"exceeding the {mem_error_perc:.2f}% of the "
+                f"memory available, which is {havailable_memory!r}% "
+            )
+        if memimpact.total_ratio >= self.mem_warning_ratio:
+            total_perc = memimpact.total_ratio * 100
+            mem_warning_perc = self.mem_warning_ratio * 100
+            havailable_memory = memimpact.havailable_memory
+            warnings.warn(
+                f"Result is {total_perc:.2f}% "
+                f"exceeding the {mem_warning_perc:.2f}% of the "
+                f"memory available, which is {havailable_memory!r}% ",
+                category=MaybeTooBigForAvailableMemoryWarning,
+            )
 
     def run(self, **run_kws):
         """Run the sweep over the range of values for the target parameter.
@@ -247,20 +353,36 @@ class ParameterSweep:
 
         Returns
         -------
-        NDResultCollection
-            A collection of the results from the parameter sweep.
+        object
+            The aggregated results from all runs, as processed by the sweep
+            strategy.
+
+        Warnings
+        --------
+        ToBigForAvailableMemoryError
+            If the result exeeds the available memory by the specified ratio.
+
+        Raises
+        ------
+        TypeError
+            If the target parameter is included in run_kws.
+        ToBigForAvailableMemoryError
+            If the result exeeds the available memory by the specified ratio.
 
         """
         if self._target in run_kws:
             raise TypeError(
-                f"Parameter '{self._target}' "
-                f"are under control of {type(self)!r} instance"
+                f"Parameter '{self._target}' is under control of "
+                f"{type(self)!r} instance"
             )
+
+        # copy model and precision to easy write the code
+        model, compression_params = self._model, self._compression_params
 
         # get all the configurations
         rkw_combs, runs_total = self._run_kwargs_combinations(run_kws)
 
-        # if we need to add a progress bar we extract the iterable from it
+        # if we need to add a progress bar, we extract the iterable from it
         if self._tqdm_cls:
             rkw_combs = iter(
                 self._tqdm_cls(
@@ -270,27 +392,38 @@ class ParameterSweep:
                 )
             )
 
-        # Prepare to run
-        storage_type = self._storage
-        size = runs_total
-        tag = type(self).__name__
-        storage_kws = self._storage_kws
+        # run the first iteration sequentially to check if the memory is
+        # sufficient
+        cit, rkw, rkw_seed = next(rkw_combs)
+        first_result = _run_report(
+            idx=cit,
+            model=model,
+            run_kws=rkw,
+            seed=rkw_seed,
+            compression_params=compression_params,
+        )
 
-        with storages.storage(
-            storage_type, size=size, tag=tag, **storage_kws
-        ) as results:
-            # execute the first iteration synchronous so if some configuration
-            # fails we can catch it here
-            cit, rkw, rkw_seed = next(rkw_combs)
-            self._run_report(cit, rkw, rkw_seed, results)
+        # check if the memory is sufficient
+        self._check_if_it_fit_in_memory(first_result, runs_total)
 
-            with joblib.Parallel(n_jobs=self._n_jobs) as Parallel:
-                drun = joblib.delayed(self._run_report)
-                Parallel(
-                    drun(cit, rkw, rkw_seed, results)
-                    for cit, rkw, rkw_seed in rkw_combs
+        # run the rest of the iterations in parallel
+        with joblib.Parallel(n_jobs=self._n_jobs) as Parallel:
+            drun = joblib.delayed(_run_report)
+            results = Parallel(
+                drun(
+                    idx=cit,
+                    model=model,
+                    run_kws=rkw,
+                    seed=rkw_seed,
+                    compression_params=compression_params,
                 )
+                for cit, rkw, rkw_seed in rkw_combs
+            )
 
-        result = NDResultCollection(tag, results, tqdm_cls=self._tqdm_cls)
+        # add the first iteration to the results
+        results.insert(0, first_result)
 
-        return result
+        # aggregate all the processed results into a single object
+        final_result = ndcollection.NDResultCollection("Sweep", results)
+
+        return final_result

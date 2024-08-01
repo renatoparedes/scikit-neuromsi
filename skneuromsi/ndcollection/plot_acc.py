@@ -26,7 +26,7 @@ data, including line plots for reports and biases.
 
 import seaborn as sns
 
-from ...utils import AccessorABC
+from ..utils import AccessorABC
 
 # =============================================================================
 # PLOTTER

@@ -22,6 +22,7 @@
 # =============================================================================
 
 import copy
+import pickle
 
 import pytest
 
@@ -89,3 +90,14 @@ def test_Bunch_copy():
     assert md is not md_c
     assert md._name == md_c._name
     assert md._data == md_c._data and md._data is md_c._data
+
+
+def test_Bunch_setstate():
+    md = bunch.Bunch("foo", {"alfa": 1})
+    reloaded = pickle.loads(pickle.dumps(md))
+    assert md == reloaded
+
+
+def test_Bunch_todict():
+    md = bunch.Bunch("foo", {"alfa": 1})
+    assert md.to_dict() == {"alfa": 1}

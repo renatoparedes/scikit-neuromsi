@@ -352,7 +352,7 @@ def _read_nd_results_into_storage(zip_fp, storage, tqdm_cls):
 
 
 def store_ndrcollection(
-    path_or_stream, ndrcollection, *, metadata=None, tqdm_cls=tqdm, **kwargs
+    path_or_stream, ndrcollection, *, metadata=None, **kwargs
 ):
     """Store an NDResultCollection to a file or stream.
 
@@ -364,8 +364,6 @@ def store_ndrcollection(
         The NDResultCollection object to store.
     metadata : dict, optional
         Additional metadata to include in the output file.
-    tqdm_cls : type, optional
-        The progress bar class to use (or None to disable progress bars).
     **kwargs
         Additional keyword arguments to pass to zipfile.ZipFile.
 
@@ -385,18 +383,14 @@ def store_ndrcollection(
     kwargs.setdefault("compression", _Compression.COMPRESSION)
     kwargs.setdefault("compresslevel", _Compression.COMPRESS_LEVEL)
 
-    # extract the data from the object
-    ndrcollection_kwargs = ndrcollection.to_dict()
-    ndresults = ndrcollection_kwargs.pop("ndresults")
-
     # timestamp
     timestamp = dt.datetime.utcnow()
 
     # collection of metadata
     ndc_metadata = _prepare_ndc_metadata(
-        size=len(ndresults),
+        size=len(ndrcollection),
         obj_type=_ObjTypes.NDCOLLETION_TYPE,
-        obj_kwargs=ndrcollection_kwargs,
+        obj_kwargs={"name": ndrcollection.name},
         utc_timestamp=timestamp,
         extra_metadata=metadata or {},
     )
@@ -408,11 +402,8 @@ def store_ndrcollection(
         )
         zip_fp.writestr(_ZipFileNames.METADATA, ndc_metadata_json)
 
-        if tqdm_cls:
-            ndresults = tqdm_cls(iterable=ndresults, desc="Writing ndresults")
-
         # write every ndresult
-        for idx, ndresult in enumerate(ndresults):
+        for idx, ndresult in enumerate(ndrcollection):
             # determine the directory
             ndr_metadata_filename, ndr_nddata_filename = _mk_ndr_in_zip_paths(
                 idx
@@ -428,6 +419,9 @@ def store_ndrcollection(
             zip_fp.writestr(ndr_metadata_filename, ndr_metadata_json)
 
             del ndresult, ndr_nddata_nc, ndr_metadata_json
+
+
+# READ NDR ====================================================================
 
 
 def open_ndrcollection(
@@ -539,9 +533,7 @@ def store_ndresult(path_or_stream, ndresult, *, metadata=None, **kwargs):
     if not isinstance(ndresult, core.NDResult):
         raise TypeError(f"'ndresult' must be an instance of {core.NDResult!r}")
 
-    ndrcollection = core.NDResultCollection(
-        "NDResult", [ndresult], tqdm_cls=None
-    )
+    ndrcollection = core.NDResultCollection("NDResult", [ndresult])
     store_ndrcollection(
         path_or_stream, ndrcollection, metadata=metadata, **kwargs
     )

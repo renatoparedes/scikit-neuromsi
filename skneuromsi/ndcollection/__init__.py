@@ -8,28 +8,26 @@
 # Full Text:
 #     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
 
+
 # =============================================================================
 # DOCS
 # =============================================================================
 
-"""Utilities for scikit-neuromsi."""
+"""Implementation of NDCollection.
 
+The ndcollection module implements the NDCollection class, which is a
+collection of NDResult objects.
+
+"""
 
 # =============================================================================
 # IMPORTS
 # =============================================================================
 
-from . import ddtype_tools, memtools
-from .accabc import AccessorABC
-from .bunch import Bunch
-from .doctools import doc_inherit
+from .collection import NDResultCollection
 
-__all__ = [
-    "AccessorABC",
-    "Bunch",
-    "storages",
-    "doc_inherit",
-    "ddtype_tools",
-    "memtools",
-]
+# =============================================================================
+# ALL
+# =============================================================================
 
+__all__ = ["NDResultCollection"]

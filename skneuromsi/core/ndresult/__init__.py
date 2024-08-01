@@ -12,34 +12,35 @@
 # DOCS
 # =============================================================================
 
-"""Core functionalities and structures of skneuromsi."""
+"""Result class for multi-sensory integration simulation.
+
+This module contains the implementation of the NDResult class which represents
+the results of a multi-sensory integration simulation.
+
+
+"""
 
 # =============================================================================
 # IMPORTS
 # =============================================================================
 
-from .modelabc import ParameterAliasTemplate, SKNMSIMethodABC, SKNMSIRunConfig
-from .ndresult import (
+from .compress import (
     DEFAULT_COMPRESSION_PARAMS,
-    NDResult,
     CompressedNDResult,
     compress_ndresult,
     decompress_ndresult,
     validate_compression_params,
 )
+from .result import NDResult
 
 # =============================================================================
 # ALL
 # =============================================================================
 
-
 __all__ = [
     "DEFAULT_COMPRESSION_PARAMS",
-    "CompressedNDResult",
     "NDResult",
-    "ParameterAliasTemplate",
-    "SKNMSIMethodABC",
-    "SKNMSIRunConfig",
+    "CompressedNDResult",
     "compress_ndresult",
     "decompress_ndresult",
     "validate_compression_params",

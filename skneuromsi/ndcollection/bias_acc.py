@@ -31,7 +31,7 @@ import numpy as np
 
 import pandas as pd
 
-from ...utils import AccessorABC
+from ..utils import AccessorABC
 
 # =============================================================================
 # BIAS ACC
@@ -180,7 +180,7 @@ class NDResultBiasAcc(AccessorABC):
 
         influence_value = disp_mtx[influence_parameter][0]
 
-        ndresults = nd_collection._ndresults
+        ndresults = nd_collection._cndresults
         tqdm_cls = nd_collection._tqdm_cls
         if quiet is False and tqdm_cls is not None:
             ndresults = tqdm_cls(iterable=ndresults, desc="Calculating biases")

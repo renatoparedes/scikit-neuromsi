@@ -29,7 +29,7 @@ import pandas as pd
 
 import xarray as xa
 
-from .constants import (
+from ..constants import (
     DIMENSIONS,
     D_MODES,
     D_POSITIONS,
@@ -37,9 +37,9 @@ from .constants import (
     D_TIMES,
     XA_NAME,
 )
-from .plot import ResultPlotter
-from .stats import ResultStatsAccessor
-from ..utils import Bunch, ddtype_tools
+from .plot_acc import ResultPlotter
+from .stats_acc import ResultStatsAccessor
+from ...utils import Bunch, ddtype_tools
 
 
 # =============================================================================
@@ -47,13 +47,15 @@ from ..utils import Bunch, ddtype_tools
 # =============================================================================
 
 
-def _modes_to_data_array(nddata):
+def _modes_to_data_array(nddata, dtype):
     """Convert a dictionary of modes to an xarray.DataArray.
 
     Parameters
     ----------
     nddata : dict
         A dictionary of modes and their corresponding coordinates.
+    dtype : numpy.dtype, optional
+        The data type of the resulting xarray.DataArray.
 
     Returns
     -------
@@ -81,7 +83,7 @@ def _modes_to_data_array(nddata):
         # [[[1, 10], [2, 20], [3, 30]],
         #  [[4, 40], [5, 50], [6, 60]]]
         # The astype is to ensure that the data type is consistent
-        nd_mode_coords = np.dstack(mode_coords)
+        nd_mode_coords = np.dstack(mode_coords).astype(dtype, copy=False)
 
         if coords is None:  # first time we need to populate the indexes
             # retrieve how many times, positions and
@@ -106,9 +108,7 @@ def _modes_to_data_array(nddata):
         modes.append(nd_mode_coords.reshape(final_shape))
 
     data = (
-        np.concatenate(modes)
-        if modes
-        else np.array([], ndmin=len(DIMENSIONS), dtype=np.float)
+        np.concatenate(modes) if modes else np.array([], ndmin=len(DIMENSIONS))
     )
 
     da = xa.DataArray(data, coords=coords, dims=DIMENSIONS, name=XA_NAME)
@@ -150,7 +150,10 @@ class NDResult:
         The parameters used for running the model.
     extra : dict
         Extra information associated with the result.
-
+    ensure_dtypes : numpy.dtype, optional (default=infer)
+        Force all data types to be assigned to this type.
+        This only applies to parameters that accept the dtype message
+        If None, the data types are inferred.
 
     Attributes
     ----------
@@ -174,6 +177,8 @@ class NDResult:
         The resolution of position values.
     run_params : Bunch
         The parameters used for running the model.
+    dtypes : numpy.dtype
+        The data type of the result data.
     extra_ : Bunch
         Extra information associated with the result.
     causes_ : int
@@ -186,6 +191,7 @@ class NDResult:
         The position values of the result data.
     positions_coordinates_ : numpy.ndarray
         The position coordinates of the result data.
+
 
     """
 
@@ -204,23 +210,35 @@ class NDResult:
         causes,
         run_params,
         extra,
+        ensure_dtype=None,
     ):
-        self._mname = str(mname)
-        self._mtype = str(mtype)
-        self._output_mode = str(output_mode)
+        # deberia validad las cosas aca
+        # hay que validar las resoluciones y los rangos
+
+        self._mname = mname
+        self._mtype = mtype
+        self._output_mode = output_mode
         self._nmap = dict(nmap)
-        self._time_range = np.asarray(time_range)
-        self._position_range = np.asarray(position_range)
-        self._time_res = float(time_res)
-        self._position_res = float(position_res)
+        self._time_range = np.asarray(time_range, dtype=ensure_dtype)
+        self._position_range = np.asarray(position_range, dtype=ensure_dtype)
+        self._time_res = time_res
+        self._position_res = position_res
+        self._time_res = time_res
+        self._position_res = position_res
         self._run_params = dict(run_params)
         self._extra = dict(extra)
         self._causes = causes
         self._nddata = (
-            _modes_to_data_array(nddata)
+            _modes_to_data_array(nddata, dtype=ensure_dtype)
             if isinstance(nddata, Mapping)
             else nddata
         )
+
+        # Ensure that the instance variables are not dynamically added.
+        if ensure_dtype is not None:
+            self.__dict__ = ddtype_tools.deep_astype(
+                vars(self), dtype=ensure_dtype
+            )
 
     # PROPERTIES ==============================================================
 
@@ -275,6 +293,8 @@ class NDResult:
         return Bunch("run_params", self._run_params)
 
     rp = run_params
+
+    # dtypes are at the end <===================================!!!
 
     @property
     def extra_(self):
@@ -589,12 +609,13 @@ class NDResult:
         ddtypes = ddtypes[0] if memory_usage else ddtypes
         return ddtypes["ndresult"][1]
 
-    def dtypes(self, *, memory_usage=False):
+    def dtypes(self, memory_usage=False):
         """pd.DataFrame containing the data types of each attribute in the \
         NDResult object."""
         ddtypes = self.deep_dtypes(max_deep=2, memory_usage=memory_usage)
         dtypes = []
         for attr, obj_info in ddtypes.items():
+
             obj_type, obj_dtype = obj_info[:2]
             dtype = (
                 obj_dtype if ddtype_tools.single_dtype_class(obj_type) else "-"
@@ -616,3 +637,4 @@ class NDResult:
         dtypes_df.name = "dtypes"
 
         return dtypes_df
+

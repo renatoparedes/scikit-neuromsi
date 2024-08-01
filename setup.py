@@ -46,6 +46,7 @@ REQUIREMENTS = [
     "jinja2",
     "humanize",
     "pympler",
+    "lz4",
 ]
 
 with open(PATH / "skneuromsi" / "__init__.py") as fp:

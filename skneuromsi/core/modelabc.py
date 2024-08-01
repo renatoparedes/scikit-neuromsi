@@ -38,7 +38,7 @@ from bidict import frozenbidict
 
 import numpy as np
 
-from . import result
+from .ndresult import NDResult
 
 # =============================================================================
 # CONSTANTS
@@ -152,7 +152,7 @@ class SKNMSIRunConfig:
 
     _input: tuple
     _output: tuple
-    _result_cls: result.NDResult
+    _result_cls: NDResult
     _model_name: str
     _model_type: str
     _output_mode: str
@@ -597,7 +597,7 @@ class SKNMSIRunConfig:
         """
         state = dict(instance.__dict__)
 
-        # becase the run instance method is a clojure we can't serialize this
+        # becase the run instance method is a clousure we can't serialize this
         # and we only store the context
         state["run"] = dict(instance.run.__skneuromsi_run_template_context__)
 
@@ -649,7 +649,7 @@ TO_REDEFINE = [
 ]
 
 REDEFINE_WITH_DEFAULT = [
-    ("_run_result", result.NDResult),
+    ("_run_result", NDResult),
 ]
 
 
@@ -709,13 +709,13 @@ class SKNMSIMethodABC:
         cls.__init__ = config.wrap_init(cls.__init__)
         cls._run_config = config
 
-    # def __getstate__(self):
-    #     cls = type(self)
-    #     return cls._run_config.get_model_state(self)
+    def __getstate__(self):
+        cls = type(self)
+        return cls._run_config.get_model_state(self)
 
-    # def __setstate__(self, state):
-    #     cls = type(self)
-    #     cls._run_config.set_model_state(self, state)
+    def __setstate__(self, state):
+        cls = type(self)
+        cls._run_config.set_model_state(self, state)
 
     def calculate_causes(self, **kwargs):
         """Calculate the causes based on the model output.
