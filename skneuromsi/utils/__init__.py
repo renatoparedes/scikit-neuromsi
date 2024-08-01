@@ -19,7 +19,7 @@
 # IMPORTS
 # =============================================================================
 
-from . import ddtype_tools, memtools
+from . import custom_json, ddtype_tools, memtools
 from .accabc import AccessorABC
 from .bunch import Bunch
 from .doctools import doc_inherit
@@ -27,6 +27,7 @@ from .doctools import doc_inherit
 __all__ = [
     "AccessorABC",
     "Bunch",
+    "custom_json",
     "storages",
     "doc_inherit",
     "ddtype_tools",

@@ -51,8 +51,8 @@ from tqdm.auto import tqdm
 
 import xarray as xa
 
-from . import VERSION, core
-from .utils import storages
+from . import VERSION, core, ndcollection
+from .utils import custom_json
 
 
 # =============================================================================
@@ -130,65 +130,7 @@ class _Compression:
 
 
 # =============================================================================
-# JSON CONVERTERS
-# =============================================================================
-
-
-class NDResultJSONEncoder(json.JSONEncoder):
-    """JSON encoder for NDResult objects and related data types.
-
-    This encoder extends the default JSON encoder to support serializing
-    additional data types commonly used with NDResult objects, such as
-    tuples, sets, frozensets, datetime objects, and NumPy data types.
-
-    """
-
-    _CONVERTERS = {
-        tuple: list,
-        set: list,
-        frozenset: list,
-        dt.datetime: dt.datetime.isoformat,
-        np.integer: int,
-        np.floating: float,
-        np.complexfloating: complex,
-        np.bool_: bool,
-        np.ndarray: np.ndarray.tolist,
-    }
-
-    def default(self, obj):
-        """Override the default method to serialize additional types.
-
-        This method gets called by the json.JSONEncoder superclass when
-        encountering an object that is neither a dict, list, str, nor any other
-        JSON-encodable type. This implementation extends support to serialize
-        tuples, sets, frozensets, datetime objects, and NumPy data types.
-        If the object is not serializable, a TypeError is raised to signal
-        that the default serialization method cannot handle this object type.
-
-        Parameters
-        ----------
-        obj : object
-            The object to serialize.
-
-        Returns
-        -------
-        serializable : object
-            A JSON-encodable version of the object.
-
-        Raises
-        ------
-        TypeError
-            If the object is not serializable.
-
-        """
-        for nptype, converter in self._CONVERTERS.items():
-            if isinstance(obj, nptype):
-                return converter(obj)
-        return super(NDResultJSONEncoder, self).default(obj)
-
-
-# =============================================================================
-# METADATA MERGER
+# STORE
 # =============================================================================
 
 
@@ -257,31 +199,9 @@ def _ndr_split_and_serialize(ndresult):
     }
 
     ndr_nddata_nc = ndr_nddata.to_netcdf(None)
-    ndr_metadata_json = json.dumps(
-        ndr_metadata, cls=NDResultJSONEncoder, indent=2
-    )
+    ndr_metadata_json = custom_json.dumps(ndr_metadata, indent=2)
 
     return ndr_nddata_nc, ndr_metadata_json
-
-
-def _check_object_type(obj_type, expected):
-    """Check that an object type matches the expected value.
-
-    Parameters
-    ----------
-    obj_type : str
-        The object type to check.
-    expected : str
-        The expected object type.
-
-    Raises
-    ------
-    ValueError
-        If the object type does not match the expected value.
-
-    """
-    if obj_type != expected:
-        raise ValueError(f"'object_type' != {expected!r}. Found {obj_type!r}")
 
 
 def _mk_ndr_in_zip_paths(idx):
@@ -303,52 +223,7 @@ def _mk_ndr_in_zip_paths(idx):
     return ndr_metadata_filename, ndr_nddata_filename
 
 
-def _read_nd_results_into_storage(zip_fp, storage, tqdm_cls):
-    """Read NDResult objects from a zip file into a storage backend.
-
-    Parameters
-    ----------
-    zip_fp : zipfile.ZipFile
-        The zip file containing the NDResult data.
-    storage : StorageBackend
-        The storage backend to load the NDResults into.
-    tqdm_cls : type
-        The progress bar class to use (or None to disable progress bars).
-
-    Returns
-    -------
-    StorageBackend
-        The storage backend populated with the loaded NDResult objects.
-
-    """
-    indexes = range(len(storage))
-    if tqdm_cls:
-        indexes = tqdm_cls(iterable=indexes, desc="Reading ndresults")
-
-    for idx in indexes:
-        # determine the directory
-        ndr_metadata_filename, ndr_nddata_filename = _mk_ndr_in_zip_paths(idx)
-
-        with zip_fp.open(ndr_metadata_filename) as fp:
-            ndr_metadata = json.load(fp)
-
-        obj_type = ndr_metadata.pop(_Keys.OBJ_TYPE_KEY)
-        _check_object_type(obj_type, _ObjTypes.NDRESULT_TYPE)
-
-        with zip_fp.open(ndr_nddata_filename) as fp:
-            nddata = xa.open_dataarray(fp).compute()
-
-        ndresult_kwargs = ndr_metadata[_Keys.OBJ_KWARGS_KEY]
-        ndresult = core.NDResult(nddata=nddata, **ndresult_kwargs)
-
-        storage[idx] = ndresult
-
-        del ndr_metadata, nddata, ndresult_kwargs, ndresult
-
-
-# =============================================================================
-# NDCOLLECTION
-# =============================================================================
+# API STORE ===================================================================
 
 
 def store_ndrcollection(
@@ -373,10 +248,10 @@ def store_ndrcollection(
         If `ndrcollection` is not an instance of NDResultCollection.
 
     """
-    if not isinstance(ndrcollection, core.NDResultCollection):
+    if not isinstance(ndrcollection, ndcollection.NDResultCollection):
         raise TypeError(
             "'ndrcollection' must be an instance "
-            f"of {core.NDResultCollection!r}"
+            f"of {ndcollection.NDResultCollection!r}"
         )
 
     # default parameters for zipfile
@@ -395,12 +270,10 @@ def store_ndrcollection(
         extra_metadata=metadata or {},
     )
 
+    # serialize metadataa
+    ndc_metadata_json = custom_json.dumps(ndc_metadata, indent=2)
+
     with zipfile.ZipFile(path_or_stream, "w", **kwargs) as zip_fp:
-        # write the collection metadata.json
-        ndc_metadata_json = json.dumps(
-            ndc_metadata, cls=NDResultJSONEncoder, indent=2
-        )
-        zip_fp.writestr(_ZipFileNames.METADATA, ndc_metadata_json)
 
         # write every ndresult
         for idx, ndresult in enumerate(ndrcollection):
@@ -420,56 +293,90 @@ def store_ndrcollection(
 
             del ndresult, ndr_nddata_nc, ndr_metadata_json
 
+        # write the collection metadata.json
+        zip_fp.writestr(_ZipFileNames.METADATA, ndc_metadata_json)
 
-# READ NDR ====================================================================
+
+def store_ndresult(path_or_stream, ndresult, *, metadata=None, **kwargs):
+    """Store a single NDResult object to a file or stream."""
+    if not isinstance(ndresult, core.NDResult):
+        raise TypeError(f"'ndresult' must be an instance of {core.NDResult!r}")
+
+    cls_name = type(ndresult).__name__
+    ndrcollection = ndcollection.NDResultCollection.from_ndresults(
+        cls_name, [ndresult]
+    )
+
+    store_ndrcollection(
+        path_or_stream, ndrcollection, metadata=metadata, **kwargs
+    )
+
+
+# =============================================================================
+# READ
+# =============================================================================
+
+
+def _check_object_type(obj_type, expected):
+    """Check that an object type matches the expected value.
+
+    Parameters
+    ----------
+    obj_type : str
+        The object type to check.
+    expected : str
+        The expected object type.
+
+    Raises
+    ------
+    ValueError
+        If the object type does not match the expected value.
+
+    """
+    if obj_type != expected:
+        raise ValueError(f"'object_type' != {expected!r}. Found {obj_type!r}")
+
+
+def _generate_ndresults(*, zip_fp, size, tqdm_cls):
+    """Read NDResult objects from a zip file into a storage backend."""
+    indexes = range(size)
+
+    if tqdm_cls:
+        indexes = tqdm_cls(iterable=indexes, desc="Reading ndresults")
+
+    for idx in indexes:
+        # determine the directory
+        ndr_metadata_filename, ndr_nddata_filename = _mk_ndr_in_zip_paths(idx)
+
+        with zip_fp.open(ndr_metadata_filename) as fp:
+            ndr_metadata = json.load(fp)
+
+        obj_type = ndr_metadata.pop(_Keys.OBJ_TYPE_KEY)
+        _check_object_type(obj_type, _ObjTypes.NDRESULT_TYPE)
+
+        with zip_fp.open(ndr_nddata_filename) as fp:
+            nddata = xa.open_dataarray(fp).compute()
+
+        ndresult_kwargs = ndr_metadata[_Keys.OBJ_KWARGS_KEY]
+        ndresult = core.NDResult(nddata=nddata, **ndresult_kwargs)
+
+        yield ndresult
 
 
 def open_ndrcollection(
     path_or_stream,
     *,
-    storage="directory",
-    storage_kws=None,
+    compression_params=core.DEFAULT_COMPRESSION_PARAMS,
     expected_size=None,
     tqdm_cls=tqdm,
     **kwargs,
 ):
-    """Retrieve an NDResultCollection from a file or stream.
-
-    Parameters
-    ----------
-    path_or_stream : str or file-like object
-        The file path or stream to read the NDResultCollection from.
-    storage : str or StorageBackend, optional
-        The storage backend to use for the loaded NDResults.
-    storage_kws : dict, optional
-        Additional keyword arguments to pass to the storage backend
-        constructor.
-    expected_size : int, optional
-        The expected number of NDResults in the collection
-        (or None to disable checking).
-    tqdm_cls : type, optional
-        The progress bar class to use (or None to disable progress bars).
-    **kwargs
-        Additional keyword arguments to pass to zipfile.ZipFile.
-
-    Returns
-    -------
-    NDResultCollection
-        The loaded NDResultCollection object.
-
-    Raises
-    ------
-    ValueError
-        If the number of loaded NDResults does not match `expected_size`.
-
-    """
-    # default parameters for storage_kws
-    storage_kws = {} if storage_kws is None else dict(storage_kws)
+    """Retrieve an NDResultCollection from a file or stream."""
 
     with zipfile.ZipFile(path_or_stream, "r", **kwargs) as zip_fp:
         # open the collection metadata
         with zip_fp.open(_ZipFileNames.METADATA) as fp:
-            ndc_metadata = json.load(fp)
+            ndc_metadata = custom_json.load(fp)
 
         # validate the object type
         obj_type = ndc_metadata.pop(_Keys.OBJ_TYPE_KEY)
@@ -487,97 +394,32 @@ def open_ndrcollection(
             )
 
         # create the tag for the storage
-        tag = ndcollection_kwargs.get("name", "<UNKNOW>")
+        tag = ndcollection_kwargs.pop("name", "<UNKNOW>")
 
-        # open the storage and read the entire ndresults
-        with storages.storage(
-            storage, size=size, tag=tag, **storage_kws
-        ) as results:
-            _read_nd_results_into_storage(
-                zip_fp=zip_fp, storage=results, tqdm_cls=tqdm_cls
-            )
+        nd_results_gen = _generate_ndresults(
+            zip_fp=zip_fp,
+            size=size,
+            tqdm_cls=tqdm_cls,
+        )
 
         # store the results inside the ndr collection
-        ndr_collection = core.NDResultCollection(
-            results=results, tqdm_cls=tqdm_cls, **ndcollection_kwargs
+        ndr_collection = ndcollection.NDResultCollection.from_ndresults(
+            name=tag,
+            results=nd_results_gen,
+            tqdm_cls=tqdm_cls,
+            compression_params=compression_params,
+            **ndcollection_kwargs,
         )
 
         return ndr_collection
 
 
-# =============================================================================
-# ND RESULT
-# =============================================================================
-
-
-def store_ndresult(path_or_stream, ndresult, *, metadata=None, **kwargs):
-    """Store a single NDResult object to a file or stream.
-
-    Parameters
-    ----------
-    path_or_stream : str or file-like object
-        The file path or stream to write the NDResult to.
-    ndresult : NDResult
-        The NDResult object to store.
-    metadata : dict, optional
-        Additional metadata to include in the output file.
-    **kwargs
-        Additional keyword arguments to pass to zipfile.ZipFile.
-
-    Raises
-    ------
-    TypeError
-        If `ndresult` is not an instance of NDResult.
-
-    """
-    if not isinstance(ndresult, core.NDResult):
-        raise TypeError(f"'ndresult' must be an instance of {core.NDResult!r}")
-
-    ndrcollection = core.NDResultCollection("NDResult", [ndresult])
-    store_ndrcollection(
-        path_or_stream, ndrcollection, metadata=metadata, **kwargs
-    )
-
-
 def open_ndresult(path_or_stream, **kwargs):
-    """Open a single NDResult object from a file or stream.
-
-    This function loads a single NDResult object that was previously stored
-    using the `store_ndresult` function. It expects the input file or stream to
-    be a zip archive containing the serialized metadata and data for the
-    NDResult.
-
-    Under the hood, this function uses `open_ndrcollection` to load the
-    NDResult as an NDResultCollection with a single element, and then returns
-    that element.
-
-    Parameters
-    ----------
-    path_or_stream : str or file-like object
-        The file path or stream to read the NDResult from.
-    **kwargs
-        Additional keyword arguments to pass to `open_ndrcollection`.
-
-    Returns
-    -------
-    NDResult
-        The loaded NDResult object.
-
-    See Also
-    --------
-    store_ndresult : Store a single NDResult object to a file or stream.
-    open_ndrcollection : Open an NDResultCollection from a file or stream.
-
-    Examples
-    --------
-    >>> import skneuromsi.io as ndio
-    >>> ndresult = ndio.open_ndresult('path/to/ndresult.ndr')
-
-    """
+    """Open a single NDResult object from a file or stream."""
     ndr_collection = open_ndrcollection(
         path_or_stream,
-        storage="single_process",
         expected_size=1,
+        compression_params=None,
         tqdm_cls=None,
         **kwargs,
     )

@@ -554,7 +554,7 @@ class NDResult:
             Additional keyword arguments to pass to the NMSI storage function.
 
         """
-        from ..io import store_ndresult  # noqa
+        from ...io import store_ndresult  # noqa
 
         store_ndresult(path_or_stream, self, metadata=metadata, **kwargs)
 
