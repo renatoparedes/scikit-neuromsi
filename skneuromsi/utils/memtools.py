@@ -169,7 +169,7 @@ class _MemoryImpact:
         )
 
 
-def memory_impact(obj, num_objects=1):
+def memory_impact(obj, *, size_factor=1.2, num_objects=1):
     """
     Calculate the memory impact of an object or multiple objects.
 
@@ -179,14 +179,19 @@ def memory_impact(obj, num_objects=1):
         The object to calculate memory impact for.
     num_objects : int, optional
         Number of objects to consider (default is 1).
+    size_factor : float, optional
+        Factor to multiply the expected size by (default is 1.2).
 
     Returns
     -------
     _MemoryImpact
         An instance of _MemoryImpact containing the calculated impact metrics.
     """
+    if size_factor < 0:
+        raise ValueError("size_factor must be a positive value")
+
     obj_memory = memory_usage(obj)
-    total_object_memory = obj_memory.size * num_objects
+    total_object_memory = obj_memory.size * size_factor * num_objects
     vmem = psutil.virtual_memory()
 
     total_ratio = total_object_memory / vmem.total

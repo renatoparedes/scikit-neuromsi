@@ -234,7 +234,7 @@ class NDResultCollection(Sequence):
             cls_name = type(self).__name__
             raise ValueError(f"Empty {cls_name} not allowed")
         if not (
-            self._tqdm_cls is None or isinstance(self._tqdm_cls, tqdm.tqdm)
+            self._tqdm_cls is None or issubclass(self._tqdm_cls, tqdm.tqdm)
         ):
             raise TypeError(
                 "tqdm_cls must be an instance of tqdm.tqdm or None"
@@ -247,7 +247,12 @@ class NDResultCollection(Sequence):
 
     @classmethod
     def from_ndresults(
-        cls, name, results, compression_params=core.DEFAULT_COMPRESSION_PARAMS
+        cls,
+        name,
+        results,
+        *,
+        compression_params=core.DEFAULT_COMPRESSION_PARAMS,
+        tqdm_cls=None,
     ):
         """Create an instance of NDResultCollection from a list of \
         NDResult objects.
@@ -262,18 +267,21 @@ class NDResultCollection(Sequence):
         compression_params : Tuple[str, int], optional
             The compression parameters for the NDResult objects. Defaults to
              core.DEFAULT_COMPRESSION_PARAMS.
+        tqdm_cls : tqdm.tqdm, optional
+            The tqdm class to use. Defaults to None.
 
         Returns
         -------
         NDResultCollection
-            An instance of NDResultCollection containing the compressed NDResult objects.
+            An instance of NDResultCollection containing the compressed
+            NDResult objects.
         """
         generator = (
             core.compress_ndresult(r, compression_params=compression_params)
             for r in results
         )
         compressed_results = np.fromiter(generator, dtype=object)
-        return cls(name, compressed_results)
+        return cls(name, compressed_results, tqdm_cls=tqdm_cls)
 
     # Because is a Sequence ==================================================
 
@@ -295,20 +303,41 @@ class NDResultCollection(Sequence):
     # PROPERTIES =============================================================
 
     def _get_from_cache(self, key):
+        """Get a value from the cache based on the given key.
+
+        This function retrieves a value from the cache based on the given key.
+        If the cache is None, it initializes it by decompressing the first
+        NDResult object in the collection and storing the metadata cache in the
+        cache attribute. If the key is not present in the cache, it collects
+        metadata from all the NDResult objects in the collection using an
+        iterator and stores the metadata cache in the cache attribute.
+        Finally, it returns the value associated with the given key in the
+        cache.
+
+        """
+        # if the cache is None, we need to collect metadata
         if self._cache is None:
             ndresult = self[0]
             cache = _from_one_cache(ndresult)
             self._cache = Bunch("_cache", cache)
+
+        # if the key is not present in the cache, we need to collect metadata
         if key not in self._cache:
             ndresults = iter(self)
+
+            # if tqdm_cls is not None, we need to show a progress bar
             if self._tqdm_cls:
                 ndresults = self._tqdm_cls(
                     iterable=ndresults,
-                    total=len(ndresults),
+                    total=len(self),
                     desc="Collecting metadata",
                 )
+
+            # collect metadata
             cache = _make_metadata_cache(ndresults)
             self._cache = Bunch("_cache", cache)
+
+        # return the value associated with the given key
         return self._cache[key]
 
     @property
@@ -319,13 +348,13 @@ class NDResultCollection(Sequence):
     @property
     def modes_(self):
         """Modes of all the results in the NDResultCollection."""
-        return self._metadata_cache.modes
+        return self._get_from_cache("modes")
 
     @property
     def output_mode_(self):
         """Output mode of all the results in the \
         NDResultCollection."""
-        return self._metadata_cache.output_mode
+        return self._get_from_cache("output_mode")
 
     @property
     def input_modes_(self):
@@ -358,7 +387,8 @@ class NDResultCollection(Sequence):
             A DataFrame representing the disparity matrix.
 
         """
-        df = pd.DataFrame(list(self._metadata_cache.run_parameters_values))
+        run_parameters_values = self._get_from_cache("run_parameters_values")
+        df = pd.DataFrame(list(run_parameters_values))
         df.index.name = "Iteration"
         df.columns.name = "Parameters"
         return df
@@ -436,8 +466,8 @@ class NDResultCollection(Sequence):
             The sum of variances for modes.
 
         """
-        cache = self._metadata_cache
-        varsum = cache.modes_variances_sum.copy()
+        modes_variances_sum = self._get_from_cache("modes_variances_sum")
+        varsum = modes_variances_sum.copy()
         return varsum
 
     def coerce_mode(self, prefer=None):

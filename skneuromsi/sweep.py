@@ -50,6 +50,9 @@ class MaybeTooBigForAvailableMemoryWarning(UserWarning):
     """
 
 
+warnings.simplefilter("always", MaybeTooBigForAvailableMemoryWarning)
+
+
 class ToBigForAvailableMemoryError(MemoryError):
     """Error raised when the result is too big for the available memory."""
 
@@ -320,7 +323,9 @@ class ParameterSweep:
 
     def _check_if_it_fit_in_memory(self, result, results_total):
         """Check if 'results_total' of the result fits in memory."""
-        memimpact = memtools.memory_impact(result, num_objects=results_total)
+        memimpact = memtools.memory_impact(
+            result, size_factor=1.2, num_objects=results_total
+        )
 
         if memimpact.total_ratio >= self.mem_error_ratio:
             total_perc = memimpact.total_ratio * 100
@@ -424,6 +429,8 @@ class ParameterSweep:
         results.insert(0, first_result)
 
         # aggregate all the processed results into a single object
-        final_result = ndcollection.NDResultCollection("Sweep", results)
+        final_result = ndcollection.NDResultCollection(
+            "Sweep", results, tqdm_cls=self._tqdm_cls
+        )
 
         return final_result
