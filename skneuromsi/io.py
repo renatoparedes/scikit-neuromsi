@@ -374,6 +374,9 @@ def _generate_ndresults(*, zip_fp, size, tqdm_cls):
         yield ndresult
 
 
+# API READ ====================================================================
+
+
 def open_ndrcollection(
     path_or_stream,
     *,
