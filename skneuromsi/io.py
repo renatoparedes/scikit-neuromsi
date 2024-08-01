@@ -227,7 +227,7 @@ def _mk_ndr_in_zip_paths(idx):
 
 
 def store_ndrcollection(
-    path_or_stream, ndrcollection, *, metadata=None, **kwargs
+    path_or_stream, ndrcollection, *, metadata=None, tqdm_cls=tqdm, **kwargs
 ):
     """Store an NDResultCollection to a file or stream.
 
@@ -273,6 +273,13 @@ def store_ndrcollection(
     # serialize metadataa
     ndc_metadata_json = custom_json.dumps(ndc_metadata, indent=2)
 
+    if tqdm_cls:
+        ndrcollection = tqdm_cls(
+            ndrcollection,
+            total=len(ndrcollection),
+            desc=f"Saving '{str(path_or_stream)}'",
+        )
+
     with zipfile.ZipFile(path_or_stream, "w", **kwargs) as zip_fp:
 
         # write every ndresult
@@ -308,7 +315,11 @@ def store_ndresult(path_or_stream, ndresult, *, metadata=None, **kwargs):
     )
 
     store_ndrcollection(
-        path_or_stream, ndrcollection, metadata=metadata, **kwargs
+        path_or_stream,
+        ndrcollection,
+        metadata=metadata,
+        tqdm_cls=None,
+        **kwargs,
     )
 
 
@@ -397,9 +408,7 @@ def open_ndrcollection(
         tag = ndcollection_kwargs.pop("name", "<UNKNOW>")
 
         nd_results_gen = _generate_ndresults(
-            zip_fp=zip_fp,
-            size=size,
-            tqdm_cls=tqdm_cls,
+            zip_fp=zip_fp, size=size, tqdm_cls=tqdm_cls
         )
 
         # store the results inside the ndr collection

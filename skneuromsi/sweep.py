@@ -424,6 +424,9 @@ class ParameterSweep:
         results.insert(0, first_result)
 
         # aggregate all the processed results into a single object
-        final_result = ndcollection.NDResultCollection("Sweep", results)
+        tag = type(self).__name__
+        final_result = ndcollection.NDResultCollection(
+            tag, results, tqdm_cls=self._tqdm_cls
+        )
 
         return final_result

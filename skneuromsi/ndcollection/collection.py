@@ -610,11 +610,13 @@ class NDResultCollection(Sequence):
             function.
 
         """
-        from ...io import store_ndrcollection  # noqa
+        from ..io import store_ndrcollection  # noqa
 
+        tqdm_cls = None if quiet else self._tqdm_cls
         store_ndrcollection(
             path_or_stream,
-            self,
+            ndrcollection=self,
+            tqdm_cls=tqdm_cls,
             metadata=metadata,
             **kwargs,
         )

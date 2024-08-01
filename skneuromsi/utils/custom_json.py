@@ -59,17 +59,17 @@ class CustomJSONEncoder(json.JSONEncoder):
         applied. Otherwise, the default behavior of the superclass is used.
     """
 
-    CONVERTERS = {
-        tuple: list,
-        set: list,
-        frozenset: list,
-        dt.datetime: dt.datetime.isoformat,
-        np.integer: int,
-        np.floating: float,
-        np.complexfloating: complex,
-        np.bool_: bool,
-        np.ndarray: np.ndarray.tolist,
-    }
+    CONVERTERS = (
+        (tuple, list),
+        (set, list),
+        (frozenset, list),
+        (dt.datetime, dt.datetime.isoformat),
+        (np.integer, int),
+        (np.floating, float),
+        (np.complexfloating, complex),
+        (np.bool_, bool),
+        (np.ndarray, np.ndarray.tolist),
+    )
 
     def default(self, obj):
         """
@@ -85,10 +85,10 @@ class CustomJSONEncoder(json.JSONEncoder):
         object
             The JSON-serializable representation of the object.
         """
-        obj_type = type(obj)
-        super_default = super(CustomJSONEncoder, self).default
-        converter = self.CONVERTERS.get(obj_type, super_default)
-        return converter(obj)
+        for cls, converter in self.CONVERTERS:
+            if isinstance(obj, cls):
+                return converter(obj)
+        return super(CustomJSONEncoder, self).default(obj)
 
 
 # =============================================================================
