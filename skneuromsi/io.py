@@ -45,8 +45,6 @@ import platform
 import sys
 import zipfile
 
-import numpy as np
-
 from tqdm.auto import tqdm
 
 import xarray as xa
@@ -305,7 +303,25 @@ def store_ndrcollection(
 
 
 def store_ndresult(path_or_stream, ndresult, *, metadata=None, **kwargs):
-    """Store a single NDResult object to a file or stream."""
+    """
+    Store a single NDResult object to a file or stream.
+
+    Parameters
+    ----------
+    path_or_stream : str or file-like object
+        The file path or stream to write the NDResult to.
+    ndresult : NDResult
+        The NDResult object to store.
+    metadata : dict, optional
+        Additional metadata to include in the output file.
+    **kwargs
+        Additional keyword arguments to pass to store_ndrcollection.
+
+    Raises
+    ------
+    TypeError
+        If `ndresult` is not an instance of NDResult.
+    """
     if not isinstance(ndresult, core.NDResult):
         raise TypeError(f"'ndresult' must be an instance of {core.NDResult!r}")
 
@@ -385,7 +401,32 @@ def open_ndrcollection(
     tqdm_cls=tqdm,
     **kwargs,
 ):
-    """Retrieve an NDResultCollection from a file or stream."""
+    """
+    Retrieve an NDResultCollection from a file or stream.
+
+    Parameters
+    ----------
+    path_or_stream : str or file-like object
+        The file path or stream to read the NDResultCollection from.
+    compression_params : dict, optional
+        Compression parameters for the NDResultCollection.
+    expected_size : int, optional
+        The expected number of NDResult objects in the collection.
+    tqdm_cls : callable, optional
+        The tqdm class to use for progress bars.
+    **kwargs
+        Additional keyword arguments to pass to zipfile.ZipFile.
+
+    Returns
+    -------
+    NDResultCollection
+        The retrieved NDResultCollection object.
+
+    Raises
+    ------
+    ValueError
+        If the expected size doesn't match the actual size of the collection.
+    """
 
     with zipfile.ZipFile(path_or_stream, "r", **kwargs) as zip_fp:
         # open the collection metadata
@@ -427,7 +468,21 @@ def open_ndrcollection(
 
 
 def open_ndresult(path_or_stream, **kwargs):
-    """Open a single NDResult object from a file or stream."""
+    """
+    Open a single NDResult object from a file or stream.
+
+    Parameters
+    ----------
+    path_or_stream : str or file-like object
+        The file path or stream to read the NDResult from.
+    **kwargs
+        Additional keyword arguments to pass to open_ndrcollection.
+
+    Returns
+    -------
+    NDResult
+        The retrieved NDResult object.
+    """
     ndr_collection = open_ndrcollection(
         path_or_stream,
         expected_size=1,
