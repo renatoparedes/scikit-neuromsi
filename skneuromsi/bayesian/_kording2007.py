@@ -25,12 +25,52 @@ from ..core import SKNMSIMethodABC
 
 
 class Kording2007(SKNMSIMethodABC):
-    """Zaraza.
+    """
+    Bayesian Causal Inference model for multisensory integration based on Kording (2007).
+
+    This model uses Bayesian principles to infer whether two unimodal signals come from
+    a common cause or different causes. It combines auditory and visual signals and evaluates
+    the probability of a common cause based on the observed signals.
+
+    This implementation is inspired on the Matlab version of the BCI Toolbox
+    (Zhu, Beierholm & Shams, 2004).
 
 
     References
     ----------
-    :cite:p:`cuppini2017biologically`
+    :cite:p:`kording2007causal`
+    :cite:p:`zhu2024bci`
+
+
+    Notes
+    -----
+    The Bayesian Causal Inference model uses the following formulation:
+
+    .. math::
+        p(C \mid x_{1}, x_{2}) = \\frac{p(x_{1}, x_{2} \mid C) \, p(C)}{p(x_{1}, x_{2})}
+
+    where :math:`x_{1}` and :math:`x_{2}` are two unimodal signals, and :math:`C` is
+    a binary variable representing the number of causes in the environment.
+
+    The posterior probability of the signals having a single cause in the environment
+    is defined as follows:
+
+    .. math::
+        p(C = 1 \mid x_{1}, x_{2}) = \\frac{p(x_{1}, x_{2} \mid C=1) \, p(C=1)}{p(x_{1}, x_{2} \mid C=1) \, p(C=1) + p(x_{1}, x_{2} \mid C=2) \, (1 - p(C=1))}
+
+    and the likelihood is computed as:
+
+    .. math::
+        p(x_{1}, x_{2} \mid C = 1) = \\iint p(x_{1}, x_{2} \mid X) \, p(X) \, dX
+
+    Here, :math:`p(C = 1)` is the prior probability of a common cause (default is 0.5).
+    :math:`X` denotes the attributes of the stimuli (e.g., distance), which are then
+    represented in the nervous system as :math:`x_{1}` and :math:`x_{2}`.
+
+    These equations show that the inference of a common cause of two unisensory signals
+    is computed by combining the likelihood and prior of signals having a common cause.
+    A higher likelihood occurs if the two unisensory signals are similar, which in turn
+    increases the probability of inferring that the signals have a common cause.
 
     """
 
@@ -61,6 +101,28 @@ class Kording2007(SKNMSIMethodABC):
         time_res=1,
         seed=None,
     ):
+        """
+        Initializes the Kording 2007 model.
+
+        Parameters
+        ----------
+        n : int
+            Number of simulations to run.
+        mode0 : str
+            The name for the first sensory modality (e.g., "auditory").
+        mode1 : str
+            The name for the second sensory modality (e.g., "visual").
+        position_range : tuple of float
+            The range of positions to consider for estimation. E.g., (-42, 43).
+        position_res : float
+            The resolution of positions to consider for estimation. E.g., 1.7.
+        time_range : tuple of int
+            The range of time steps to consider. E.g., (1, 1).
+        time_res : int
+            The resolution of time steps. E.g., 1.
+        seed : int or None
+            Seed for the random number generator. If None, the random number generator will not be seeded.
+        """
         self._n = n
         self._mode0 = mode0
         self._mode1 = mode1
@@ -74,39 +136,121 @@ class Kording2007(SKNMSIMethodABC):
 
     @property
     def mode0(self):
+        """
+        Returns the name of the first sensory modality.
+
+        Returns
+        -------
+        str
+            The name of the first sensory modality.
+        """
         return self._mode0
 
     @property
     def mode1(self):
+        """
+        Returns the name of the second sensory modality.
+
+        Returns
+        -------
+        str
+            The name of the second sensory modality.
+        """
         return self._mode1
 
     @property
     def n(self):
+        """
+        Returns the number of simulations.
+
+        Returns
+        -------
+        int
+            The number of simulations to run.
+        """
         return self._n
 
     @property
     def time_range(self):
+        """
+        Returns the range of time steps considered.
+
+        Returns
+        -------
+        tuple of int
+            The range of time steps.
+        """
         return self._time_range
 
     @property
     def time_res(self):
+        """
+        Returns the resolution of time steps considered.
+
+        Returns
+        -------
+        int
+            The resolution of time steps.
+        """
         return self._time_res
 
     @property
     def position_range(self):
+        """
+        Returns the range of positions considered for estimation.
+
+        Returns
+        -------
+        tuple of float
+            The range of positions. E.g., (-42, 43).
+        """
         return self._position_range
 
     @property
     def position_res(self):
+        """
+        Returns the resolution of positions considered for estimation.
+
+        Returns
+        -------
+        float
+            The resolution of positions. E.g., 1.7142857142857142.
+        """
         return self._position_res
 
     @property
     def random(self):
+        """
+        Returns the random number generator.
+
+        Returns
+        -------
+        numpy.random.Generator
+            The random number generator.
+        """
         return self._random
 
     # Model methods
 
     def input_computation(self, unisensory_position, unisensory_var, noise):
+        """
+        Computes the unisensory input considering the position estimate
+        and variance. In this implementation noise is optional.
+
+        Parameters
+        ----------
+        unisensory_position : float
+            The position estimate for the sensory modality.
+        unisensory_var : float
+            The variance of the sensory modality.
+        noise : bool
+            Whether to include noise in the computation.
+
+        Returns
+        -------
+        float
+            The computed input for the sensory modality.
+        """
         if noise is False:
             return unisensory_position + np.sqrt(unisensory_var)
         return unisensory_position + np.sqrt(
@@ -121,6 +265,27 @@ class Kording2007(SKNMSIMethodABC):
         prior_mu,
         unisensory_input,
     ):
+        """
+        Estimates the unisensory posterior given the input and prior.
+
+        Parameters
+        ----------
+        unisensory_var : float
+            The variance of the sensory modality.
+        unisensory_var_hat : float
+            The estimated variance of the sensory modality.
+        prior_var : float
+            The prior variance of the cause.
+        prior_mu : float
+            The prior mean of the cause.
+        unisensory_input : float
+            The input value for the sensory modality.
+
+        Returns
+        -------
+        float
+            The posterior estimate of the sensory modality.
+        """
         unisensory_hat_ind = (
             (unisensory_input / unisensory_var)
             + (np.ones(self.n) * prior_mu) / prior_var
@@ -147,6 +312,53 @@ class Kording2007(SKNMSIMethodABC):
         auditory_input,
         visual_input,
     ):
+        """
+        Estimates the multisensory posterior using Bayesian inference.
+
+        Parameters
+        ----------
+        auditory_estimate : float
+            The auditory estimate of the sensory modality.
+        visual_estimate : float
+            The visual estimate of the sensory modality.
+        auditory_var : float
+            The variance of the auditory modality.
+        visual_var : float
+            The variance of the visual modality.
+        prior_var : float
+            The prior variance of the cause.
+        prior_mu : float
+            The prior mean of the cause.
+        multisensory_var : float
+            The variance of the multisensory estimate.
+        multisensory_var_hat : float
+            The estimated variance of the multisensory estimate.
+        n : int
+            Number of simulations.
+        auditory_ind_var : float
+            The variance of the independent auditory estimate.
+        visual_ind_var : float
+            The variance of the independent visual estimate.
+        p_common : float
+            The prior probability of a common cause.
+        strategy : str
+            The strategy for model selection ("selection", "averaging", "matching").
+        possible_locations : np.ndarray
+            The possible positions to consider for estimation.
+        auditory_input : float
+            The input value for the auditory modality.
+        visual_input : float
+            The input value for the visual modality.
+
+        Returns
+        -------
+        dict
+            A dictionary with keys:
+            - "auditory": The auditory posterior estimate.
+            - "visual": The visual posterior estimate.
+            - "multi": The multisensory posterior estimate.
+            - "pc": The posterior probability of a common cause.
+        """
         # Inputs
         single_stim = np.sum(np.isnan([auditory_input, visual_input]))
 
@@ -240,6 +452,14 @@ class Kording2007(SKNMSIMethodABC):
         return res
 
     def set_random(self, rng):
+        """
+        Sets the random number generator.
+
+        Parameters
+        ----------
+        rng : numpy.random.Generator
+            The random number generator to set.
+        """
         self._random = rng
 
     def run(
@@ -256,6 +476,39 @@ class Kording2007(SKNMSIMethodABC):
         noise=True,
         causes_kind="count",
     ):
+        """
+        Runs the Bayesian causal inference model.
+
+        Parameters
+        ----------
+        auditory_position : float
+            The position of the auditory stimulus.
+        visual_position : float
+            The position of the visual stimulus.
+        auditory_sigma : float
+            The standard deviation of the auditory stimulus.
+        visual_sigma : float
+            The standard deviation of the visual stimulus.
+        p_common : float
+            The prior probability of a common cause.
+        prior_sigma : float
+            The standard deviation of the prior cause.
+        prior_mu : float
+            The mean of the prior cause.
+        strategy : str
+            The strategy for model selection ("selection", "averaging", "matching").
+        noise : bool
+            Whether to include noise in the computation.
+        causes_kind : str
+            The type of cause to calculate ("count" or "prob").
+
+        Returns
+        -------
+        tuple
+            A tuple containing:
+            - dict: Response dictionary with "auditory", "visual", and "multi" keys.
+            - dict: Extra information with "mean_p_common_cause", "p_common_cause", and "causes_kind".
+        """
         possible_locations = np.arange(
             self._position_range[0],
             self._position_range[1],
@@ -340,6 +593,24 @@ class Kording2007(SKNMSIMethodABC):
         return response, extra
 
     def calculate_causes(self, p_common_cause, causes_kind, **kwargs):
+        """
+        Calculates the causes of the stimuli based on the
+        provided probabilities.
+
+        Parameters
+        ----------
+        p_common_cause : float or np.ndarray
+            The probability of a common cause.
+        causes_kind : str
+            The type of cause to calculate ("count" or "prob").
+
+        Returns
+        -------
+        int or float or None
+            The number of causes if `causes_kind` is "count",
+            the probability of a unique cause if `causes_kind` is "prob",
+            or None if no valid cause type is specified.
+        """
         # Determine the type of cause to calculate
         if causes_kind == "count":
             # If counting the number of causes, determine the number of simulations executed

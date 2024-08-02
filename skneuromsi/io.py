@@ -279,7 +279,6 @@ def store_ndrcollection(
         )
 
     with zipfile.ZipFile(path_or_stream, "w", **kwargs) as zip_fp:
-
         # write every ndresult
         for idx, ndresult in enumerate(ndrcollection):
             # determine the directory

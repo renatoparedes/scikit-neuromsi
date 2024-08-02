@@ -26,12 +26,41 @@ from ..core import SKNMSIMethodABC
 
 
 class AlaisBurr2004(SKNMSIMethodABC):
-    """Zaraza.
+    """
+    Multisensory integration model based on the approach developed by Alais and Burr (2004).
 
+    This model estimates multisensory integration by combining unisensory estimates with weights
+    derived from the standard deviations of sensory modalities. It follows the Near-optimal Bimodal 
+    Integrator model described in Alais and Burr (2004) for integrating auditory and visual information.
 
+    
     References
     ----------
-    :cite:p:`cuppini2017biologically`
+    :cite:p:`alais2004ventriloquist`
+
+    
+    Notes
+    -----
+    The Near-optimal Bimodal Integrator for visual (V) and auditory (A) signals can be computed as:
+
+    .. math::
+        \\hat{S}_{VA} = w_{V} \\hat{S}_{V} + w_{A} \\hat{S}_{A}
+
+    where :math:`\\hat{S}_{V}` and :math:`\\hat{S}_{A}` are unimodal auditory and visual estimates,
+    respectively, and :math:`\\hat{S}_{VA}` is the multimodal estimate.
+
+    In addition, :math:`w_{A}` and :math:`w_{V}` are the relative weights for each modality,
+    defined as:
+
+    .. math::
+        w_{A} = \\frac{\\sigma_{V}^{2}}{\\sigma_{A}^{2} + \\sigma_{V}^{2}} \\ 
+        w_{V} = \\frac{\\sigma_{A}^{2}}{\\sigma_{V}^{2} + \\sigma_{A}^{2}}
+
+    where :math:`\\sigma_{A}` and :math:`\\sigma_{V}` are the standard deviations (or square roots of the variances)
+    of each unimodal stimuli, respectively.
+
+    These equations show that the optimal multisensory estimate combines the unisensory estimates weighted
+    by their normalized reciprocal variances.
 
     """
 
@@ -63,6 +92,23 @@ class AlaisBurr2004(SKNMSIMethodABC):
         time_res=1,
         seed=None,
     ):
+        """
+        Initializes the Alais-Burr 2004 model.
+
+        Parameters
+        ----------
+        mode0 : str
+            The name for the first sensory modality (e.g., "auditory").
+        mode1 : str
+            The name for the second sensory modality (e.g., "visual").
+        position_range : tuple of float
+            The range of positions to consider for estimation. E.g., (-20, 20).
+        position_res : float
+            The resolution of positions to consider for estimation. E.g., 0.01.
+        seed : int or None
+            Seed for the random number generator. If None, the random number generator will not be seeded.
+        """
+
         self._mode0 = mode0
         self._mode1 = mode1
         self._position_range = position_range
@@ -76,32 +122,99 @@ class AlaisBurr2004(SKNMSIMethodABC):
 
     @property
     def mode0(self):
+        """
+        Returns the name of the first sensory modality.
+
+        Returns
+        -------
+        str
+            The name of the first sensory modality.
+        """
         return self._mode0
 
     @property
     def mode1(self):
+        """
+        Returns the name of the second sensory modality.
+
+        Returns
+        -------
+        str
+            The name of the second sensory modality.
+        """
         return self._mode1
 
     @property
     def time_range(self):
+        """
+        Returns the range of time considered for estimation.
+        Not used in this implementation.
+
+        Returns
+        -------
+        tuple of float
+            The range of time. E.g., (0, 100).
+        """
         return self._time_range
 
     @property
     def time_res(self):
+        """
+        Returns the resolution of time considered for estimation.
+        Not used in this implementation.
+
+        Returns
+        -------
+        float
+            The resolution of time. E.g., 0.01.
+        """
         return self._time_res
 
     @property
     def position_range(self):
+        """
+        Returns the range of positions considered for estimation.
+
+        Returns
+        -------
+        tuple of float
+            The range of positions. E.g., (-20, 20).
+        """
         return self._position_range
 
     @property
     def position_res(self):
+        """
+        Returns the resolution of positions considered for estimation.
+
+        Returns
+        -------
+        float
+            The resolution of positions. E.g., 0.01.
+        """
         return self._position_res
 
     # Model methods
     def unisensory_estimator(
         self, unisensory_sigma, unisensory_position, possible_locations
     ):
+        """
+        Estimates the unisensory probability density function.
+
+        Parameters
+        ----------
+        unisensory_sigma : float
+            The standard deviation of the sensory modality.
+        unisensory_position : float
+            The position estimate of the sensory modality.
+        possible_locations : numpy.ndarray
+            The array of possible positions to evaluate.
+
+        Returns
+        -------
+        numpy.ndarray
+            The estimated probability density function for the given sensory modality.
+        """
         sigma = unisensory_sigma
         location = unisensory_position
         plocations = possible_locations
@@ -115,6 +228,21 @@ class AlaisBurr2004(SKNMSIMethodABC):
         return unisensory_estimate
 
     def weight_calculator(self, target_sigma, reference_sigma):
+        """
+        Calculates the weight of a sensory modality.
+
+        Parameters
+        ----------
+        target_sigma : float
+            The standard deviation of the target sensory modality.
+        reference_sigma : float
+            The standard deviation of the reference sensory modality.
+
+        Returns
+        -------
+        float
+            The weight of the target sensory modality.
+        """
         target_weight = np.square(reference_sigma) / (
             np.square(target_sigma) + np.square(reference_sigma)
         )
@@ -129,6 +257,29 @@ class AlaisBurr2004(SKNMSIMethodABC):
         multisensory_sigma,
         possible_locations,
     ):
+        """
+        Estimates the multisensory probability density function.
+
+        Parameters
+        ----------
+        unisensory_position_a : float
+            The position estimate of the first sensory modality.
+        unisensory_position_b : float
+            The position estimate of the second sensory modality.
+        unisensory_weight_a : float
+            The weight of the first sensory modality.
+        unisensory_weight_b : float
+            The weight of the second sensory modality.
+        multisensory_sigma : float
+            The standard deviation of the multisensory estimate.
+        possible_locations : numpy.ndarray
+            The array of possible positions to evaluate.
+
+        Returns
+        -------
+        numpy.ndarray
+            The estimated multisensory probability density function.
+        """
         sigma = multisensory_sigma
 
         location = (
@@ -147,6 +298,14 @@ class AlaisBurr2004(SKNMSIMethodABC):
 
     # Model run
     def set_random(self, rng):
+        """
+        Sets the random number generator.
+
+        Parameters
+        ----------
+        rng : numpy.random.Generator
+            The random number generator to use.
+        """
         self._random = rng
 
     def run(
@@ -158,22 +317,38 @@ class AlaisBurr2004(SKNMSIMethodABC):
         visual_sigma=3.0,
         noise=None,
     ):
+        """
+        Runs the multisensory model with the given parameters and returns the estimates.
+
+        Parameters
+        ----------
+        auditory_position : float
+            The position estimate for the auditory modality.
+        visual_position : float
+            The position estimate for the visual modality.
+        auditory_sigma : float
+            The standard deviation for the auditory modality.
+        visual_sigma : float
+            The standard deviation for the visual modality.
+        noise : any, optional
+            Additional noise to apply, if needed (not used in this implementation).
+
+        Returns
+        -------
+        tuple
+            A tuple containing:
+            - response : dict
+                A dictionary with keys 'auditory', 'visual', and 'multi' containing the auditory,
+                visual, and multisensory estimates respectively.
+            - extra : dict
+                A dictionary with keys 'auditory_weight' and 'visual_weight' containing the weights
+                for the auditory and visual modalities respectively.
+        """
         possible_locations = np.arange(
             self._position_range[0],
             self._position_range[1],
             self._position_res,
         )
-
-        # auditory_position = (
-        #     int(possible_locations.size / 2)
-        #     if auditory_position is None
-        #     else auditory_position
-        # )
-        # visual_position = (
-        #     int(possible_locations.size / 2)
-        #     if visual_position is None
-        #     else visual_position
-        # )
 
         auditory_estimate = self.unisensory_estimator(
             auditory_sigma, auditory_position, possible_locations

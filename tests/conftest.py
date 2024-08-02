@@ -83,5 +83,3 @@ def random_dataarray():
         )
 
     return maker
-
-

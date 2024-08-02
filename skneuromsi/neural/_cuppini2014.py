@@ -457,21 +457,6 @@ class Cuppini2014(SKNMSIMethodABC):
                 * auditory_res[computed_cross_latency, :]
             )
 
-            # Compute external input
-
-            # auditory_input = auditory_stimuli[i] + auditory_cm_input
-            # visual_input = visual_stimuli[i] + visual_cm_input
-
-            # if noise:
-            #    auditory_noise = -(auditory_intensity * 0.4) + (
-            #        2 * auditory_intensity * 0.4
-            #    ) * self.random.rand(self.neurons)
-            #    visual_noise = -(visual_intensity * 0.4) + (
-            #        2 * visual_intensity * 0.4
-            #    ) * self.random.rand(self.neurons)
-            #    auditory_input += auditory_noise
-            #    visual_input += visual_noise
-
             (
                 auditory_outside_input,
                 visual_outside_input,
@@ -550,3 +535,21 @@ class Cuppini2014(SKNMSIMethodABC):
             "auditory_filter_input": auditoryfilter_inputs,
             "visual_filter_input": visualfilter_inputs,
         }
+
+
+## TODO
+# Include noise. Follow Paredes implementation:
+# Compute external input
+
+# auditory_input = auditory_stimuli[i] + auditory_cm_input
+# visual_input = visual_stimuli[i] + visual_cm_input
+
+# if noise:
+#    auditory_noise = -(auditory_intensity * 0.4) + (
+#        2 * auditory_intensity * 0.4
+#    ) * self.random.rand(self.neurons)
+#    visual_noise = -(visual_intensity * 0.4) + (
+#        2 * visual_intensity * 0.4
+#    ) * self.random.rand(self.neurons)
+#    auditory_input += auditory_noise
+#    visual_input += visual_noise
