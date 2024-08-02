@@ -18,8 +18,6 @@
 # IMPORTS
 # =============================================================================
 
-import functools
-
 import numpy as np
 
 import pytest
@@ -263,6 +261,7 @@ def random_modes_dict():
     callable
         Function for generating random mode dictionaries.
     """
+
     def maker(
         *,
         dtype=np.float32,
@@ -322,6 +321,7 @@ def random_modes_da(random_modes_dict):
     callable
         Function for generating random mode DataArrays.
     """
+
     def maker(*, dtype=np.float32, seed=None, **kwargs):
         random = np.random.default_rng(seed)
         modes_dict = random_modes_dict(seed=random, **kwargs)
@@ -390,11 +390,8 @@ def random_ndresult(random_modes_da):
             **kwargs,
         )
 
-        causes = (
-            random.integers(0, len(nddata.modes) - 1, endpoint=True)
-            if causes is None
-            else causes
-        )
+        if causes is None and random.choice([True, False]):
+            causes = random.integers(0, len(nddata.modes) - 1, endpoint=True)
 
         return NDResult(
             mname=mname,
