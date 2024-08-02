@@ -233,7 +233,7 @@ def create_unimodal_stimuli_matrix(
 ):
     """
     Creates the matrix of a unimodal stimuli for each neuron
-    at each timepoint. Supports up to four stimuli.
+    at each timepoint. Supports multiple stimuli.
 
     Parameters
     ----------

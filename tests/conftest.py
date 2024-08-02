@@ -362,7 +362,6 @@ def random_ndresult(random_modes_da):
         seed=None,
         **kwargs,
     ):
-
         random = np.random.default_rng(seed)
 
         if mname is None:
