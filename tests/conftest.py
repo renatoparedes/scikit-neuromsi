@@ -32,6 +32,29 @@ from skneuromsi.core.ndresult import modes_to_data_array, NDResult
 
 
 def check_min_max(min_name, max_name, minv, maxv, min_limit, max_limit):
+    """
+    Check if the given min and max values are within specified limits.
+
+    Parameters
+    ----------
+    min_name : str
+        Name of the minimum value parameter.
+    max_name : str
+        Name of the maximum value parameter.
+    minv : int or float
+        Minimum value to check.
+    maxv : int or float
+        Maximum value to check.
+    min_limit : int or float or None
+        Lower limit for the minimum value.
+    max_limit : int or float or None
+        Upper limit for the maximum value.
+
+    Raises
+    ------
+    ValueError
+        If any of the checks fail.
+    """
     min_limit = minv if min_limit is None else min_limit
     max_limit = maxv if max_limit is None else max_limit
 
@@ -44,6 +67,23 @@ def check_min_max(min_name, max_name, minv, maxv, min_limit, max_limit):
 
 
 def get_input_modes(random, input_modes_min, input_modes_max):
+    """
+    Generate a tuple of input mode names.
+
+    Parameters
+    ----------
+    random : numpy.random.Generator
+        Random number generator.
+    input_modes_min : int
+        Minimum number of input modes.
+    input_modes_max : int
+        Maximum number of input modes.
+
+    Returns
+    -------
+    tuple of str
+        Tuple of generated input mode names.
+    """
     check_min_max(
         "input_modes_min",
         "input_modes_max",
@@ -57,12 +97,46 @@ def get_input_modes(random, input_modes_min, input_modes_max):
 
 
 def get_times_number(random, times_min, times_max):
+    """
+    Generate a random number of time points.
+
+    Parameters
+    ----------
+    random : numpy.random.Generator
+        Random number generator.
+    times_min : int
+        Minimum number of time points.
+    times_max : int
+        Maximum number of time points.
+
+    Returns
+    -------
+    int
+        Random number of time points.
+    """
     check_min_max("times_min", "times_max", times_min, times_max, 1, None)
     number = random.integers(times_min, times_max, endpoint=True)
     return number
 
 
 def get_positions_number(random, positions_min, positions_max):
+    """
+    Generate a random number of positions.
+
+    Parameters
+    ----------
+    random : numpy.random.Generator
+        Random number generator.
+    positions_min : int
+        Minimum number of positions.
+    positions_max : int
+        Maximum number of positions.
+
+    Returns
+    -------
+    int
+        Random number of positions.
+    """
     check_min_max(
         "positions_min", "positions_max", positions_min, positions_max, 1, None
     )
@@ -73,6 +147,23 @@ def get_positions_number(random, positions_min, positions_max):
 def get_position_coordinates_number(
     random, position_coordinates_min, position_coordinates_max
 ):
+    """
+    Generate a random number of position coordinates.
+
+    Parameters
+    ----------
+    random : numpy.random.Generator
+        Random number generator.
+    position_coordinates_min : int
+        Minimum number of position coordinates.
+    position_coordinates_max : int
+        Maximum number of position coordinates.
+
+    Returns
+    -------
+    int
+        Random number of position coordinates.
+    """
     check_min_max(
         "position_coordinates_min",
         "position_coordinates_max",
@@ -88,6 +179,27 @@ def get_position_coordinates_number(
 
 
 def make_mode_values(random, *, times, positions, position_coordinates, dtype):
+    """
+    Generate random mode values.
+
+    Parameters
+    ----------
+    random : numpy.random.Generator
+        Random number generator.
+    times : int
+        Number of time points.
+    positions : int
+        Number of positions.
+    position_coordinates : int
+        Number of position coordinates.
+    dtype : numpy.dtype
+        Data type for the generated values.
+
+    Returns
+    -------
+    numpy.ndarray or tuple of numpy.ndarray
+        Generated mode values.
+    """
     mode = []
     for i in range(position_coordinates):
         mode.append(random.random((times, positions), dtype=dtype))
@@ -97,6 +209,29 @@ def make_mode_values(random, *, times, positions, position_coordinates, dtype):
 def make_modes_dict(
     random, *, input_modes, times, positions, position_coordinates, dtype
 ):
+    """
+    Generate a dictionary of mode values.
+
+    Parameters
+    ----------
+    random : numpy.random.Generator
+        Random number generator.
+    input_modes : tuple of str
+        Input mode names.
+    times : int
+        Number of time points.
+    positions : int
+        Number of positions.
+    position_coordinates : int
+        Number of position coordinates.
+    dtype : numpy.dtype
+        Data type for the generated values.
+
+    Returns
+    -------
+    dict
+        Dictionary of generated mode values.
+    """
     modes = {}
     for mode in input_modes:
         modes[mode] = make_mode_values(
@@ -120,7 +255,14 @@ def make_modes_dict(
 
 @pytest.fixture(scope="session")
 def random_modes_dict():
+    """
+    Fixture for generating random mode dictionaries.
 
+    Returns
+    -------
+    callable
+        Function for generating random mode dictionaries.
+    """
     def maker(
         *,
         dtype=np.float32,
@@ -167,6 +309,19 @@ def random_modes_dict():
 
 @pytest.fixture(scope="session")
 def random_modes_da(random_modes_dict):
+    """
+    Fixture for generating random mode DataArrays.
+
+    Parameters
+    ----------
+    random_modes_dict : callable
+        Function for generating random mode dictionaries.
+
+    Returns
+    -------
+    callable
+        Function for generating random mode DataArrays.
+    """
     def maker(*, dtype=np.float32, seed=None, **kwargs):
         random = np.random.default_rng(seed)
         modes_dict = random_modes_dict(seed=random, **kwargs)
@@ -177,7 +332,19 @@ def random_modes_da(random_modes_dict):
 
 @pytest.fixture(scope="session")
 def random_ndresult(random_modes_da):
+    """
+    Fixture for generating random NDResult objects.
 
+    Parameters
+    ----------
+    random_modes_da : callable
+        Function for generating random mode DataArrays.
+
+    Returns
+    -------
+    callable
+        Function for generating random NDResult objects.
+    """
     idx = 0
 
     def maker(
