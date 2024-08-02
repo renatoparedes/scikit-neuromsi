@@ -583,7 +583,7 @@ class NDResultCollection(Sequence):
     @property
     def bias(self):
         """Accessor for NDResultBiasAcc providing access to bias analysis."""
-        return bias_acc.NDResultBiasAcc(self)
+        return bias_acc.NDResultBiasAcc(self, self._tqdm_cls)
 
     @methodtools.lru_cache(maxsize=None)
     @property

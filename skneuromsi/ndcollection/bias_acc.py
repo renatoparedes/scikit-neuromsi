@@ -52,14 +52,17 @@ class NDResultBiasAcc(AccessorABC):
     ----------
     ndcollection : NDResultCollection
         The NDResultCollection for which to calculate biases.
+    tqdm_cls : tqdm.tqdm, optional
+        The tqdm class to use. Defaults to None.
 
 
     """
 
     _default_kind = "bias"
 
-    def __init__(self, ndcollection):
+    def __init__(self, ndcollection, tqdm_cls):
         self._nd_collection = ndcollection
+        self._tqdm_cls = tqdm_cls
 
     def _bias_as_frame(
         self, disp_mtx, influence_parameter, changing_parameter, bias_arr
@@ -162,11 +165,12 @@ class NDResultBiasAcc(AccessorABC):
             If the specified parameters are invalid.
 
         """
-        nd_collection = self._nd_collection
+        ndresults = self._nd_collection
+        tqdm_cls = self._tqdm_cls
 
-        mode = nd_collection.coerce_mode(mode)
-        changing_parameter = nd_collection.coerce_parameter(changing_parameter)
-        dim = nd_collection.coerce_dimension(dim)
+        mode = ndresults.coerce_mode(mode)
+        changing_parameter = ndresults.coerce_parameter(changing_parameter)
+        dim = ndresults.coerce_dimension(dim)
 
         # unchanged_parameters = ~nd_collection.changing_parameters()
         # if not unchanged_parameters[influence_parameter]:
@@ -174,18 +178,17 @@ class NDResultBiasAcc(AccessorABC):
         #        f"influence_parameter {influence_parameter!r} are not fixed"
         #    )
 
-        disp_mtx = nd_collection.disparity_matrix()[
+        disp_mtx = ndresults.disparity_matrix()[
             [changing_parameter, influence_parameter]
         ]
 
         influence_value = disp_mtx[influence_parameter][0]
 
-        ndresults = nd_collection
-        tqdm_cls = nd_collection._tqdm_cls
+        # tqdm progress bar
         if quiet is False and tqdm_cls is not None:
             ndresults = tqdm_cls(iterable=ndresults, desc="Calculating biases")
 
-        bias_arr = np.zeros(len(nd_collection))
+        bias_arr = np.zeros(len(ndresults))
         for idx, res in enumerate(ndresults):
             ref_value = res.run_params[changing_parameter]
 
