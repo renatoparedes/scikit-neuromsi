@@ -31,7 +31,7 @@ from .compress import (
     decompress_ndresult,
     validate_compression_params,
 )
-from .result import NDResult
+from .result import NDResult, modes_to_data_array
 
 # =============================================================================
 # ALL
@@ -43,5 +43,6 @@ __all__ = [
     "CompressedNDResult",
     "compress_ndresult",
     "decompress_ndresult",
+    "modes_to_data_array",
     "validate_compression_params",
 ]

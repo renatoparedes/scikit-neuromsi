@@ -47,12 +47,12 @@ from ...utils import Bunch, ddtype_tools
 # =============================================================================
 
 
-def _modes_to_data_array(nddata, dtype):
+def modes_to_data_array(modes_dict, dtype):
     """Convert a dictionary of modes to an xarray.DataArray.
 
     Parameters
     ----------
-    nddata : dict
+    modes_dict : dict
         A dictionary of modes and their corresponding coordinates.
     dtype : numpy.dtype, optional
         The data type of the resulting xarray.DataArray.
@@ -63,10 +63,12 @@ def _modes_to_data_array(nddata, dtype):
         The modes as an xarray.DataArray.
 
     """
+
+    # we start with an empty array
     modes, coords = [], None
 
     # we iterate over each mode
-    for mode_name, mode_coords in nddata.items():
+    for mode_name, mode_coords in modes_dict.items():
         # NDResult always expects to have more than one coordinate per
         # position. If it has only one coordinate, it puts it into a
         # collection of length 1, so that it can continue te operations.
@@ -229,7 +231,7 @@ class NDResult:
         self._extra = dict(extra)
         self._causes = causes
         self._nddata = (
-            _modes_to_data_array(nddata, dtype=ensure_dtype)
+            modes_to_data_array(nddata, dtype=ensure_dtype)
             if isinstance(nddata, Mapping)
             else nddata
         )
@@ -338,7 +340,7 @@ class NDResult:
         mname = self.mname
         modes = self.modes_
         _, times, pos, pos_coords = self._nddata.shape
-        causes = bool(self.causes_)
+        causes = False if self.causes_ is None else self.causes_
 
         return (
             f"<{cls_name} '{mname}', modes={modes!s}, "
