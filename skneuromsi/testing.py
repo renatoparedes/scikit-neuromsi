@@ -61,6 +61,28 @@ def _assert(cond, err_msg):
 def assert_ndresult_allclose(
     left, right, rtol=1e-05, atol=1e-08, equal_nan=True, decode_bytes=True
 ):
+    """Assert that two NDResult objects are approximately equal.
+
+    Parameters
+    ----------
+    left : NDResult
+        The first NDResult object to compare.
+    right : NDResult
+        The second NDResult object to compare.
+    rtol : float, optional
+        The relative tolerance parameter for the `assert_allclose` function
+        (default is 1e-05).
+    atol : float, optional
+        The absolute tolerance parameter for the `assert_allclose` function
+        (default is 1e-08).
+    equal_nan : bool, optional
+        Whether to compare NaN values in the arrays (default is True).
+    decode_bytes : bool, optional
+        Whether to decode bytes in the arrays (default is True).
+        (See `xarray.testing.assert_allclose` for details).
+
+    """
+
     _assert(isinstance(left, core.NDResult), "left is not an NDResult")
     _assert(isinstance(right, core.NDResult), "right is not an NDResult")
 
@@ -118,6 +140,28 @@ def assert_ndresult_allclose(
 def assert_ndresult_collection_allclose(
     left, right, rtol=1e-05, atol=1e-08, equal_nan=True, decode_bytes=True
 ):
+    """Assert that two NDResultCollection objects are approximately equal.
+
+    Parameters
+    ----------
+    left : NDResultCollection
+        The first NDResultCollection object to compare.
+    right : NDResultCollection
+        The second NDResultCollection object to compare.
+    rtol : float, optional
+        The relative tolerance parameter for the `assert_allclose` function
+        (default is 1e-05).
+    atol : float, optional
+        The absolute tolerance parameter for the `assert_allclose` function
+        (default is 1e-08).
+    equal_nan : bool, optional
+        Whether to compare NaN values in the arrays (default is True).
+    decode_bytes : bool, optional
+        Whether to decode bytes in the arrays (default is True).
+        (See `xarray.testing.assert_allclose` for details).
+
+    """
+
     _assert(
         isinstance(left, ndcollection.NDResultCollection),
         "left is not an NDResultCollection",
