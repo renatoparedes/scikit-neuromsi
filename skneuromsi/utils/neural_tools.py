@@ -264,15 +264,32 @@ def create_unimodal_stimuli_matrix(
     numpy.array
         The value of the external stimuli for each neuron.
 
+    Raises
+    ------
+    ValueError
+        If the total duration of all stimuli plus the total duration of the inter-stimulus intervals
+        (i.e., `stimuli_duration * stimuli_n + soa * (stimuli_n - 1)`) exceeds the
+        `simulation_length`.
+
     """
     if onset is not None:
         onset = int(onset)
 
-    if soa is not None:
-        soa = int(soa)
-
     if stimuli_n is not None:
         stimuli_n = int(stimuli_n)
+
+    if stimuli_duration * stimuli_n > simulation_length:
+        raise ValueError("Stimuli total duration exceeds simulation length.")
+
+    if soa is not None:
+        soa = int(soa)
+        if (
+            stimuli_duration * stimuli_n + soa * (stimuli_n - 1)
+            > simulation_length
+        ):
+            raise ValueError(
+                "Stimuli total duration exceeds simulation length."
+            )
 
     no_stim = np.zeros(neurons, dtype=dtype)
 

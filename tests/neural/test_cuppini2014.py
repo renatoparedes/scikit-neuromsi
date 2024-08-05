@@ -14,8 +14,6 @@
 
 import numpy as np
 
-import pytest
-
 from skneuromsi.neural import Cuppini2014
 
 from findpeaks import findpeaks
