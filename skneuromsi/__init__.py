@@ -15,16 +15,53 @@
 """Implementation of multisensory integration models."""
 
 # =============================================================================
-# META
-# =============================================================================
-
-__version__ = "0.0.2"
-
-VERSION = __version__
-
-# =============================================================================
 # IMPORTS
 # =============================================================================
 
-from .core import *  # noqa
-from .io import *  # noqa
+from .core import (
+    VERSION,
+    compress_ndresult,
+    decompress_ndresult,
+    CompressedNDResult,
+    NDResult,
+)
+from .io import (
+    read_ndr,
+    open_ndresult,
+    read_ndc,
+    open_ndresults_collection,
+    to_ndr,
+    to_ndr,
+    to_ndc,
+    store_ndresults_collection,
+)
+from .ndcollection import NDResultCollection
+from . import testing
+
+# =============================================================================
+# META
+# =============================================================================
+
+__version__ = ".".join(map(str, VERSION))
+
+
+# =============================================================================
+# EXPORTS
+# =============================================================================
+
+__all__ = [
+    "compress_ndresult",
+    "decompress_ndresult",
+    "CompressedNDResult",
+    "NDResult",
+    "NDResultCollection",
+    "read_ndr",
+    "open_ndresult",
+    "read_ndc",
+    "open_ndresults_collection",
+    "to_ndr",
+    "store_ndresult",
+    "to_ndc",
+    "store_ndresults_collection",
+    "testing",
+]

@@ -543,22 +543,22 @@ class NDResult:
             "nddata": self.to_xarray(),
         }
 
-    def to_nmsi(self, path_or_stream, metadata=None, **kwargs):
-        """Store the NDResult object in NMSI format.
+    def to_ndr(self, path_or_stream, metadata=None, **kwargs):
+        """Store the NDResult object in NMSI Result (NDR) format.
 
         Parameters
         ----------
         path_or_stream : str or file-like object
-            The path or file-like object to store the NMSI data.
+            The path or file-like object to store the NDR data.
         metadata : dict, optional
-            Additional metadata to include in the NMSI data.
+            Additional metadata to include in the NDR data.
         **kwargs
-            Additional keyword arguments to pass to the NMSI storage function.
+            Additional keyword arguments to pass to the NDR storage function.
 
         """
-        from ...io import store_ndresult  # noqa
+        from ...io import to_ndr  # noqa
 
-        store_ndresult(path_or_stream, self, metadata=metadata, **kwargs)
+        to_ndr(path_or_stream, self, metadata=metadata, **kwargs)
 
     # DTYPES HELPS ============================================================
 

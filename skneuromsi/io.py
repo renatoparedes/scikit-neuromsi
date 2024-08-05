@@ -18,20 +18,10 @@ This module provides functions for storing and loading NDResult and
 NDResultCollection objects to and from files or file-like objects using a
 zip-based format.
 
-The main functions provided are:
-
-- store_ndresult: Store a single NDResult object to a file or stream.
-- open_ndresult: Open a single NDResult object from a file or stream.
-- store_ndrcollection: Store an NDResultCollection to a file or stream.
-- open_ndrcollection: Open an NDResultCollection from a file or stream.
-
 The NDResult and NDResultCollection objects are serialized using a combination
 of JSON (for metadata) and NetCDF (for the underlying nddata). The resulting
 files are zip archives containing the serialized metadata and data.
 
-The module also includes several helper functions and classes for serializing
-and deserializing NDResult and NDResultCollection objects, as well as for
-managing metadata and storage backends.
 
 """
 
@@ -49,7 +39,7 @@ from tqdm.auto import tqdm
 
 import xarray as xa
 
-from . import VERSION, core, ndcollection
+from . import core, ndcollection
 from .utils import custom_json
 
 
@@ -59,7 +49,7 @@ from .utils import custom_json
 
 #: Default metadata
 _DEFAULT_METADATA = {
-    "skneuromsi": VERSION,
+    "skneuromsi": ".".join(map(str, core.VERSION)),
     "authors": "Paredes, Cabral & Seriès",
     "author_email": "paredesrenato92@gmail.com",
     "affiliation": [
@@ -224,7 +214,7 @@ def _mk_ndr_in_zip_paths(idx):
 # API STORE ===================================================================
 
 
-def store_ndrcollection(
+def store_ndresults_collection(
     path_or_stream, ndrcollection, *, metadata=None, tqdm_cls=tqdm, **kwargs
 ):
     """Store an NDResultCollection to a file or stream.
@@ -301,7 +291,7 @@ def store_ndrcollection(
         zip_fp.writestr(_ZipFileNames.METADATA, ndc_metadata_json)
 
 
-def store_ndresult(path_or_stream, ndresult, *, metadata=None, **kwargs):
+def to_ndr(path_or_stream, ndresult, *, metadata=None, **kwargs):
     """
     Store a single NDResult object to a file or stream.
 
@@ -329,7 +319,7 @@ def store_ndresult(path_or_stream, ndresult, *, metadata=None, **kwargs):
         cls_name, [ndresult]
     )
 
-    store_ndrcollection(
+    store_ndresults_collection(
         path_or_stream,
         ndrcollection,
         metadata=metadata,
@@ -392,7 +382,7 @@ def _generate_ndresults(*, zip_fp, size, tqdm_cls):
 # API READ ====================================================================
 
 
-def open_ndrcollection(
+def open_ndresults_collection(
     path_or_stream,
     *,
     compression_params=core.DEFAULT_COMPRESSION_PARAMS,
@@ -482,7 +472,7 @@ def open_ndresult(path_or_stream, **kwargs):
     NDResult
         The retrieved NDResult object.
     """
-    ndr_collection = open_ndrcollection(
+    ndr_collection = open_ndresults_collection(
         path_or_stream,
         expected_size=1,
         compression_params=None,
@@ -490,3 +480,11 @@ def open_ndresult(path_or_stream, **kwargs):
         **kwargs,
     )
     return ndr_collection[0]
+
+
+# SHORTCUTS ===================================================================
+
+to_ndr = to_ndr
+read_ndr = open_ndresult
+to_ndc = store_ndresults_collection
+read_ndc = open_ndresults_collection

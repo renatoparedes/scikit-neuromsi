@@ -594,15 +594,15 @@ class NDResultCollection(Sequence):
 
     # IO ======================================================================
 
-    def to_nmsi(self, path_or_stream, metadata=None, quiet=False, **kwargs):
-        """Store the NDResultCollection in a NMSI format.
+    def to_ndc(self, path_or_stream, metadata=None, quiet=False, **kwargs):
+        """Store the NDResultCollection in a NMSI Collection (NDC) format.
 
         Parameters
         ----------
         path_or_stream : str or file-like
-            File path or file-like object to save the NMSI file.
+            File path or file-like object to save the NDC file.
         metadata : dict, optional
-            Additional metadata to include in the NMSI file.
+            Additional metadata to include in the NDC file.
         quiet : bool, optional
             If True, suppress tqdm progress bar. Defaults to False.
         **kwargs
@@ -610,10 +610,10 @@ class NDResultCollection(Sequence):
             function.
 
         """
-        from ..io import store_ndrcollection  # noqa
+        from ..io import store_ndresults_collection  # noqa
 
         tqdm_cls = None if quiet else self._tqdm_cls
-        store_ndrcollection(
+        store_ndresults_collection(
             path_or_stream,
             ndrcollection=self,
             tqdm_cls=tqdm_cls,

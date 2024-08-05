@@ -369,7 +369,6 @@ def random_modes_da(random_modes_dict):
 @pytest.fixture(scope="session")
 def random_ndresult(random_modes_da):
     """Fixture for generating random NDResult objects."""
-    idx = 0
 
     def maker(
         *,
@@ -429,9 +428,9 @@ def random_ndresult(random_modes_da):
         random = np.random.default_rng(seed)
 
         if mname is None:
-            nonlocal idx
+            iinfo = np.iinfo(int)
+            idx = random.integers(0, iinfo.max, dtype=int, endpoint=True)
             mname = f"Model{idx}"
-            idx += 1
 
         mtype = mtype
         output_mode = "output"
@@ -483,7 +482,6 @@ def random_ndresultcollection(random_ndresult):
     of randomly generated NDResult objects.
 
     """
-    idx = 0
 
     def maker(
         *,
@@ -527,10 +525,10 @@ def random_ndresultcollection(random_ndresult):
 
         # name
         if collection_name is None:
-            nonlocal idx
+            iinfo = np.iinfo(int)
+            idx = random.integers(0, iinfo.max, dtype=int, endpoint=True)
             collection_name = f"NDCollection{idx}"
             mname = f"ModelOfNDCollection{idx}"
-            idx += 1
 
         # length
         check_min_max(
