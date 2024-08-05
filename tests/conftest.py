@@ -22,7 +22,14 @@ import numpy as np
 
 import pytest
 
-from skneuromsi.core.ndresult import modes_to_data_array, NDResult
+import tqdm
+
+from skneuromsi.core.ndresult import (
+    compress_ndresult,
+    modes_to_data_array,
+    NDResult,
+)
+from skneuromsi.ndcollection import NDResultCollection
 
 # =============================================================================
 # FIXTURES
@@ -253,14 +260,7 @@ def make_modes_dict(
 
 @pytest.fixture(scope="session")
 def random_modes_dict():
-    """
-    Fixture for generating random mode dictionaries.
-
-    Returns
-    -------
-    callable
-        Function for generating random mode dictionaries.
-    """
+    """Fixture for generating random mode dictionaries."""
 
     def maker(
         *,
@@ -275,6 +275,38 @@ def random_modes_dict():
         position_coordinates_max=3,
         seed=None,
     ):
+        """
+        Generate random mode dictionaries.
+
+        Parameters
+        ----------
+        dtype : numpy.dtype
+            Data type for the generated values.
+        input_modes_min : int
+            Minimum number of input modes.
+        input_modes_max : int
+            Maximum number of input modes.
+        times_min : int
+            Minimum number of time points.
+        times_max : int
+            Maximum number of time points.
+        positions_min : int
+            Minimum number of positions.
+        positions_max : int
+            Maximum number of positions.
+        position_coordinates_min : int
+            Minimum number of position coordinates.
+        position_coordinates_max : int
+            Maximum number of position coordinates.
+        seed : int
+            Seed for the random number generator. Defaults to None.
+
+        Returns
+        -------
+        dict
+            Dictionary of generated mode values.
+
+        """
         random = np.random.default_rng(seed)
 
         # how many keys in the dictionary
@@ -308,23 +340,27 @@ def random_modes_dict():
 
 @pytest.fixture(scope="session")
 def random_modes_da(random_modes_dict):
-    """
-    Fixture for generating random mode DataArrays.
-
-    Parameters
-    ----------
-    random_modes_dict : callable
-        Function for generating random mode dictionaries.
-
-    Returns
-    -------
-    callable
-        Function for generating random mode DataArrays.
-    """
+    """Fixture for generating random mode DataArrays."""
 
     def maker(*, dtype=np.float32, seed=None, **kwargs):
-        random = np.random.default_rng(seed)
-        modes_dict = random_modes_dict(seed=random, **kwargs)
+        """Generate random "mode" DataArrays.
+
+        Parameters
+        ----------
+        dtype : numpy.dtype
+            Data type for the generated values.
+        seed : int
+            Seed for the random number generator.
+        kwargs
+            Keyword arguments for random_modes_dict.
+
+        Returns
+        -------
+        xarray.DataArray
+            Random mode DataArray.
+
+        """
+        modes_dict = random_modes_dict(seed=seed, dtype=dtype, **kwargs)
         return modes_to_data_array(modes_dict, dtype=dtype)
 
     return maker
@@ -332,19 +368,7 @@ def random_modes_da(random_modes_dict):
 
 @pytest.fixture(scope="session")
 def random_ndresult(random_modes_da):
-    """
-    Fixture for generating random NDResult objects.
-
-    Parameters
-    ----------
-    random_modes_da : callable
-        Function for generating random mode DataArrays.
-
-    Returns
-    -------
-    callable
-        Function for generating random NDResult objects.
-    """
+    """Fixture for generating random NDResult objects."""
     idx = 0
 
     def maker(
@@ -362,6 +386,46 @@ def random_ndresult(random_modes_da):
         seed=None,
         **kwargs,
     ):
+        """Generate a random `NDResult` object.
+
+        Parameters
+        ----------
+        mname : str, optional
+            Model name. If not provided, a default name will be generated.
+        mtype : str, default 'test'
+            Model type.
+        nmap : dict, optional
+            Dictionary mapping names to modes. If not provided, an empty
+            dictionary will be used.
+        time_range : tuple, optional
+            Range of times for the model. Defaults to (0, 1000).
+        position_range : tuple, optional
+            Range of positions for the model. Defaults to (0, 20).
+        time_res : float, default 0.1
+            Time resolution of the model.
+        position_res : float, default 1
+            Position resolution of the model.
+        run_params : dict, optional
+            Dictionary of run parameters. If not provided, an empty dictionary
+            will be used.
+        extra : dict, optional
+            Dictionary of extra parameters. If not provided, an empty
+            dictionary will be used.
+        causes : list, optional
+            List of causes. If not provided, a random list of causes will be
+            generated.
+        seed : int, optional
+            Seed for the random number generator. If not provided, a
+            random seed will be used.
+        **kwargs :
+            Additional keyword arguments to `random_modes_da`.
+
+        Returns
+        -------
+        NDResult
+            Random `NDResult` object with the specified parameters.
+
+        """
         random = np.random.default_rng(seed)
 
         if mname is None:
@@ -389,6 +453,8 @@ def random_ndresult(random_modes_da):
             **kwargs,
         )
 
+        # random.choice([True, False]) is a valid causes, so lets give them
+        # 50% chances to survive
         if causes is None and random.choice([True, False]):
             causes = random.integers(0, len(nddata.modes) - 1, endpoint=True)
 
@@ -407,5 +473,85 @@ def random_ndresult(random_modes_da):
             extra=extra,
             ensure_dtype=None,
         )
+
+    return maker
+
+
+@pytest.fixture(scope="session")
+def random_ndresultcollection(random_ndresult):
+    """Fixture for generating an NDResultCollection with a specified number \
+    of randomly generated NDResult objects.
+
+    """
+    idx = 0
+
+    def maker(
+        *,
+        collection_name=None,
+        length_min=5,
+        length_max=10,
+        mtype="test",
+        seed=None,
+        tqdm_cls=tqdm.tqdm,
+        **kwargs,
+    ):
+        """Generate an NDResultCollection with a specified number of randomly \
+        generated NDResult objects.
+
+        Parameters
+        ----------
+        collection_name : str, optional
+            The name of the collection. If not provided, a default name will be
+            generated.
+        length_min : int, optional
+            The minimum number of NDResult objects to generate. Defaults to 5.
+        length_max : int, optional
+            The maximum number of NDResult objects to generate. Defaults to 10.
+        mtype : str, optional
+            The type of the NDResult objects. Defaults to "test".
+        seed : int, optional
+            The seed for the random number generator. Defaults to None.
+        tqdm_cls : type, optional
+            The class to use for the progress bar. Defaults to tqdm.tqdm.
+        **kwargs
+            Additional keyword arguments to pass to the random_ndresult
+            function.
+
+        Returns
+        -------
+        NDResultCollection
+            The generated NDResultCollection.
+
+        """
+        random = np.random.default_rng(seed)
+
+        # name
+        if collection_name is None:
+            nonlocal idx
+            collection_name = f"NDCollection{idx}"
+            mname = f"ModelOfNDCollection{idx}"
+            idx += 1
+
+        # length
+        check_min_max(
+            "length_min", "length_max", length_min, length_max, 1, None
+        )
+        length = random.integers(length_min, length_max, endpoint=True)
+
+        # create ndresults and compress them
+        compressed_ndresults = []
+        for _ in range(length):
+            ndresult = random_ndresult(mname=mname, seed=random, **kwargs)
+            cndres = compress_ndresult(ndresult)
+            compressed_ndresults.append(cndres)
+
+        # create collection
+        ndcol = NDResultCollection(
+            name=collection_name,
+            compressed_results=compressed_ndresults,
+            tqdm_cls=tqdm_cls,
+        )
+
+        return ndcol
 
     return maker
