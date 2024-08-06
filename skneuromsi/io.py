@@ -415,8 +415,8 @@ def open_ndresults_collection(
     ------
     ValueError
         If the expected size doesn't match the actual size of the collection.
-    """
 
+    """
     with zipfile.ZipFile(path_or_stream, "r", **kwargs) as zip_fp:
         # open the collection metadata
         with zip_fp.open(_ZipFileNames.METADATA) as fp:
