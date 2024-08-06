@@ -106,19 +106,6 @@ def test_deep_astype():
 
 
 # =============================================================================
-# TESTS MEM USAGE
-# =============================================================================
-
-
-def test_MemoryUsage():
-    """Test the `MemoryUsage` class."""
-    memory_usage = ddtype_tools.MemoryUsage(1024)
-    assert memory_usage.size == 1024
-    assert memory_usage.hsize == "1.0 kB"
-    assert repr(memory_usage) == "<MemoryUsage '1.0 kB'>"
-
-
-# =============================================================================
 # TESTS DTYPES
 # =============================================================================
 
@@ -158,4 +145,3 @@ def test_deep_dtypes():
     assert len(dtypes_mem["root"]) == 3
     assert dtypes_mem["root"][0] is dict
     assert dtypes_mem["root"][1] is not None
-    assert isinstance(dtypes_mem["root"][2], ddtype_tools.MemoryUsage)

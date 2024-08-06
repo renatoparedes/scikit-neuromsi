@@ -29,6 +29,8 @@ import pandas as pd
 
 import xarray as xa
 
+from .plot_acc import ResultPlotter
+from .stats_acc import ResultStatsAccessor
 from ..constants import (
     DIMENSIONS,
     D_MODES,
@@ -37,8 +39,6 @@ from ..constants import (
     D_TIMES,
     XA_NAME,
 )
-from .plot_acc import ResultPlotter
-from .stats_acc import ResultStatsAccessor
 from ...utils import Bunch, ddtype_tools
 
 

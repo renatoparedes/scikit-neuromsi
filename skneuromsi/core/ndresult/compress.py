@@ -32,8 +32,8 @@ import pandas as pd
 
 import xarray as xa
 
-from ...utils import memtools
 from .result import NDResult
+from ...utils import memtools
 
 
 # =============================================================================

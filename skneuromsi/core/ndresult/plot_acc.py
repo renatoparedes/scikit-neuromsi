@@ -29,8 +29,8 @@ import seaborn as sns
 
 import xarray as xr
 
-from ...utils import AccessorABC
 from ..constants import D_MODES, D_POSITIONS, D_TIMES, XA_NAME
+from ...utils import AccessorABC
 
 
 # =============================================================================

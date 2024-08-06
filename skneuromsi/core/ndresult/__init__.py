@@ -25,8 +25,8 @@ the results of a multi-sensory integration simulation.
 # =============================================================================
 
 from .compress import (
-    DEFAULT_COMPRESSION_PARAMS,
     CompressedNDResult,
+    DEFAULT_COMPRESSION_PARAMS,
     compress_ndresult,
     decompress_ndresult,
     validate_compression_params,

@@ -20,9 +20,9 @@
 
 from .modelabc import ParameterAliasTemplate, SKNMSIMethodABC, SKNMSIRunConfig
 from .ndresult import (
+    CompressedNDResult,
     DEFAULT_COMPRESSION_PARAMS,
     NDResult,
-    CompressedNDResult,
     compress_ndresult,
     decompress_ndresult,
     validate_compression_params,

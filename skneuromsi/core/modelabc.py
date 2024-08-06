@@ -36,8 +36,6 @@ from dataclasses import dataclass
 
 from bidict import frozenbidict
 
-import numpy as np
-
 from .ndresult import NDResult
 
 # =============================================================================
