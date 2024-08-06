@@ -19,6 +19,8 @@
 # IMPORTS
 # =============================================================================
 
+from findpeaks import findpeaks
+
 import numpy as np
 
 import pytest
@@ -154,12 +156,12 @@ def test_create_unimodal_stimuli_matrix(duration, loc, onset):
 
 
 @pytest.mark.parametrize(
-    "soa, duration, nstim", [(90, 20, 2), (70, 30, 2), (110, 10, 2)]
+    "soa, duration, nstim", [(90, 20, 2), (70, 30, 3), (110, 10, 4)]
 )
 def test_create_unimodal_multiple_stimuli_matrix(soa, duration, nstim):
     loc = 90
     onset = 16
-    simulation_length = 250
+    simulation_length = 400
 
     # Create stimuli matrix with multiple stimuli
     stim = neural_tools.calculate_stimuli_input(
@@ -178,14 +180,53 @@ def test_create_unimodal_multiple_stimuli_matrix(soa, duration, nstim):
         time_res=0.01,
     )
 
-    time_res = matrix[:, loc]
-    soa_sim_time = int(soa * (1 / 0.01))
+    # Calculate the duration of the stimuli
+    stim_at_loc = matrix[:, loc]
+    stim_at_loc_on_args = np.where(stim_at_loc == stim_at_loc.max())[0]
     duration_sim_time = int(duration * (1 / 0.01))
+    stim_matrix_duration = stim_at_loc_on_args.size
 
-    stim_matrix_duration = np.where(time_res == time_res.max())[0].size / nstim
+    # Count number of stimuli
+    fp = findpeaks(method="peakdetect", verbose=0)
+    fp_results = fp.fit(stim_at_loc)
+    peaks_df = fp_results["df"].query("peak==True & valley==False")
+    peaks_n = peaks_df.y.size
 
-    tpoint = int(time_res.argmax() + duration * (1 / 0.01))
-    stim_matrix_soa = matrix[tpoint:, loc].argmax()
+    # Calculate the duration of the stimulus onset asynchrony
+    stims_start_idx = np.where(np.diff(stim_at_loc) > 1)[0] + 1
+    stim_matrix_soa = stims_start_idx[1] - stims_start_idx[0]
+    soa_sim_time = int(soa * (1 / 0.01))
 
-    np.testing.assert_almost_equal(stim_matrix_duration, duration_sim_time)
-    # np.testing.assert_almost_equal(stim_matrix_soa, soa_sim_time) TODO Fix
+    # Compare the expected values with the ones observed in the generated stimuli matrix
+    np.testing.assert_almost_equal(
+        stim_matrix_duration, duration_sim_time * nstim
+    )
+    np.testing.assert_almost_equal(nstim, peaks_n)
+    np.testing.assert_almost_equal(stim_matrix_soa, soa_sim_time)
+
+
+@pytest.mark.parametrize(
+    "nstim, soa, onset", [(1, None, 120), (2, 90, 0), (2, 10, 90), (3, 40, 0)]
+)
+def test_create_unimodal_stimuli_matrix_error(nstim, soa, onset):
+    loc = 90
+    simulation_length = 100
+
+    # Create stimuli matrix with multiple stimuli
+    stim = neural_tools.calculate_stimuli_input(
+        intensity=30, scale=32, loc=loc, neurons=180
+    )
+
+    np.testing.assert_raises(
+        ValueError,
+        neural_tools.create_unimodal_stimuli_matrix,
+        stimuli=stim,
+        stimuli_duration=20,
+        onset=onset,
+        simulation_length=simulation_length,
+        stimuli_n=nstim,
+        soa=soa,
+        neurons=180,
+        dt=0.01,
+        time_res=0.01,
+    )

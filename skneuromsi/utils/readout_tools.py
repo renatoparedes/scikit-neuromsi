@@ -86,6 +86,8 @@ def calculate_single_peak_probability(peaks_values):
         Probability of reading out a single peak (stimulus).
 
     """
+    peaks_values = np.asarray(peaks_values)
+
     # If no peaks were found, assign 0
     if peaks_values.size == 0:
         single_peak_probability = 0.0
