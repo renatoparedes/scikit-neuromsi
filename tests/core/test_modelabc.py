@@ -53,6 +53,7 @@ def test_SKNMSIRunConfig_init():
         _result_cls=None,
         _model_name="model",
         _model_type="Neural",
+        _output_mode="output_mode",
     )
 
     assert isinstance(config._input, tuple)
@@ -92,16 +93,22 @@ def test_SKNMSIRunConfig_init():
         and output_alias_map["baz"] == "y_z_baz"
     )
 
+    assert config._output_mode == "output_mode"
+
 
 def test_SKNMSIRunConfig_duplicated_targets():
     pat0 = modelabc.ParameterAliasTemplate("foo", "${p0}_${p1}_foo")
     pat1 = modelabc.ParameterAliasTemplate("foo", "${p2}_${p3}_baz")
 
     with pytest.raises(ValueError):
-        modelabc.SKNMSIRunConfig([pat0, pat1], [pat0], None, "model", "Neural")
+        modelabc.SKNMSIRunConfig(
+            [pat0, pat1], [pat0], None, "model", "Neural", "output_mode"
+        )
 
     with pytest.raises(ValueError):
-        modelabc.SKNMSIRunConfig([pat0], [pat0, pat1], None, "model", "Neural")
+        modelabc.SKNMSIRunConfig(
+            [pat0], [pat0, pat1], None, "model", "Neural", "output_mode"
+        )
 
 
 def test_SKNMSIRunConfig_from_method_class():
@@ -116,6 +123,7 @@ def test_SKNMSIRunConfig_from_method_class():
         _run_output = [pat2, pat3]
         _run_result = None
         _model_type = "Neural"
+        _output_mode = "output_mode"
 
     config = modelabc.SKNMSIRunConfig.from_method_class(MethodClass)
 
@@ -169,6 +177,7 @@ def test_SKNMSIRunConfig_from_method_class_with_tuples():
         _run_output = [pat2, pat3]
         _run_result = None
         _model_type = "Neural"
+        _output_mode = "output_mode"
 
     config = modelabc.SKNMSIRunConfig.from_method_class(MethodClass)
 
@@ -228,6 +237,7 @@ def test_SKNMSIRunConfig_from_method_class_with_dicts():
         _run_output = [pat2, pat3]
         _run_result = None
         _model_type = "Neural"
+        _output_mode = "output_mode"
 
     config = modelabc.SKNMSIRunConfig.from_method_class(MethodClass)
 
@@ -293,6 +303,7 @@ def test_SKNMSIRunConfig_validate_init_and_run():
         None,
         _model_name="model",
         _model_type="Neural",
+        _output_mode="output_mode",
     )
 
     class MethodClass:
@@ -315,6 +326,7 @@ def test_SKNMSIRunConfig_validate_init_and_run_missing_target():
         None,
         _model_name="model",
         _model_type="Neural",
+        _output_mode="output_mode",
     )
 
     class MethodClass:
@@ -340,6 +352,7 @@ def test_SKNMSIRunConfig_validate_init_and_run_missing_template_variable():
         None,
         _model_name="model",
         _model_type="Neural",
+        _output_mode="output_mode",
     )
 
     class MethodClass:
@@ -363,6 +376,7 @@ def test_SKNMSIRunConfig_invalid_model_type():
             lambda **kw: {},
             "model",
             _model_type="Foo",
+            _output_mode="output_mode",
         )
 
 
@@ -373,6 +387,7 @@ def test_SKNMSIRunConfig_wrap_run():
         lambda **kw: {},
         "model",
         _model_type="Neural",
+        _output_mode="output_mode",
     )
 
     foo_calls = []
@@ -386,7 +401,7 @@ def test_SKNMSIRunConfig_wrap_run():
         def run(self, foo):
             """foo: zaraza foo"""
             foo_calls.append({"foo": foo})
-            return {}, {}
+            return {"output_mode": [1, 2]}, {}
 
         def calculate_causes(self, **kwargs):
             return None
@@ -417,6 +432,7 @@ def test_SKNMSIRunConfig_wrap_init():
         _result_cls=lambda **kw: {},
         _model_name="model",
         _model_type="Neural",
+        _output_mode="output_mode",
     )
 
     foo_calls = []
@@ -432,7 +448,7 @@ def test_SKNMSIRunConfig_wrap_init():
 
         def run(self, foo):
             foo_calls.append({"self": self, "foo": foo})
-            return {}, {}
+            return {"output_mode": [1, 2]}, {}
 
         def calculate_causes(self, **kwargs):
             return None
