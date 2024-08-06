@@ -106,13 +106,17 @@ def calculate_single_peak_probability(peaks_values):
 
 
 def calculate_causes_from_peaks(
-    mode_activity_data, causes_kind="count", peak_threshold=0.15
+    mode_activity_data,
+    causes_kind="count",
+    peak_threshold=0.15,
+    lookahead=10,
+    interpolate=5,
 ):
     """
     Computes the number of causes from peaks found in modal activity.
-    The peaks are identified using the topology method. The algorithm
-    consider peaks that surpass the persistence score (i.e., difference
-    between the birth-level and death-level) defined by the user.
+    The peaks are identified using the peakdetect method. The algorithm
+    requires to set the lookahead parameter, which is the distance to look
+    ahead from a peak candidate to determine if it is the actual peak.
 
     Parameters
     ----------
@@ -125,6 +129,8 @@ def calculate_causes_from_peaks(
         - 'prob' : takes the height of the peaks as probability values.
     peak_threshold : float
         The minimum peak height to detect peaks.
+    lookahead: int
+        The distance to look ahead from a peak candidate.
 
     Returns
     -------
@@ -133,7 +139,12 @@ def calculate_causes_from_peaks(
 
     """
     # Define the topology method to identify the peaks
-    fp = findpeaks(method="peakdetect", verbose=0)
+    fp = findpeaks(
+        method="peakdetect",
+        verbose=0,
+        lookahead=lookahead,
+        interpolate=interpolate,
+    )
 
     # Find the peaks in the data and get a DataFrame with the results
     fp_results = fp.fit(mode_activity_data)
@@ -166,12 +177,13 @@ def calculate_spatiotemporal_causes_from_peaks(
     time_point=-1,
     spatial_point=0,
     peak_threshold=0.15,
+    lookahead=10,
 ):
     """
     Computes the number of causes from peaks found in modal activity.
-    The peaks are identified using the topology method. The algorithm
-    consider peaks that surpass the persistence score (i.e., difference
-    between the birth-level and death-level) defined by the user.
+    The peaks are identified using the peakdetect method. The algorithm
+    requires to set the lookahead parameter, which is the distance to look
+    ahead from a peak candidate to determine if it is the actual peak.
 
     Parameters
     ----------
@@ -190,8 +202,10 @@ def calculate_spatiotemporal_causes_from_peaks(
         The temporal point where spatial readout is computed.
     position_point: int
         The spatial point where temporal readout is computed.
-    score_threshold : float
+    peak_threshold : float
         The minimum persistence score to detect peaks.
+    lookahead: int
+        The distance to look ahead from a peak candidate.
 
     Returns
     -------
@@ -218,6 +232,7 @@ def calculate_spatiotemporal_causes_from_peaks(
         mode_activity_data=mode_activity_data,
         causes_kind=causes_kind,
         peak_threshold=peak_threshold,
+        lookahead=lookahead,
     )
 
     # Return the calculated causes

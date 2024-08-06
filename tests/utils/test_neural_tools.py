@@ -206,7 +206,8 @@ def test_create_unimodal_multiple_stimuli_matrix(soa, duration, nstim):
 
 
 @pytest.mark.parametrize(
-    "nstim, soa, onset", [(1, None, 120), (2, 90, 0), (2, 10, 90), (3, 40, 0)]
+    "nstim, soa, onset",
+    [(1, None, 120), (2, 90, 0), (2, 10, 90), (3, 40, 0), (2, 10, 0)],
 )
 def test_create_unimodal_stimuli_matrix_error(nstim, soa, onset):
     loc = 90
