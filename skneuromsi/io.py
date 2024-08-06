@@ -390,8 +390,7 @@ def open_ndresults_collection(
     tqdm_cls=tqdm,
     **kwargs,
 ):
-    """
-    Retrieve an NDResultCollection from a file or stream.
+    """Retrieve an NDResultCollection from a file or stream.
 
     Parameters
     ----------

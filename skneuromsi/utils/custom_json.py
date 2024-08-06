@@ -97,8 +97,7 @@ class CustomJSONEncoder(json.JSONEncoder):
 
 
 def dump(obj, fp, **kwargs):
-    """
-    Serialize obj as a JSON formatted stream to fp (.write()-supporting
+    """Serialize obj as a JSON formatted stream to fp (.write()-supporting \
     file-like object).
 
     Parameters
@@ -121,8 +120,7 @@ def dump(obj, fp, **kwargs):
 
 
 def dumps(obj, **kwargs):
-    """
-    Serialize obj to a JSON formatted str.
+    """Serialize obj to a JSON formatted str.
 
     Parameters
     ----------
@@ -142,8 +140,7 @@ def dumps(obj, **kwargs):
 
 
 def load(fp, **kwargs):
-    """
-    Deserialize fp (.read()-supporting file-like object containing a JSON
+    """Deserialize fp (.read()-supporting file-like object containing a JSON \
     document) to a Python object.
 
     Parameters
@@ -163,8 +160,7 @@ def load(fp, **kwargs):
 
 
 def loads(text, **kwargs):
-    """
-    Deserialize text (str, bytes or bytearray instance containing a JSON
+    """Deserialize text (str, bytes or bytearray instance containing a JSON \
     document) to a Python object.
 
     Parameters

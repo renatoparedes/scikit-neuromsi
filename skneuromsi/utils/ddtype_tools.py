@@ -87,8 +87,7 @@ def multiple_dtype_class(cls):
 
 
 def deep_astype(obj, dtype=None):
-    """
-    Recursively cast the data type of an object and its nested objects.
+    """Recursively cast the data type of an object and its nested objects.
 
     Parameters
     ----------
@@ -129,7 +128,7 @@ def deep_astype(obj, dtype=None):
 
 
 def _deep_dtypes(obj, deep, max_deep, memory_usage):
-    """Recursively get the data types and memory usage of an object and its
+    """Recursively get the data types and memory usage of an object and its \
     nested objects.
 
     Parameters
@@ -216,7 +215,7 @@ def deep_dtypes(obj, *, root="root", max_deep=2, memory_usage=False):
         memory usage.
         If memory_usage is False, a tuple with the nested data types.
 
-   """
+    """
     dict_obj = {root: obj}  # this add an extra level of nesting (level 0)
 
     # we extract the data types of the root object

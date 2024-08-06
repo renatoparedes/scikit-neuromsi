@@ -82,12 +82,12 @@ def assert_ndresult_allclose(
         (See `xarray.testing.assert_allclose` for details).
 
     """
-
     _assert(isinstance(left, core.NDResult), "left is not an NDResult")
-    _assert(isinstance(right, core.NDResult), "right is not an NDResult")
 
     if left is right:
         return
+
+    _assert(isinstance(right, core.NDResult), "right is not an NDResult")
 
     _assert(left.mname == right.mname, "mname mismatch")
     _assert(left.mtype == right.mtype, "mtype mismatch")
@@ -161,18 +161,18 @@ def assert_ndresult_collection_allclose(
         (See `xarray.testing.assert_allclose` for details).
 
     """
-
     _assert(
         isinstance(left, ndcollection.NDResultCollection),
         "left is not an NDResultCollection",
     )
+
+    if left is right:
+        return
+
     _assert(
         isinstance(right, ndcollection.NDResultCollection),
         "right is not an NDResultCollection",
     )
-
-    if left is right:
-        return
 
     _assert(len(left) == len(right), "length mismatch")
 
