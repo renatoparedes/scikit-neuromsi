@@ -14,6 +14,8 @@
 
 import numpy as np
 
+import pytest
+
 from skneuromsi.neural import Cuppini2014
 
 from findpeaks import findpeaks
@@ -23,6 +25,8 @@ from findpeaks import findpeaks
 # =============================================================================
 
 
+@pytest.mark.slow
+@pytest.mark.model
 def test_cuppini2014_temporal_filter_auditory_stimuli():
     # In Raij 2010, for a single auditory stimuli
     #  Hechsl Gyrus auditory response latency is 23 ms and calcarine cortex visual response latency is 53 ms.
