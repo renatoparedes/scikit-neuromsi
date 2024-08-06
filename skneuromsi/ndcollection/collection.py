@@ -36,7 +36,7 @@ import tqdm
 
 from .. import core
 from ..utils import Bunch
-from . import bias_acc, causes_acc, plot_acc
+from . import bias_acc, causes_acc, cplot_acc
 
 
 # =============================================================================
@@ -590,7 +590,7 @@ class NDResultCollection(Sequence):
     def plot(self):
         """Accessor for NDResultCollectionPlotter providing access to \
         plotting utilities."""
-        return plot_acc.NDResultCollectionPlotter(self)
+        return cplot_acc.NDResultCollectionPlotter(self)
 
     # IO ======================================================================
 

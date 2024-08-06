@@ -7,3 +7,6 @@
 # License: BSD 3-Clause
 # Full Text:
 #     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
+
+
+from skneuromsi.core.ndresult import plot_acc
