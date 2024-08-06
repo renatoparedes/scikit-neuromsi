@@ -25,6 +25,8 @@ from findpeaks import findpeaks
 # =============================================================================
 
 
+@pytest.mark.slow
+@pytest.mark.model
 def test_paredes2022_temporal_filter_auditory_stimuli():
     # In Raij 2010, for a single auditory stimuli
     #  Hechsl Gyrus auditory response latency is 23 ms and calcarine cortex visual response latency is 53 ms.
@@ -49,6 +51,8 @@ def test_paredes2022_temporal_filter_auditory_stimuli():
     np.testing.assert_allclose(auditory_latency, 23, atol=1)
 
 
+@pytest.mark.slow
+@pytest.mark.model
 def test_paredes2022_temporal_filter_visual_stimuli():
     # In Raij 2010, for a single visual stimuli
     # Calcarine cortex visual response latency is 43 ms and Hechsl Gyrus auditory response latency is 82 ms.
@@ -74,6 +78,8 @@ def test_paredes2022_temporal_filter_visual_stimuli():
     np.testing.assert_allclose(auditory_latency, 82, atol=3)
 
 
+@pytest.mark.slow
+@pytest.mark.model
 def test_paredes2022_temporal_filter_audiovisual_stimuli():
     # In Raij 2010, for an audiovisual stimuli
     # Calcarine cortex visual response latency is 47 ms and Hechsl Gyrus auditory response latency is 23 ms.
@@ -98,6 +104,8 @@ def test_paredes2022_temporal_filter_audiovisual_stimuli():
     np.testing.assert_allclose(auditory_latency, 23, atol=1)
 
 
+@pytest.mark.slow
+@pytest.mark.model
 def test_paredes2022_fission_illusion():
     model = Paredes2022(time_range=(0, 400))
     res = model.run(
@@ -119,6 +127,8 @@ def test_paredes2022_fission_illusion():
     np.testing.assert_equal(flashes, 2)
 
 
+@pytest.mark.slow
+@pytest.mark.model
 def test_paredes2022_supraddivity_effect():
     # Two weak stimuli combined are able to elicit a multisensory response.
 

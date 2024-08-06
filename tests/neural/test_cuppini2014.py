@@ -50,6 +50,8 @@ def test_cuppini2014_temporal_filter_auditory_stimuli():
     np.testing.assert_allclose(auditory_latency, 23, atol=1)
 
 
+@pytest.mark.slow
+@pytest.mark.model
 def test_cuppini2014_temporal_filter_visual_stimuli():
     # In Raij 2010, for a single visual stimuli
     # Calcarine cortex visual response latency is 43 ms and Hechsl Gyrus auditory response latency is 82 ms.
@@ -74,6 +76,8 @@ def test_cuppini2014_temporal_filter_visual_stimuli():
     np.testing.assert_allclose(auditory_latency, 82, atol=3)
 
 
+@pytest.mark.slow
+@pytest.mark.model
 def test_cuppini2014_temporal_filter_audiovisual_stimuli():
     # In Raij 2010, for an audiovisual stimuli
     # Calcarine cortex visual response latency is 47 ms and Hechsl Gyrus auditory response latency is 23 ms.
@@ -97,6 +101,8 @@ def test_cuppini2014_temporal_filter_audiovisual_stimuli():
     np.testing.assert_allclose(auditory_latency, 23, atol=1)
 
 
+@pytest.mark.slow
+@pytest.mark.model
 def test_cuppini2014_fission_illusion():
     model = Cuppini2014(time_range=(0, 250))
     res = model.run(
