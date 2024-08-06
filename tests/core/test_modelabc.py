@@ -500,13 +500,14 @@ def test_SKNMSIMethodABC():
         position_range = (1, 2)
         time_res = 1
         position_res = 2
+        _output_mode = "output_mode"
 
         def __init__(self, p0):
             pass
 
         def run(self, foo):
             foo_calls.append({"self": self, "foo": foo})
-            return {}, {}
+            return {"output_mode": [1, 2]}, {}
 
         def set_random(self):
             pass
