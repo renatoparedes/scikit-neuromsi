@@ -12,6 +12,7 @@
 # IMPORTS
 # =============================================================================
 
+import pickle
 import string
 
 import pytest
@@ -550,3 +551,67 @@ def test_SKNMSIMethodABC_abstract():
         ]
 
     assert Method._run_input == [{"target": "foo", "template": "${p0}_foo"}]
+
+
+def test_SKNMSIMethodABC_output_mode_missing_on_return():
+    class Method(modelabc.SKNMSIMethodABC):
+        _model_type = "MLE"
+        _run_input = []
+        _run_output = []
+        time_range = (1, 2)
+        position_range = (1, 2)
+        time_res = 1
+        position_res = 2
+        _output_mode = "output_mode"
+
+        def set_random(self):
+            pass
+
+        def run(self):
+            return {}, {}
+
+    with pytest.raises(ValueError):
+        Method().run()
+
+# import types
+
+# import sys
+# _test_cache_models_ = types.ModuleType("_test_cache_models_")
+# sys.modules["_test_cache_models_"] = _test_cache_models_
+
+
+
+
+
+# def test_SKNMSIMethodABC_serialize():
+#     # make globals
+
+
+
+
+#     class Method(modelabc.SKNMSIMethodABC):
+#         _model_type = "MLE"
+#         _run_input = []
+#         _run_output = []
+#         time_range = (1, 2)
+#         position_range = (1, 2)
+#         time_res = 1
+#         position_res = 2
+#         _output_mode = "output_mode"
+
+#         def __reduce__(self):
+
+#             return (create_with, (), state)
+
+#         def set_random(self):
+#             pass
+
+#         def run(self):
+#             return {"output_mode": None}, {}
+
+#     _test_cache_models_.Method = Method
+
+#     original_model = Method()
+#     unserialized = pickle.loads(pickle.dumps(original_model))
+
+#     import ipdb; ipdb.set_trace()
