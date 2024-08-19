@@ -169,7 +169,7 @@ class _MemoryImpact:
         )
 
 
-def memory_impact(obj, *, size_factor=1.2, num_objects=1):
+def memory_impact(obj, *, size_factor=1, num_objects=1):
     """
     Calculate the memory impact of an object or multiple objects.
 
@@ -180,7 +180,7 @@ def memory_impact(obj, *, size_factor=1.2, num_objects=1):
     num_objects : int, optional
         Number of objects to consider (default is 1).
     size_factor : float, optional
-        Factor to multiply the expected size by (default is 1.2).
+        Factor to multiply the expected size by (default is 1).
 
     Returns
     -------

@@ -573,6 +573,7 @@ def test_SKNMSIMethodABC_output_mode_missing_on_return():
     with pytest.raises(ValueError):
         Method().run()
 
+
 # import types
 
 # import sys
@@ -580,13 +581,8 @@ def test_SKNMSIMethodABC_output_mode_missing_on_return():
 # sys.modules["_test_cache_models_"] = _test_cache_models_
 
 
-
-
-
 # def test_SKNMSIMethodABC_serialize():
 #     # make globals
-
-
 
 
 #     class Method(modelabc.SKNMSIMethodABC):

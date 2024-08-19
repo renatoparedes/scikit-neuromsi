@@ -162,7 +162,7 @@ class ParameterSweep:
         *,
         range=None,
         repeat=2,
-        n_jobs=1,
+        n_jobs=None,
         seed=None,
         compression_params=core.DEFAULT_COMPRESSION_PARAMS,
         mem_warning_ratio=0.8,
@@ -177,7 +177,7 @@ class ParameterSweep:
         run_signature = inspect.signature(model.run)
         if str(target) not in run_signature.parameters:
             mdl_name = type(model).__name__
-            raise TypeError(
+            raise ValueError(
                 f"Model '{mdl_name}.run()' has no '{target}' parameter"
             )
 
@@ -199,9 +199,8 @@ class ParameterSweep:
             DEFAULT_RANGE.copy() if range is None else np.asarray(range)
         )
         self._repeat = int(repeat)
-        self._n_jobs = int(n_jobs)
+        self._n_jobs = int(n_jobs) if n_jobs != None else n_jobs
         self._target = str(target)
-        self._seed = seed
         self._random = np.random.default_rng(seed)
         self._mem_warning_ratio = float(mem_warning_ratio)
         self._mem_error_ratio = float(mem_error_ratio)
@@ -238,14 +237,14 @@ class ParameterSweep:
         return self._target
 
     @property
-    def seed(self):
-        """The seed for the random number generator."""
-        return self._seed
-
-    @property
     def random_(self):
         """The random number generator."""
         return self._random
+
+    @property
+    def expected_result_length_(self):
+        """The expected length of the result."""
+        return len(self.range) * self.repeat
 
     @property
     def compression_params(self):
@@ -314,14 +313,11 @@ class ParameterSweep:
                     yield current_iteration, comb_as_kws.copy(), seed
                     current_iteration += 1
 
-        combs_size = len(self._range) * self._repeat
-
-        return combs_gen(), combs_size
+        return combs_gen()
 
     def _check_if_it_fit_in_memory(self, result, results_total):
         """Check if 'results_total' of the result fits in memory."""
         memimpact = memtools.memory_impact(result, num_objects=results_total)
-
         if memimpact.total_ratio >= self.mem_error_ratio:
             total_perc = memimpact.total_ratio * 100
             mem_error_perc = self.mem_error_ratio * 100
@@ -371,7 +367,7 @@ class ParameterSweep:
 
         """
         if self._target in run_kws:
-            raise TypeError(
+            raise ValueError(
                 f"Parameter '{self._target}' is under control of "
                 f"{type(self)!r} instance"
             )
@@ -380,7 +376,8 @@ class ParameterSweep:
         model, compression_params = self._model, self._compression_params
 
         # get all the configurations
-        rkw_combs, runs_total = self._run_kwargs_combinations(run_kws)
+        rkw_combs = self._run_kwargs_combinations(run_kws)
+        runs_total = self.expected_result_length_
 
         # if we need to add a progress bar, we extract the iterable from it
         if self._tqdm_cls:
