@@ -96,72 +96,56 @@ def memory_usage(obj):
 # =============================================================================
 @dclss.dataclass(frozen=True, slots=True)
 class _MemoryImpact:
-    """
-    Dataclass representing memory impact.
+    """Dataclass representing memory impact.
 
     Parameters
     ----------
-    total_ratio : float
-        Ratio of object memory to total system memory.
-    available_ratio : float
-        Ratio of object memory to available system memory.
     expected_size : int
-        Expected size of the object(s) in bytes.
+        The expected size of the memory impact in bytes.
+    vmem : object
+        The virtual memory object.
 
-    Attributes
-    ----------
-    total_ratio : float
-        Ratio of object memory to total system memory.
-    available_ratio : float
-        Ratio of object memory to available system memory.
-    expected_size : int
-        Expected size of the object(s) in bytes.
-    hexpected_size : str
-        Human-readable string representation of the expected size.
     """
 
-    total_ratio: float
-    available_ratio: float
     expected_size: int
     vmem: object
 
     @property
-    def hexpected_size(self):
-        """
-        Get the human-readable string representation of the expected size.
+    def total_ratio(self):
+        """Get the ratio of the expected size to the total memory."""
+        return self.expected_size / self.vmem.total
 
-        Returns
-        -------
-        str
-            Human-readable string representation of the expected size.
+    @property
+    def available_ratio(self):
+        """Get the ratio of the expected size to the available memory."""
+        return self.expected_size / self.vmem.available
+
+    @property
+    def hexpected_size(self):
+        """ Get the human-readable string representation of the expected \
+        size.
+
         """
         return humanize.naturalsize(self.expected_size)
 
     @property
     def havailable_memory(self):
-        """
-        Get the human-readable string representation of the available memory.
+        """Get the human-readable string representation of the \
+        available memory.
 
-        Returns
-        -------
-        str
-            Human-readable string representation of the available memory.
         """
         return humanize.naturalsize(self.vmem.available)
 
     @property
     def htotal_memory(self):
-        """
-        Get the human-readable string representation of the total memory.
+        """Get the human-readable string representation of the \
+        total memory.
 
-        Returns
-        -------
-        str
-            Human-readable string representation of the total memory.
         """
         return humanize.naturalsize(self.vmem.total)
 
     def __repr__(self):
+        """Return a string representation of the MemoryImpact object."""
         return (
             f"<memimpact expected_size={self.hexpected_size!r}, "
             f"total_ratio={self.total_ratio}, "
@@ -170,8 +154,7 @@ class _MemoryImpact:
 
 
 def memory_impact(obj, *, size_factor=1, num_objects=1):
-    """
-    Calculate the memory impact of an object or multiple objects.
+    """Calculate the memory impact of an object
 
     Parameters
     ----------
@@ -181,6 +164,12 @@ def memory_impact(obj, *, size_factor=1, num_objects=1):
         Number of objects to consider (default is 1).
     size_factor : float, optional
         Factor to multiply the expected size by (default is 1).
+        Size factor is a factor to multiply the expected size by.
+        It is assumed that most objects are a little bigger or smaller
+        than the expected size. For example, if `size_factor=1.2` then
+        the expected size is multiplied by 1.2, this means that most
+        objects will be 20% bigger than the expected size. If
+        `size_factor=0.75` then most objects will be 35% smaller.
 
     Returns
     -------
@@ -190,16 +179,15 @@ def memory_impact(obj, *, size_factor=1, num_objects=1):
     if size_factor < 0:
         raise ValueError("size_factor must be a positive value")
 
+    # the size of the object in the memory
     obj_memory = memory_usage(obj)
-    total_object_memory = obj_memory.size * size_factor * num_objects
+
+    # the expected size of the "num_objects" object in the memory
+    # based on the size factor and the number of objects
+    expected_size = num_objects * obj_memory.size * size_factor
     vmem = psutil.virtual_memory()
 
-    total_ratio = total_object_memory / vmem.total
-    available_ratio = total_object_memory / vmem.available
-
     return _MemoryImpact(
-        total_ratio=total_ratio,
-        available_ratio=available_ratio,
-        expected_size=total_object_memory,
+        expected_size=expected_size,
         vmem=vmem,
     )

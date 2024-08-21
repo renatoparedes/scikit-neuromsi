@@ -39,7 +39,6 @@ import tqdm
 
 def test_ParameterSweep():
     class SilencedTQDM(tqdm.tqdm):
-
         def __init__(self, *args, **kwargs):
             kwargs["disable"] = True
             super().__init__(*args, **kwargs)
