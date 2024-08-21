@@ -17,9 +17,23 @@
 
 """
 
+# =============================================================================
+# IMPORTS
+# =============================================================================
+
+import json
 import io
+import zipfile
+
+import pytest
 
 import skneuromsi as sknmsi
+
+from .conftest import SilencedTQDM
+
+# =============================================================================
+# TESTS
+# =============================================================================
 
 
 def test_ndresult_store_and_open(random_ndresult):
@@ -27,7 +41,7 @@ def test_ndresult_store_and_open(random_ndresult):
 
     buffer = io.BytesIO()
 
-    sknmsi.to_ndr(buffer, ndres)
+    sknmsi.store_ndresult(buffer, ndres)
     buffer.seek(0)
     restored = sknmsi.read_ndr(buffer)
 
@@ -42,7 +56,7 @@ def test_ndresult_oostore_equivalent(random_ndresult):
     oo_buffer.seek(0)
 
     func_buffer = io.BytesIO()
-    sknmsi.to_ndr(func_buffer, ndres)
+    sknmsi.store_ndresult(func_buffer, ndres)
     func_buffer.seek(0)
 
     restored_from_oo = sknmsi.read_ndr(oo_buffer)
@@ -58,9 +72,9 @@ def test_ndcollection_store_and_open(random_ndresultcollection):
 
     buffer = io.BytesIO()
 
-    sknmsi.to_ndc(buffer, collection, tqdm_cls=None)
+    sknmsi.to_ndc(buffer, collection, tqdm_cls=SilencedTQDM)
     buffer.seek(0)
-    restored = sknmsi.read_ndc(buffer, tqdm_cls=None)
+    restored = sknmsi.read_ndc(buffer, tqdm_cls=SilencedTQDM)
 
     sknmsi.testing.assert_ndresult_collection_allclose(collection, restored)
 
@@ -72,12 +86,52 @@ def test_ndcollection_oostore_equivalent(random_ndresultcollection):
     oo_buffer.seek(0)
 
     func_buffer = io.BytesIO()
-    sknmsi.to_ndc(func_buffer, collection, tqdm_cls=None)
+    sknmsi.to_ndc(func_buffer, collection, tqdm_cls=SilencedTQDM)
     func_buffer.seek(0)
 
-    restored_from_oo = sknmsi.read_ndc(oo_buffer, tqdm_cls=None)
-    restored_from_func = sknmsi.read_ndc(func_buffer, tqdm_cls=None)
+    restored_from_oo = sknmsi.read_ndc(oo_buffer, tqdm_cls=SilencedTQDM)
+    restored_from_func = sknmsi.read_ndc(func_buffer, tqdm_cls=SilencedTQDM)
 
     sknmsi.testing.assert_ndresult_collection_allclose(
         restored_from_func, restored_from_oo
     )
+
+
+def test_store_ndresults_collection_not_instace_of_ndcollection():
+    with pytest.raises(TypeError):
+        sknmsi.to_ndc("", None)
+
+
+def test_store_ndresults_not_instace_of_ndresult():
+    with pytest.raises(TypeError):
+        sknmsi.to_ndr("", None)
+
+
+def test_open_ndresults_invalid_object_type():
+
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as zip_fp:
+        fake_metadata = json.dumps({"object_type": "fake"})
+        zip_fp.writestr("metadata.json", fake_metadata)
+    buffer.seek(0)
+
+    with pytest.raises(ValueError):
+        sknmsi.read_ndc(buffer)
+
+
+def test_open_ndresults_invalid_object_size():
+
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as zip_fp:
+        fake_metadata = json.dumps(
+            {
+                "object_type": "ndcollection",
+                "object_size": 3,
+                "object_kwargs": {},
+            }
+        )
+        zip_fp.writestr("metadata.json", fake_metadata)
+    buffer.seek(0)
+
+    with pytest.raises(ValueError):
+        sknmsi.read_ndc(buffer, expected_size=1)

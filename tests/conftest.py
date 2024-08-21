@@ -553,3 +553,20 @@ def random_ndresultcollection(random_ndresult):
         return ndcol
 
     return maker
+
+
+# =============================================================================
+# SOME HELPERS
+# =============================================================================
+
+
+class SilencedTQDM(tqdm.tqdm):
+    """Silence TQDM.
+
+    This class is used to silence TQDM progress bars.
+
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs["disable"] = True
+        super().__init__(*args, **kwargs)

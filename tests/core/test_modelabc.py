@@ -574,40 +574,59 @@ def test_SKNMSIMethodABC_output_mode_missing_on_return():
         Method().run()
 
 
-# import types
+# =============================================================================
+# PERSITENCE
+# =============================================================================
 
-# import sys
-# _test_cache_models_ = types.ModuleType("_test_cache_models_")
-# sys.modules["_test_cache_models_"] = _test_cache_models_
-
-
-# def test_SKNMSIMethodABC_serialize():
-#     # make globals
+# needed to store dynamic models
+_dynamic_models = {}
 
 
-#     class Method(modelabc.SKNMSIMethodABC):
-#         _model_type = "MLE"
-#         _run_input = []
-#         _run_output = []
-#         time_range = (1, 2)
-#         position_range = (1, 2)
-#         time_res = 1
-#         position_res = 2
-#         _output_mode = "output_mode"
+# for use in reduce of dynamic models
+def _recreate(cls_id):
+    cls = _dynamic_models[cls_id]
+    return cls.__new__(cls)
 
-#         def __reduce__(self):
 
-#             return (create_with, (), state)
+def test_SKNMSIMethodABC_serialize():
 
-#         def set_random(self):
-#             pass
+    class Method(modelabc.SKNMSIMethodABC):
+        _model_type = "MLE"
+        _run_input = []
+        _run_output = []
+        time_range = (1, 2)
+        position_range = (1, 2)
+        time_res = 1
+        position_res = 2
+        _output_mode = "output_mode"
 
-#         def run(self):
-#             return {"output_mode": None}, {}
+        def __init__(self, some_value):
+            self.some_value = some_value
 
-#     _test_cache_models_.Method = Method
+        def __reduce__(self):
+            cls = type(self)
+            state = self.__getstate__()
+            return (_recreate, (id(cls),), state)
 
-#     original_model = Method()
-#     unserialized = pickle.loads(pickle.dumps(original_model))
+        def set_random(self):
+            pass
 
-#     import ipdb; ipdb.set_trace()
+        def run(self):
+            return {"output_mode": None}, {}
+
+    _dynamic_models[id(Method)] = Method
+
+    original_model = Method(some_value=42)
+    unserialized = pickle.loads(pickle.dumps(original_model))
+
+    try:
+
+        assert isinstance(unserialized, Method)
+
+        assert unserialized.some_value == original_model.some_value
+        assert vars(unserialized).keys() == vars(original_model).keys()
+        assert callable(vars(unserialized)["run"])
+        assert unserialized.__getstate__() == original_model.__getstate__()
+
+    finally:
+        _dynamic_models.pop(id(Method))

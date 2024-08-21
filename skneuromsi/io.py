@@ -291,7 +291,7 @@ def store_ndresults_collection(
         zip_fp.writestr(_ZipFileNames.METADATA, ndc_metadata_json)
 
 
-def to_ndr(path_or_stream, ndresult, *, metadata=None, **kwargs):
+def store_ndresult(path_or_stream, ndresult, *, metadata=None, **kwargs):
     """
     Store a single NDResult object to a file or stream.
 
@@ -430,6 +430,7 @@ def open_ndresults_collection(
 
         # retrieve the collection size and check if the size is correct
         size = ndc_metadata[_Keys.OBJ_SIZE_KEY]
+
         if expected_size is not None and size != int(expected_size):
             raise ValueError(
                 f"{str(path_or_stream)}: Expected {expected_size} "
@@ -483,7 +484,7 @@ def open_ndresult(path_or_stream, **kwargs):
 
 # SHORTCUTS ===================================================================
 
-to_ndr = to_ndr
+to_ndr = store_ndresult
 read_ndr = open_ndresult
 to_ndc = store_ndresults_collection
 read_ndc = open_ndresults_collection

@@ -556,9 +556,9 @@ class NDResult:
             Additional keyword arguments to pass to the NDR storage function.
 
         """
-        from ...io import to_ndr  # noqa
+        from ...io import store_ndresult  # noqa
 
-        to_ndr(path_or_stream, self, metadata=metadata, **kwargs)
+        store_ndresult(path_or_stream, self, metadata=metadata, **kwargs)
 
     # DTYPES HELPS ============================================================
 

@@ -30,8 +30,9 @@ from .io import (
     open_ndresult,
     read_ndc,
     open_ndresults_collection,
+    store_ndresult,
     to_ndr,
-    to_ndr,
+    store_ndresult,
     to_ndc,
     store_ndresults_collection,
 )
