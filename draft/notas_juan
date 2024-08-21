@@ -1,10 +1,7 @@
 
-skneuromsi/core/modelabc.py               202     10    95%   596-602, 616-622, 711-712, 715-716
-skneuromsi/core/ndresult/compress.py       64     12    81%   86, 98-103, 148-149, 177, 197-198, 268, 278
 skneuromsi/core/ndresult/plot_acc.py       86     69    20%   58, 80-91, 118-131, 151-163, 184-224, 246-286
 skneuromsi/core/ndresult/result.py        178     54    70%   241, 321, 326, 331, 339-345, 356-358, 363-365, 394-403, 426, 470-472, 489-491, 508-512, 581-587, 605-612, 617-640
 skneuromsi/core/ndresult/stats_acc.py      60     44    27%   56, 78-86, 110-111, 135-136, 158-159, 183-184, 210-221, 245-246, 272-283, 319-320, 337-355
-skneuromsi/io.py                          103      6    94%   240, 265, 315, 353, 361, 434
 skneuromsi/ndcollection/bias_acc.py        50     39    22%   64-65, 92-117, 168-217, 268-281
 skneuromsi/ndcollection/causes_acc.py      59     46    22%   62, 80-100, 118-119, 151-164, 204, 235-247, 271-286
 skneuromsi/ndcollection/collection.py     169     43    75%   234-235, 239, 246, 299-301, 351, 357, 363, 369, 375, 384-385, 389-392, 467, 472-473, 487-489, 519-539, 567-571, 580, 586, 593

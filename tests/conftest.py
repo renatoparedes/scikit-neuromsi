@@ -434,7 +434,7 @@ def random_ndresult(random_modes_da):
 
         mtype = mtype
         output_mode = "output"
-        nmap = {} if extra is None else dict(nmap)
+        nmap = {} if nmap is None else dict(nmap)
         time_res = float(time_res)
         position_res = float(position_res)
         run_params = {} if run_params is None else dict(run_params)

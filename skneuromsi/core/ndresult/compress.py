@@ -75,7 +75,7 @@ class CompressedNDResult:
     compressed_memory_usage: object
 
     @property
-    def compression(self):
+    def compression_ratio(self):
         """Calculate the compression ratio.
 
         Returns
@@ -98,7 +98,7 @@ class CompressedNDResult:
         cls_name = type(self).__name__
 
         compressed_size = self.compressed_memory_usage.hsize
-        compression_percentage = self.compression * 100
+        compression_percentage = self.compression_ratio * 100
 
         return (
             f"<{cls_name} {compressed_size!r} ({compression_percentage:.2f}%)>"
