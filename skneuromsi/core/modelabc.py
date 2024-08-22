@@ -126,7 +126,7 @@ class ParameterAliasTemplate:
 # =============================================================================
 # CONFIG
 # =============================================================================
-@dataclass
+@dataclass(kw_only=True)
 class SKNMSIRunConfig:
     """Configuration class for using aliases in the run method and creating \
     the result object.
@@ -137,8 +137,6 @@ class SKNMSIRunConfig:
         Input configuration for alias templates.
     _output : tuple
         Output configuration for alias templates.
-    _result_cls : type
-        Class to use for creating the result object.
     _model_name : str
         Name of the model.
     _model_type : str
@@ -150,7 +148,6 @@ class SKNMSIRunConfig:
 
     _input: tuple
     _output: tuple
-    _result_cls: NDResult
     _model_name: str
     _model_type: str
     _output_mode: str
@@ -228,7 +225,6 @@ class SKNMSIRunConfig:
 
         _input = parse_run_conf(method_class._run_input, "_run_input")
         _output = parse_run_conf(method_class._run_output, "_run_output")
-        _result = method_class._run_result
         _model_name = str(
             getattr(method_class, "_model_name", method_class.__name__)
         )
@@ -240,7 +236,6 @@ class SKNMSIRunConfig:
             _model_type=_model_type,
             _input=_input,
             _output=_output,
-            _result_cls=_result,
             _output_mode=_output_mode,
         )
 
@@ -475,6 +470,10 @@ class SKNMSIRunConfig:
         time_res = model_instance.time_res
         position_res = model_instance.position_res
 
+        make_result = getattr(
+            model_instance, "_make_result", NDResult.from_modes_dict
+        )
+
         @functools.wraps(run_method)
         def run_wrapper(*args, **kwargs):
             # if some parameters are not valid in the aliased function
@@ -515,12 +514,12 @@ class SKNMSIRunConfig:
                 output_alias_map.get(k, k): v for k, v in extra.items()
             }
 
-            return self._result_cls(
+            ndresult = make_result(
                 mname=self._model_name,
                 mtype=self._model_type,
                 output_mode=self._output_mode,
                 nmap=output_alias_map,
-                nddata=response_aliased,
+                modes_dict=response_aliased,
                 time_range=time_range,
                 position_range=position_range,
                 time_res=time_res,
@@ -529,6 +528,8 @@ class SKNMSIRunConfig:
                 run_params=dict(bound_params.arguments),
                 extra=extra_aliased,
             )
+
+            return ndresult
 
         run_wrapper.__skneuromsi_run_template_context__ = run_template_context
         run_wrapper.__signature__ = signature_with_alias
@@ -646,10 +647,6 @@ TO_REDEFINE = [
     ("set_random", "Method"),
 ]
 
-REDEFINE_WITH_DEFAULT = [
-    ("_run_result", NDResult),
-]
-
 
 class SKNMSIMethodABC:
     """Abstract class that allows to configure method names dynamically.
@@ -688,11 +685,6 @@ class SKNMSIMethodABC:
                 )
                 raise TypeError(msg)
 
-        # redefine with default
-        for attr, default in REDEFINE_WITH_DEFAULT:
-            if not hasattr(cls, attr):
-                setattr(cls, attr, default)
-
         # config creation
         config = SKNMSIRunConfig.from_method_class(cls)
 
@@ -700,7 +692,7 @@ class SKNMSIMethodABC:
         config.validate_init_and_run(cls)
 
         # teardown
-        for attr, _ in TO_REDEFINE + REDEFINE_WITH_DEFAULT:
+        for attr, _ in TO_REDEFINE:
             if attr.startswith("_"):
                 delattr(cls, attr)
 
@@ -708,10 +700,20 @@ class SKNMSIMethodABC:
         cls._run_config = config
 
     def __getstate__(self):
+        """Get the state of a model instance.
+
+        Needed for multiprocessing environment.
+
+        """
         cls = type(self)
         return cls._run_config.get_model_state(self)
 
     def __setstate__(self, state):
+        """Set the state of a model instance.
+
+        Needed for multiprocessing environment.
+
+        """
         cls = type(self)
         cls._run_config.set_model_state(self, state)
 

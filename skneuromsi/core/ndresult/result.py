@@ -137,7 +137,7 @@ class NDResult:
     nmap : dict
         A dictionary mapping modes to their corresponding values.
     nddata : xarray.DataArray or dict
-        The multidimensional data as an xarray.DataArray or a dictionary.
+        The multidimensional data as an xarray.DataArray.
     time_range : tuple
         The range of time values.
     position_range : tuple
@@ -230,17 +230,37 @@ class NDResult:
         self._run_params = dict(run_params)
         self._extra = dict(extra)
         self._causes = causes
-        self._nddata = (
-            modes_to_data_array(nddata, dtype=ensure_dtype)
-            if isinstance(nddata, Mapping)
-            else nddata
-        )
+        self._nddata = nddata
 
         # Ensure that the instance variables are not dynamically added.
         if ensure_dtype is not None:
             self.__dict__ = ddtype_tools.deep_astype(
                 vars(self), dtype=ensure_dtype
             )
+
+    @classmethod
+    def from_modes_dict(cls, *, modes_dict, ensure_dtype=None, **kwargs):
+        """Create an NDResult object from a dictionary of modes.
+
+        Parameters
+        ----------
+        modes_dict : dict
+            A dictionary mapping modes to their corresponding values.
+        ensure_dtype : numpy.dtype, optional
+            Force all data types to be assigned to this type.
+            This only applies to parameters that accept the dtype message
+            If None, the data types are inferred.
+        **kwargs
+            Additional keyword arguments to pass to the NDResult constructor.
+
+        Returns
+        -------
+        NDResult
+            The NDResult object.
+
+        """
+        nddata = modes_to_data_array(modes_dict, dtype=ensure_dtype)
+        return cls(nddata=nddata, **kwargs)
 
     # PROPERTIES ==============================================================
 

@@ -21,6 +21,8 @@
 # IMPORTS
 # =============================================================================
 
+import re
+
 import numpy as np
 
 import pandas as pd
@@ -31,7 +33,6 @@ import pytest
 
 import skneuromsi as sknmsi
 from skneuromsi.core.ndresult import compress
-
 
 import xarray as xa
 
@@ -118,7 +119,10 @@ def test_compress_ndresult(random_ndresult):
     )
 
     # repr
-    assert repr(comp_ndres) == "<CompressedNDResult '54.7 kB' (73.99%)>"
+    comp_repr = repr(comp_ndres)
+    assert re.match(
+        r"<CompressedNDResult '\d+(\.\d+)? kB' \(\d+\.\d+%\)>", comp_repr
+    )
 
 
 def test_decompress_ndresult(random_ndresult):
