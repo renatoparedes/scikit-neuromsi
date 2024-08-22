@@ -112,7 +112,6 @@ def modes_to_data_array(modes_dict, dtype):
     data = (
         np.concatenate(modes) if modes else np.array([], ndmin=len(DIMENSIONS))
     )
-
     da = xa.DataArray(data, coords=coords, dims=DIMENSIONS, name=XA_NAME)
 
     return da
@@ -217,25 +216,54 @@ class NDResult:
         # deberia validad las cosas aca
         # hay que validar las resoluciones y los rangos
 
-        self._mname = mname
-        self._mtype = mtype
-        self._output_mode = output_mode
+        self._mname = str(mname)
+        self._mtype = str(mtype)
+        self._output_mode = str(output_mode)
         self._nmap = dict(nmap)
         self._time_range = np.asarray(time_range, dtype=ensure_dtype)
         self._position_range = np.asarray(position_range, dtype=ensure_dtype)
-        self._time_res = time_res
-        self._position_res = position_res
-        self._time_res = time_res
-        self._position_res = position_res
+        self._time_res = float(time_res)
+        self._position_res = float(position_res)
         self._run_params = dict(run_params)
         self._extra = dict(extra)
-        self._causes = causes
+        self._causes = None if causes is None else int(causes)
         self._nddata = nddata
 
         # Ensure that the instance variables are not dynamically added.
         if ensure_dtype is not None:
             self.__dict__ = ddtype_tools.deep_astype(
                 vars(self), dtype=ensure_dtype
+            )
+
+        self._validate()
+
+    def _validate(self):
+        # chek if the output mode is pressent
+        if self._output_mode not in self._nddata.modes:
+            raise ValueError(f"Output mode '{self._output_mode}' not found.")
+
+        # check if there are at least two modes
+        if len(self._nddata.modes) < 2:
+            raise ValueError("At least two modes are required.")
+
+        # check if the time range and resolution match the data
+        expected_times = int(self._time_range.max() * self._time_res)
+        times = len(self._nddata.times)
+        if expected_times != times:
+            raise ValueError(
+                "The time range and resolution do not match the data. "
+                f"Expected {expected_times} times, got {times}"
+            )
+
+        # check if the position range and resolution match the data
+        expected_positions = int(
+            self._position_range.max() * self._position_res
+        )
+        positions = len(self._nddata.positions)
+        if expected_positions != positions:
+            raise ValueError(
+                "The position range and resolution do not match the data. "
+                f"Expected {expected_positions} positions, got {positions}"
             )
 
     @classmethod

@@ -391,15 +391,15 @@ def test_SKNMSIRunConfig_wrap_run():
     foo_calls = []
 
     class MethodClass:
-        time_range = (1, 2)
-        position_range = (1, 2)
+        time_range = (1, 1)
+        position_range = (2, 2)
         time_res = 1
         position_res = 2
 
         def run(self, foo):
             """foo: zaraza foo"""
             foo_calls.append({"foo": foo})
-            return {"output_mode": [1, 2]}, {}
+            return {"mode": [1, 2], "output_mode": [1, 2]}, {}
 
         def calculate_causes(self, **kwargs):
             return None
@@ -445,7 +445,7 @@ def test_SKNMSIRunConfig_wrap_init():
 
         def run(self, foo):
             foo_calls.append({"self": self, "foo": foo})
-            return {"output_mode": [1, 2]}, {}
+            return {"mode": [1, 2], "output_mode": [1, 2]}, {}
 
         def calculate_causes(self, **kwargs):
             return None
@@ -504,7 +504,7 @@ def test_SKNMSIMethodABC():
 
         def run(self, foo):
             foo_calls.append({"self": self, "foo": foo})
-            return {"output_mode": [1, 2]}, {}
+            return {"mode": [1, 2], "output_mode": [1, 2]}, {}
 
         def set_random(self):
             pass

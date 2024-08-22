@@ -513,7 +513,6 @@ class SKNMSIRunConfig:
             extra_aliased = {
                 output_alias_map.get(k, k): v for k, v in extra.items()
             }
-
             ndresult = make_result(
                 mname=self._model_name,
                 mtype=self._model_type,
