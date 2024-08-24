@@ -440,8 +440,8 @@ def random_ndresult(random_modes_da):
         run_params = {} if run_params is None else dict(run_params)
         extra = {} if extra is None else dict(extra)
 
-        times = np.abs(np.subtract(*time_range)) * time_res
-        positions = np.abs(np.subtract(*position_range)) * position_res
+        times = int(np.abs(np.subtract(*time_range)) / time_res)
+        positions = int(np.abs(np.subtract(*position_range)) / position_res)
 
         nddata = random_modes_da(
             seed=random,

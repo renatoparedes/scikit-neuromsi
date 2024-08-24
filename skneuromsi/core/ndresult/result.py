@@ -263,7 +263,7 @@ class NDResult:
 
         # check if the time range and resolution match the data
         tres = self._time_res
-        expected_times = int(np.abs(np.subtract(*trange)) * tres) or 1
+        expected_times = int(np.abs(np.subtract(*trange)) / tres) or 1
         times = len(nddata.times)
         if expected_times != times:
             raise ValueError(
@@ -280,7 +280,7 @@ class NDResult:
 
         # check if the position range and resolution match the data
         pres = self._position_res
-        expected_positions = int(np.abs(np.subtract(*prange)) * pres) or 1
+        expected_positions = int(np.abs(np.subtract(*prange)) / pres) or 1
         positions = len(self._nddata.positions)
         if expected_positions != positions:
             raise ValueError(
