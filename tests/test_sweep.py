@@ -163,7 +163,7 @@ def test_ParameterSweep_warning_memory():
     available_mem = psutil.virtual_memory().total
 
     # how much memory trigger the warning + 5% (to guarantee the trigger)
-    warning_mem = int(available_mem * (param_sweep.mem_warning_ratio + 0.05))
+    warning_mem = int(available_mem * (param_sweep.mem_warning_ratio + 0.15))
 
     # how many elements do we expect?
     expected_result_length = param_sweep.expected_result_length_

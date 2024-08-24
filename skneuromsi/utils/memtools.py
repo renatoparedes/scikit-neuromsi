@@ -175,6 +175,7 @@ def memory_impact(obj, *, size_factor=1, num_objects=1):
     -------
     _MemoryImpact
         An instance of _MemoryImpact containing the calculated impact metrics.
+
     """
     if size_factor < 0:
         raise ValueError("size_factor must be a positive value")

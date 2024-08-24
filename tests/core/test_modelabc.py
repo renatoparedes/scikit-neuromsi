@@ -392,7 +392,7 @@ def test_SKNMSIRunConfig_wrap_run():
 
     class MethodClass:
         time_range = (1, 1)
-        position_range = (2, 2)
+        position_range = (1, 2)
         time_res = 1
         position_res = 2
 

@@ -238,31 +238,53 @@ class NDResult:
         self._validate()
 
     def _validate(self):
+        """Validate the result data.
+
+        """
         # chek if the output mode is pressent
-        if self._output_mode not in self._nddata.modes:
-            raise ValueError(f"Output mode '{self._output_mode}' not found.")
+        output_mode = self._output_mode
+        nddata = self._nddata
+        if output_mode not in nddata.modes:
+            raise ValueError(f"Output mode '{output_mode}' not found.")
 
         # check if there are at least two modes
-        if len(self._nddata.modes) < 2:
-            raise ValueError("At least two modes are required.")
+        n_modes = len(nddata.modes)
+        if n_modes < 2:
+            raise ValueError(
+                "At least two modes are required. " f"Got {n_modes}."
+            )
+
+        # check time range size and limits
+        trange = tuple(self._time_range)
+        if len(trange) != 2 or trange[0] > trange[1]:
+            raise ValueError(
+                "The time_range must be (min, max). " f"Got {trange}"
+            )
 
         # check if the time range and resolution match the data
-        expected_times = int(self._time_range.max() * self._time_res)
-        times = len(self._nddata.times)
+        tres = self._time_res
+        expected_times = int(np.abs(np.subtract(*trange)) * tres) or 1
+        times = len(nddata.times)
         if expected_times != times:
             raise ValueError(
-                "The time range and resolution do not match the data. "
+                "The time_range and time_res do not match the data. "
                 f"Expected {expected_times} times, got {times}"
             )
 
+        # check position range size and limits
+        prange = tuple(self._position_range)
+        if len(prange) != 2 or prange[0] > prange[1]:
+            raise ValueError(
+                "The position_range must be (min, max). " f"Got {prange}"
+            )
+
         # check if the position range and resolution match the data
-        expected_positions = int(
-            self._position_range.max() * self._position_res
-        )
+        pres = self._position_res
+        expected_positions = int(np.abs(np.subtract(*prange)) * pres) or 1
         positions = len(self._nddata.positions)
         if expected_positions != positions:
             raise ValueError(
-                "The position range and resolution do not match the data. "
+                "The position_range and position_res do not match the data. "
                 f"Expected {expected_positions} positions, got {positions}"
             )
 
