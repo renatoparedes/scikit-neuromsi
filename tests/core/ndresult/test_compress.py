@@ -119,10 +119,9 @@ def test_compress_ndresult(random_ndresult):
     )
 
     # repr
+    pattern = r"<CompressedNDResult '\d+(\.\d+)? (kB|MB|GB|TB)' \(\d+\.\d+%\)>"
     comp_repr = repr(comp_ndres)
-    assert re.match(
-        r"<CompressedNDResult '\d+(\.\d+)? kB' \(\d+\.\d+%\)>", comp_repr
-    )
+    assert re.match(pattern, comp_repr)
 
 
 def test_decompress_ndresult(random_ndresult):
