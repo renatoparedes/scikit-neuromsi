@@ -21,7 +21,7 @@ multidimensional array."""
 # IMPORTS
 # =============================================================================
 
-from typing import Iterable, Mapping
+from typing import Iterable
 
 import numpy as np
 
@@ -246,11 +246,8 @@ class NDResult:
             raise ValueError(f"Output mode '{output_mode}' not found.")
 
         # check if there are at least two modes
-        n_modes = len(nddata.modes)
-        if n_modes < 2:
-            raise ValueError(
-                "At least two modes are required. " f"Got {n_modes}."
-            )
+        if len(nddata.modes) < 2:
+            raise ValueError("At least two modes are required.")
 
         # check time range size and limits
         trange = tuple(self._time_range)
@@ -308,7 +305,7 @@ class NDResult:
 
         """
         nddata = modes_to_data_array(modes_dict, dtype=ensure_dtype)
-        return cls(nddata=nddata, **kwargs)
+        return cls(nddata=nddata, ensure_dtype=ensure_dtype, **kwargs)
 
     # PROPERTIES ==============================================================
 
@@ -421,16 +418,16 @@ class NDResult:
     @property
     def plot(self):
         """ResultPlotter: Plot accessor for the NDResult object."""
-        if not hasattr(self, "__plot"):
-            self.__plot = ResultPlotter(self)
-        return self.__plot
+        if not hasattr(self, "_plot"):
+            self._plot = ResultPlotter(self)
+        return self._plot
 
     @property
     def stats(self):
         """ResultStatsAccessor: Stats accessor for the NDResult object."""
-        if not hasattr(self, "__stats"):
-            self.__stats = ResultStatsAccessor(self)
-        return self.__stats
+        if not hasattr(self, "_stats"):
+            self._stats = ResultStatsAccessor(self)
+        return self._stats
 
     # DF BY DIMENSION =========================================================
     def _coherce_filters(self, flt, defaults, dim_name):
