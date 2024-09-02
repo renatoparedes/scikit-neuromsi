@@ -10,4 +10,4 @@ markers = [
 testpaths = [
     "tests",
 ]
-addopts = "-m 'not slow'"
+addopts = "-m 'not slow' --disable-warnings"

@@ -148,7 +148,7 @@ def test_modes_to_data_array_invalid():
 #         time_range=(0, 1),
 #         position_range=(0, 1),
 #         time_res=0.01,
-#         position_res=0.01,
+#         position_res=1.,
 #         causes=1,
 #         run_params={},
 #         extra={},

@@ -258,7 +258,7 @@ class NDResult:
         trange = tuple(self._time_range)
         if len(trange) != 2 or trange[0] > trange[1]:
             raise ValueError(
-                "The time_range must be (min, max). " f"Got {trange}"
+                f"The time_range must be (min, max). Got {trange}"
             )
 
         # check if the time range and resolution match the data
@@ -275,7 +275,7 @@ class NDResult:
         prange = tuple(self._position_range)
         if len(prange) != 2 or prange[0] > prange[1]:
             raise ValueError(
-                "The position_range must be (min, max). " f"Got {prange}"
+                f"The position_range must be (min, max). Got {prange}"
             )
 
         # check if the position range and resolution match the data
