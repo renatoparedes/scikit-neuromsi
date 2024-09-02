@@ -95,7 +95,7 @@ class Kording2007(SKNMSIMethodABC):
         n=1,
         mode0="auditory",
         mode1="visual",
-        position_range=(-42, 43),
+        position_range=(-42, 42),
         position_res=1.7142857142857142,
         time_range=(1, 1),
         time_res=1,

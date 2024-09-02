@@ -117,14 +117,17 @@ def test_paredes2022_fission_illusion():
         visual_duration=12,
         auditory_onset=25,
         visual_onset=25,
-        soa=56,
+        auditory_soa=56,
     )
-    fp = findpeaks(method="topology", verbose=0, limit=0.15)
+    fp = findpeaks(method="peakdetect", verbose=0, lookahead=10, interpolate=5)
     X = res.get_modes("visual").query("positions==45").visual.values
     results = fp.fit(X)
-    flashes = results["df"].peak.sum()
+    visual_peaks_df = results["df"].query("peak==True & valley==False")
+    visual_peaks = visual_peaks_df[visual_peaks_df["y"] > 0.15]
+    visual_peaks_n = visual_peaks.y.size
+    visual_peaks_n
 
-    np.testing.assert_equal(flashes, 2)
+    np.testing.assert_equal(visual_peaks_n, 2)
 
 
 @pytest.mark.slow
@@ -142,14 +145,18 @@ def test_paredes2022_supraddivity_effect():
         visual_duration=12,
         auditory_onset=0,
         visual_onset=0,
-        soa=0,
     )
-    fp = findpeaks(method="topology", verbose=0, limit=0.15)
+    fp = findpeaks(method="peakdetect", verbose=0, lookahead=10, interpolate=5)
     X = res.get_modes("multi").query("positions==45").multi.values
     results = fp.fit(X)
-    multisensory_response = results["df"].peak.sum()
+    multisensory_peaks_df = results["df"].query("peak==True & valley==False")
+    multisensory_peaks = multisensory_peaks_df[
+        multisensory_peaks_df["y"] > 0.15
+    ]
+    multisensory_peaks_n = multisensory_peaks.y.size
+    multisensory_peaks_n
 
-    np.testing.assert_equal(multisensory_response, 1)
+    np.testing.assert_equal(multisensory_peaks_n, 1)
 
 
 ## TODO Test noise implementation

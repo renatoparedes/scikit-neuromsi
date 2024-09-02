@@ -37,9 +37,9 @@ def test_kording2007_run(visual, auditory, visual_expected, auditory_expected):
         https://shamslab.psych.ucla.edu/bci-matlab-toolbox/
     """
 
-    position_range = (-42, 43)
+    position_range = (-42, 42)
     locations = np.linspace(
-        position_range[0], position_range[1] - 1, 50, retstep=True
+        position_range[0], position_range[1], 50, retstep=True
     )
 
     model = Kording2007(n=1000000, position_range=position_range)

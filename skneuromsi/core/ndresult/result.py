@@ -238,9 +238,7 @@ class NDResult:
         self._validate()
 
     def _validate(self):
-        """Validate the result data.
-
-        """
+        """Validate the result data."""
         # chek if the output mode is pressent
         output_mode = self._output_mode
         nddata = self._nddata

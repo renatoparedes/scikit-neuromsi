@@ -115,9 +115,12 @@ def test_cuppini2014_fission_illusion():
         onset=25,
         soa=56,
     )
-    fp = findpeaks(method="topology", verbose=0, limit=0.40)
+    fp = findpeaks(method="peakdetect", verbose=0, lookahead=10, interpolate=5)
     X = res.get_modes("visual").query("positions==90").visual.values
     results = fp.fit(X)
-    flashes = results["df"].peak.sum()
+    visual_peaks_df = results["df"].query("peak==True & valley==False")
+    visual_peaks = visual_peaks_df[visual_peaks_df["y"] > 0.40]
+    visual_peaks_n = visual_peaks.y.size
+    visual_peaks_n
 
-    np.testing.assert_equal(flashes, 2)
+    np.testing.assert_equal(visual_peaks_n, 2)
