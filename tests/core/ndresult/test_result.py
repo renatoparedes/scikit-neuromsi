@@ -21,6 +21,7 @@
 # IMPORTS
 # =============================================================================
 
+import io
 import re
 
 import numpy as np
@@ -34,6 +35,7 @@ import pytest
 import skneuromsi as sknmsi
 from skneuromsi.core import constants
 from skneuromsi.core.ndresult import result, stats_acc, plot_acc
+from skneuromsi.utils import dict_cmp
 
 import xarray as xa
 
@@ -376,3 +378,424 @@ def test_NDResult_invalid_positions():
             extra={},
             ensure_dtype=None,
         )
+
+
+def test_NDResult_get_modes():
+    modes_dict = {
+        "mode0": [[1, 2, 3], [4, 5, 6]],
+        "output": [[1, 2, 3], [4, 5, 6]],
+    }
+    ndres = result.NDResult.from_modes_dict(
+        mname="Model",
+        modes_dict=modes_dict,
+        mtype="Test",
+        output_mode="output",
+        nmap={},
+        time_range=(0, 1),
+        position_range=(0, 3),
+        time_res=0.5,
+        position_res=1.0,
+        causes=1,
+        run_params={},
+        extra={},
+        ensure_dtype=float,
+    )
+    expected = pd.DataFrame(
+        {
+            "mode0": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            "output": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+        },
+        index=pd.MultiIndex.from_product(
+            [[0, 1], [0, 1, 2], ["x0"]],
+            names=["times", "positions", "positions_coordinates"],
+        ),
+    )
+    expected.columns.name = "modes"
+
+    modes = ndres.get_modes()
+
+    pd.testing.assert_frame_equal(modes, expected)
+    with pytest.raises(ValueError, match="modes 'invalid' not found"):
+        ndres.get_modes(include="invalid")
+
+
+def test_NDResult_get_times():
+    modes_dict = {
+        "mode0": [[1, 2, 3], [4, 5, 6]],
+        "output": [[1, 2, 3], [4, 5, 6]],
+    }
+    ndres = result.NDResult.from_modes_dict(
+        mname="Model",
+        modes_dict=modes_dict,
+        mtype="Test",
+        output_mode="output",
+        nmap={},
+        time_range=(0, 1),
+        position_range=(0, 3),
+        time_res=0.5,
+        position_res=1.0,
+        causes=1,
+        run_params={},
+        extra={},
+        ensure_dtype=float,
+    )
+    expected = pd.DataFrame(
+        {
+            0: [1.0, 2.0, 3.0, 1.0, 2.0, 3.0],
+            1: [4.0, 5.0, 6.0, 4.0, 5.0, 6.0],
+        },
+        index=pd.MultiIndex.from_product(
+            [["mode0", "output"], [0, 1, 2], ["x0"]],
+            names=["modes", "positions", "positions_coordinates"],
+        ),
+    )
+    expected.columns.name = "times"
+
+    times = ndres.get_times()
+    pd.testing.assert_frame_equal(times, expected)
+
+    times = ndres.get_times(include=[0, 1])
+    pd.testing.assert_frame_equal(times, expected)
+
+    with pytest.raises(ValueError, match="times 'invalid' not found"):
+        ndres.get_times(include="invalid")
+
+
+def test_NDResult_get_positions():
+    modes_dict = {
+        "mode0": [[1, 2, 3], [4, 5, 6]],
+        "output": [[1, 2, 3], [4, 5, 6]],
+    }
+    ndres = result.NDResult.from_modes_dict(
+        mname="Model",
+        modes_dict=modes_dict,
+        mtype="Test",
+        output_mode="output",
+        nmap={},
+        time_range=(0, 1),
+        position_range=(0, 3),
+        time_res=0.5,
+        position_res=1.0,
+        causes=1,
+        run_params={},
+        extra={},
+        ensure_dtype=float,
+    )
+    expected = pd.DataFrame(
+        {
+            0: [1.0, 4.0, 1.0, 4.0],
+            1: [2.0, 5.0, 2.0, 5.0],
+            2: [3.0, 6.0, 3.0, 6.0],
+        },
+        index=pd.MultiIndex.from_product(
+            [["mode0", "output"], [0, 1], ["x0"]],
+            names=["modes", "times", "positions_coordinates"],
+        ),
+    )
+    expected.columns.name = "positions"
+
+    positions = ndres.get_positions()
+    pd.testing.assert_frame_equal(positions, expected)
+
+    positions = ndres.get_positions(include=[0, 1, 2])
+    pd.testing.assert_frame_equal(positions, expected)
+
+    with pytest.raises(ValueError, match="positions 'invalid' not found"):
+        ndres.get_positions(include="invalid")
+
+
+def test_NDResult_get_position_coordinates():
+    modes_dict = {
+        "mode0": [[1, 2, 3], [4, 5, 6]],
+        "output": [[1, 2, 3], [4, 5, 6]],
+    }
+    ndres = result.NDResult.from_modes_dict(
+        mname="Model",
+        modes_dict=modes_dict,
+        mtype="Test",
+        output_mode="output",
+        nmap={},
+        time_range=(0, 1),
+        position_range=(0, 3),
+        time_res=0.5,
+        position_res=1.0,
+        causes=1,
+        run_params={},
+        extra={},
+        ensure_dtype=float,
+    )
+    expected = pd.DataFrame(
+        {"x0": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]},
+        index=pd.MultiIndex.from_product(
+            [["mode0", "output"], [0, 1], [0, 1, 2]],
+            names=["modes", "times", "positions"],
+        ),
+    )
+    expected.columns.name = "positions_coordinates"
+
+    position_coordinates = ndres.get_positions_coordinates()
+    pd.testing.assert_frame_equal(position_coordinates, expected)
+
+    position_coordinates = ndres.get_positions_coordinates(include="x0")
+    pd.testing.assert_frame_equal(position_coordinates, expected)
+
+    # invalid
+    with pytest.raises(
+        ValueError, match="positions_coordinates 'invalid' not found"
+    ):
+        ndres.get_positions_coordinates(include="invalid")
+
+
+def test_NDResult_to_xarray():
+    modes_dict = {
+        "mode0": [[1, 2, 3], [4, 5, 6]],
+        "output": [[1, 2, 3], [4, 5, 6]],
+    }
+    ndres = result.NDResult.from_modes_dict(
+        mname="Model",
+        modes_dict=modes_dict,
+        mtype="Test",
+        output_mode="output",
+        nmap={},
+        time_range=(0, 1),
+        position_range=(0, 3),
+        time_res=0.5,
+        position_res=1.0,
+        causes=1,
+        run_params={},
+        extra={},
+        ensure_dtype=float,
+    )
+
+    expected = xa.DataArray(
+        data=[
+            [[[1.0], [2.0], [3.0]], [[4.0], [5.0], [6.0]]],
+            [[[1.0], [2.0], [3.0]], [[4.0], [5.0], [6.0]]],
+        ],
+        coords={
+            "modes": ["mode0", "output"],
+            "times": [0, 1],
+            "positions": [0, 1, 2],
+            "positions_coordinates": ["x0"],
+        },
+        dims=["modes", "times", "positions", "positions_coordinates"],
+    )
+
+    as_da = ndres.to_xarray()
+    xa.testing.assert_equal(expected, as_da)
+
+
+def test_NDResult_to_dict():
+    modes_dict = {
+        "mode0": [[1, 2, 3], [4, 5, 6]],
+        "output": [[1, 2, 3], [4, 5, 6]],
+    }
+    ndres = result.NDResult.from_modes_dict(
+        mname="Model",
+        modes_dict=modes_dict,
+        mtype="Test",
+        output_mode="output",
+        nmap={},
+        time_range=(0, 1),
+        position_range=(0, 3),
+        time_res=0.5,
+        position_res=1.0,
+        causes=1,
+        run_params={},
+        extra={},
+        ensure_dtype=float,
+    )
+
+    expected = {
+        "mname": "Model",
+        "mtype": "Test",
+        "output_mode": "output",
+        "nmap": {},
+        "time_range": np.array([0.0, 1.0]),
+        "position_range": np.array([0.0, 3.0]),
+        "time_res": 0.5,
+        "position_res": 1.0,
+        "causes": 1,
+        "run_params": {},
+        "extra": {},
+        "nddata": xa.DataArray(
+            data=[
+                [[[1.0], [2.0], [3.0]], [[4.0], [5.0], [6.0]]],
+                [[[1.0], [2.0], [3.0]], [[4.0], [5.0], [6.0]]],
+            ],
+            coords={
+                "modes": ["mode0", "output"],
+                "times": [0, 1],
+                "positions": [0, 1, 2],
+                "positions_coordinates": ["x0"],
+            },
+            dims=["modes", "times", "positions", "positions_coordinates"],
+        ),
+    }
+
+    as_dict = ndres.to_dict()
+    dict_cmp.dict_allclose(expected, as_dict)
+
+
+def test_NDResult_to_ndr(random_ndresult):
+    ndres = random_ndresult()
+
+    oo_buffer = io.BytesIO()
+    ndres.to_ndr(oo_buffer)
+    oo_buffer.seek(0)
+
+    func_buffer = io.BytesIO()
+    sknmsi.store_ndresult(func_buffer, ndres)
+    func_buffer.seek(0)
+
+    restored_from_oo = sknmsi.read_ndr(oo_buffer)
+    restored_from_func = sknmsi.read_ndr(func_buffer)
+
+    sknmsi.testing.assert_ndresult_allclose(
+        restored_from_func, restored_from_oo
+    )
+
+
+def test_NDResult_astype_compared_with_deep_dtypes(random_ndresult):
+    modes_dict = {
+        "mode0": [[1, 2, 3], [4, 5, 6]],
+        "output": [[1, 2, 3], [4, 5, 6]],
+    }
+    ndres = result.NDResult.from_modes_dict(
+        mname="Model",
+        modes_dict=modes_dict,
+        mtype="Test",
+        output_mode="output",
+        nmap={},
+        time_range=(0, 1),
+        position_range=(0, 3),
+        time_res=0.5,
+        position_res=1.0,
+        causes=1,
+        run_params={},
+        extra={},
+        ensure_dtype=float,
+    )
+
+    expected = {
+        "mname": (str, None),
+        "mtype": (str, None),
+        "output_mode": (str, None),
+        "nmap": (dict, {}),
+        "time_range": (np.ndarray, np.dtype("float64")),
+        "position_range": (np.ndarray, np.dtype("float64")),
+        "time_res": (float, None),
+        "position_res": (float, None),
+        "causes": (int, None),
+        "run_params": (dict, {}),
+        "extra": (dict, {}),
+        "nddata": (xa.DataArray, np.dtype("float64")),
+    }
+
+    assert expected == ndres.deep_dtypes()
+
+    int_ndres = ndres.astype(int)
+
+    int_expected = {
+        "mname": (str, None),
+        "mtype": (str, None),
+        "output_mode": (str, None),
+        "nmap": (dict, {}),
+        "time_range": (np.ndarray, np.dtype("int64")),
+        "position_range": (np.ndarray, np.dtype("int64")),
+        "time_res": (float, None),
+        "position_res": (float, None),
+        "causes": (int, None),
+        "run_params": (dict, {}),
+        "extra": (dict, {}),
+        "nddata": (xa.DataArray, np.dtype("int64")),
+    }
+
+    assert int_expected == int_ndres.deep_dtypes()
+
+
+def test_NDResult_dtypes(random_ndresult):
+    modes_dict = {
+        "mode0": [[1, 2, 3], [4, 5, 6]],
+        "output": [[1, 2, 3], [4, 5, 6]],
+    }
+    ndres = result.NDResult.from_modes_dict(
+        mname="Model",
+        modes_dict=modes_dict,
+        mtype="Test",
+        output_mode="output",
+        nmap={},
+        time_range=(0, 1),
+        position_range=(0, 3),
+        time_res=0.5,
+        position_res=1.0,
+        causes=1,
+        run_params={},
+        extra={},
+        ensure_dtype=float,
+    )
+
+    expected = pd.DataFrame(
+        {
+            "Type": [
+                str,
+                str,
+                str,
+                dict,
+                np.ndarray,
+                np.ndarray,
+                float,
+                float,
+                int,
+                dict,
+                dict,
+                xa.core.dataarray.DataArray,
+            ],
+            "DType": [
+                "-",
+                "-",
+                "-",
+                "-",
+                "float64",
+                "float64",
+                "-",
+                "-",
+                "-",
+                "-",
+                "-",
+                "float64",
+            ],
+            "Size": [
+                "?",
+                "?",
+                "?",
+                "?",
+                "?",
+                "?",
+                "?",
+                "?",
+                "?",
+                "?",
+                "?",
+                "?",
+            ],
+        },
+        index=[
+            "mname",
+            "mtype",
+            "output_mode",
+            "nmap",
+            "time_range",
+            "position_range",
+            "time_res",
+            "position_res",
+            "causes",
+            "run_params",
+            "extra",
+            "nddata",
+        ],
+    )
+
+    expected.index.name = "Attribute"
+
+    pd.testing.assert_frame_equal(expected, ndres.dtypes())

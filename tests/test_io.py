@@ -48,25 +48,6 @@ def test_ndresult_store_and_open(random_ndresult):
     sknmsi.testing.assert_ndresult_allclose(ndres, restored)
 
 
-def test_ndresult_oostore_equivalent(random_ndresult):
-    ndres = random_ndresult()
-
-    oo_buffer = io.BytesIO()
-    ndres.to_ndr(oo_buffer)
-    oo_buffer.seek(0)
-
-    func_buffer = io.BytesIO()
-    sknmsi.store_ndresult(func_buffer, ndres)
-    func_buffer.seek(0)
-
-    restored_from_oo = sknmsi.read_ndr(oo_buffer)
-    restored_from_func = sknmsi.read_ndr(func_buffer)
-
-    sknmsi.testing.assert_ndresult_allclose(
-        restored_from_func, restored_from_oo
-    )
-
-
 def test_ndcollection_store_and_open(random_ndresultcollection):
     collection = random_ndresultcollection(length_max=2, length_min=2)
 

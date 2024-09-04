@@ -375,7 +375,7 @@ def random_ndresult(random_modes_da):
         mname=None,
         mtype="test",
         nmap=None,
-        time_range=(0, 1000),
+        time_range=(0, 10),
         position_range=(0, 20),
         time_res=0.1,
         position_res=1,
@@ -397,7 +397,7 @@ def random_ndresult(random_modes_da):
             Dictionary mapping names to modes. If not provided, an empty
             dictionary will be used.
         time_range : tuple, optional
-            Range of times for the model. Defaults to (0, 1000).
+            Range of times for the model. Defaults to (0, 10).
         position_range : tuple, optional
             Range of positions for the model. Defaults to (0, 20).
         time_res : float, default 0.1

@@ -463,7 +463,8 @@ class NDResult:
 
         diff = set(flt).difference(defaults)
         if diff:
-            raise ValueError(f"{dim_name}{diff!r} not found")
+            diff_str = ", ".join(map(repr, diff))
+            raise ValueError(f"{dim_name} {diff_str} not found")
 
         return flt
 
@@ -498,7 +499,7 @@ class NDResult:
         df.columns.name = dim_name
         return df
 
-    def get_modes(self, include=None):
+    def get_modes(self, *, include=None):
         """Get the modes of the result data as a DataFrame.
 
         Parameters
@@ -517,7 +518,7 @@ class NDResult:
         df = self._dim_as_dataframe(flt, D_MODES)
         return df
 
-    def get_times(self, include=None):
+    def get_times(self, *, include=None):
         """Get the time values of the result data as a DataFrame.
 
         Parameters
@@ -536,7 +537,7 @@ class NDResult:
         df = self._dim_as_dataframe(flt, D_TIMES)
         return df
 
-    def get_positions(self, include=None):
+    def get_positions(self, *, include=None):
         """Get the position values of the result data as a DataFrame.
 
         Parameters
@@ -555,7 +556,7 @@ class NDResult:
         df = self._dim_as_dataframe(flt, D_POSITIONS)
         return df
 
-    def get_positions_coordinates(self, include=None):
+    def get_positions_coordinates(self, *, include=None):
         """Get the position coordinates of the result data as a DataFrame.
 
         Parameters
@@ -673,10 +674,10 @@ class NDResult:
             max_deep=max_deep,
             memory_usage=memory_usage,
         )
-        ddtypes = ddtypes[0] if memory_usage else ddtypes
+        # ddtypes = ddtypes[0] if memory_usage else ddtypes
         return ddtypes["ndresult"][1]
 
-    def dtypes(self, memory_usage=False):
+    def dtypes(self, *, memory_usage=False):
         """pd.DataFrame containing the data types of each attribute in the \
         NDResult object."""
         ddtypes = self.deep_dtypes(max_deep=2, memory_usage=memory_usage)
