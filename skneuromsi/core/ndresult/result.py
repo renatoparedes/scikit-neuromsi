@@ -489,8 +489,11 @@ class NDResult:
         for gname, group in xa.groupby(dim_name):
             partial_df = group.to_dataframe(name=gname)
 
-            axis = "columns" if dim_name in partial_df.columns else "index"
-            partial_df = partial_df.drop(dim_name, axis=axis)
+            partial_df = (
+                partial_df.drop(dim_name, axis="columns")
+                if dim_name in partial_df.columns
+                else partial_df.droplevel(dim_name)
+            )
 
             dfs.append(partial_df)
 
