@@ -262,7 +262,7 @@ class ResultPlotter(AccessorABC):
 
         kwargs.setdefault("alpha", 0.75)
 
-        for coord, ax in zip(self._result.pcoords_, axes):
+        for coord, ax in zip(self._result.pcoords_, axes, strict=True):
             df = xa.sel(
                 positions_coordinates=coord, positions=position
             ).to_dataframe()
@@ -273,6 +273,7 @@ class ResultPlotter(AccessorABC):
                 hue=D_MODES,
                 data=df,
                 ax=ax,
+                legend=(ax == axes[-1]),  # the last ax has the legend
                 **kwargs,
             )
 
@@ -284,10 +285,12 @@ class ResultPlotter(AccessorABC):
             ax.set_xticks(ticks)  # without this a warning will be raised
             ax.set_xticklabels(labels)
 
-        model_name = self._result.mname
-        ax.set_title(f"{model_name} - Position {position}")
-        ax.legend()
+            # title
+            ax.set_title(coord)
 
-        return ax
+        figure = ax.get_figure()
+        figure.suptitle(f"{self._result.mname} - Position {position}")
+
+        return axes
 
     linet = line_times
