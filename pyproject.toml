@@ -3,9 +3,10 @@ line-length = 79
 target-version = ['py37', 'py38', 'py39', 'py310', 'py311']
 
 [tool.pytest.ini_options]
-markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "model: marks tests as part some neuro msi model computation (deselect with '-m \"not model\"')",
+markerrs = [
+    "slow: marks tests that require significant execution time (deselect with '-m \"not slow\"')",
+    "plot: marks tests related to matplotlib integration (deselect with '-m \"not plot\"')",
+    "model: marks tests involving MSI model calculations (deselect with '-m \"not model\"')",
 ]
 testpaths = [
     "tests",

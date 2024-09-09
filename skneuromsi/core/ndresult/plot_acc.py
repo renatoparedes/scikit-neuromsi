@@ -86,9 +86,9 @@ class ResultPlotter(AccessorABC):
             fig.set_size_inches(size_x * coords_number, size_y)
 
         if not isinstance(ax, Iterable):
-            ax = np.array([ax])
+            ax = [ax]
 
-        return ax
+        return np.asarray(ax)
 
     def _complete_dimension(self, xa, dim, n, scalar_dim=True):
         """Complete a dimension in the xarray.DataArray.
@@ -177,14 +177,14 @@ class ResultPlotter(AccessorABC):
 
         Returns
         -------
-        ax : numpy.ndarray
+        axes : numpy.ndarray
             The plotted axes.
 
         """
         if time is None:
             time = self._result.stats.dimmax()[D_TIMES]
 
-        axes = self._resolve_axis(kwargs.pop("ax", None))
+        axes = self._resolve_axis(kwargs.pop("ax", None)).flatten()
         has_single_position = len(self._result.positions_) == 1
         position_range = self._result.position_range
 
@@ -195,7 +195,8 @@ class ResultPlotter(AccessorABC):
 
         kwargs.setdefault("alpha", 0.75)
 
-        for coord, ax in zip(self._result.pcoords_, axes):
+        for coord, ax in zip(self._result.pcoords_, axes, strict=True):
+
             df = xa.sel(positions_coordinates=coord, times=time).to_dataframe()
 
             sns.lineplot(
@@ -204,6 +205,7 @@ class ResultPlotter(AccessorABC):
                 hue=D_MODES,
                 data=df,
                 ax=ax,
+                legend=(ax == axes[-1]),  # the last ax has the legend
                 **kwargs,
             )
 
@@ -217,11 +219,14 @@ class ResultPlotter(AccessorABC):
             ax.set_xticks(ticks)  # without this a warning will be raised
             ax.set_xticklabels(labels)
 
-        model_name = self._result.mname
-        ax.set_title(f"{model_name} - Time {time}")
-        ax.legend()
+            # title
+            ax.set_title(coord)
 
-        return ax
+        # retrieve the figure
+        figure = ax.get_figure()
+        figure.suptitle(f"{self._result.mname} - Time {time}")
+
+        return axes
 
     linep = line_positions
 

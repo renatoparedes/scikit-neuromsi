@@ -20,6 +20,8 @@
 
 import numpy as np
 
+import matplotlib
+
 import pytest
 
 import tqdm
@@ -30,6 +32,12 @@ from skneuromsi.core.ndresult import (
     NDResult,
 )
 from skneuromsi.ndcollection import NDResultCollection
+
+# =============================================================================
+# CONFIGURATION
+# =============================================================================
+
+matplotlib.use("agg")
 
 # =============================================================================
 # FIXTURES
