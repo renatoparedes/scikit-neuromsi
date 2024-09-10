@@ -114,6 +114,7 @@ class ResultPlotter(AccessorABC):
             The completed xarray.DataArray.
 
         """
+        import ipdb; ipdb.set_trace()
         # the original array must be in the final data
         completed = [xa]
 

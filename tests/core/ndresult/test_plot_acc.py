@@ -120,6 +120,30 @@ def test_ResultPlotter_line_positions(random_ndresult, fig_test, fig_ref):
 
 @pytest.mark.plot
 @check_figures_equal()
+def test_ResultPlotter_line_positions_one_position(
+    random_ndresult, fig_test, fig_ref
+):
+    ndres = random_ndresult(
+        input_modes_min=1,
+        input_modes_max=1,
+        time_res=1,
+        position_range=(0, 1),
+        position_res=1,
+        position_coordinates_min=1,
+        position_coordinates_max=1,
+    )
+    plotter = plot_acc.ResultPlotter(ndres)
+
+    test_axes = fig_test.subplots(1, 3, sharey=True)
+    plotter.line_positions(ax=test_axes)
+
+    # EXPECTED
+    # ref_axes = fig_ref.subplots(1, 3, sharey=True).flatten()
+
+
+
+@pytest.mark.plot
+@check_figures_equal()
 def test_ResultPlotter_line_positions_default_axes(
     random_ndresult, fig_test, fig_ref
 ):
