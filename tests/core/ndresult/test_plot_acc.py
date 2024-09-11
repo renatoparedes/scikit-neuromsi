@@ -126,13 +126,12 @@ def test_ResultPlotter_line_positions_one_time(
     ndres = random_ndresult(
         input_modes_min=1,
         input_modes_max=1,
-        time_range=(0, 1),
+        position_range=(0, 1),
         time_res=1,
         position_res=1,
         position_coordinates_min=1,
         position_coordinates_max=1,
     )
-    import ipdb; ipdb.set_trace()
     plotter = plot_acc.ResultPlotter(ndres)
     test_axes = fig_test.subplots()
     plotter.line_positions(ax=test_axes)

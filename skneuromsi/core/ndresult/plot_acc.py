@@ -114,7 +114,6 @@ class ResultPlotter(AccessorABC):
             The completed xarray.DataArray.
 
         """
-        import ipdb; ipdb.set_trace()
         # the original array must be in the final data
         completed = [xa]
 
@@ -192,12 +191,13 @@ class ResultPlotter(AccessorABC):
         xa = self._result.to_xarray()
 
         if has_single_position:
-            xa = self._complete_dimension(xa, D_POSITIONS, 25, scalar_dim=True)
+            xa = self._complete_dimension(
+                xa, D_POSITIONS, 25, scalar_dim=False
+            )
 
         kwargs.setdefault("alpha", 0.75)
 
         for coord, ax in zip(self._result.pcoords_, axes, strict=True):
-
             df = xa.sel(positions_coordinates=coord, times=time).to_dataframe()
 
             sns.lineplot(
