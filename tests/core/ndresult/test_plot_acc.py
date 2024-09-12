@@ -35,6 +35,7 @@ from skneuromsi.core.ndresult import plot_acc
 
 
 @pytest.mark.plot
+@pytest.mark.slow
 @check_figures_equal()
 def test_ResultPlotter_line_positions(random_ndresult, fig_test, fig_ref):
     ndres = random_ndresult(
@@ -121,6 +122,7 @@ def test_ResultPlotter_line_positions(random_ndresult, fig_test, fig_ref):
 
 
 @pytest.mark.plot
+@pytest.mark.slow
 @check_figures_equal()
 def test_ResultPlotter_line_positions_one_position(
     random_ndresult, fig_test, fig_ref
@@ -190,6 +192,7 @@ def test_ResultPlotter_line_positions_one_position(
 
 
 @pytest.mark.plot
+@pytest.mark.slow
 @check_figures_equal()
 def test_ResultPlotter_line_positions_default_axes(
     random_ndresult, fig_test, fig_ref
@@ -219,6 +222,7 @@ def test_ResultPlotter_line_positions_default_axes(
 
 
 @pytest.mark.plot
+@pytest.mark.slow
 @check_figures_equal()
 def test_ResultPlotter_line_times(random_ndresult, fig_test, fig_ref):
     ndres = random_ndresult(
@@ -305,6 +309,7 @@ def test_ResultPlotter_line_times(random_ndresult, fig_test, fig_ref):
 
 
 @pytest.mark.plot
+@pytest.mark.slow
 @check_figures_equal()
 def test_ResultPlotter_line_times_default_axes(
     random_ndresult, fig_test, fig_ref
@@ -351,6 +356,7 @@ def test_ResultPlotter_invalid_number_of_axes(random_ndresult):
 
 
 @pytest.mark.plot
+@pytest.mark.slow
 @check_figures_equal()
 def test_ResultPlotter_line_positions_one_time(
     random_ndresult, fig_test, fig_ref
