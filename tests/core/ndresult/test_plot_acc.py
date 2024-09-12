@@ -19,6 +19,8 @@ from matplotlib.testing.decorators import check_figures_equal
 
 import numpy as np
 
+import pandas as pd
+
 import pytest
 
 import seaborn as sns
@@ -120,7 +122,7 @@ def test_ResultPlotter_line_positions(random_ndresult, fig_test, fig_ref):
 
 @pytest.mark.plot
 @check_figures_equal()
-def test_ResultPlotter_line_positions_one_time(
+def test_ResultPlotter_line_positions_one_position(
     random_ndresult, fig_test, fig_ref
 ):
     ndres = random_ndresult(
@@ -137,8 +139,54 @@ def test_ResultPlotter_line_positions_one_time(
     plotter.line_positions(ax=test_axes)
 
     # EXPECTED
-    # ref_axes = fig_ref.subplots(1, 3, sharey=True).flatten()
+    ref_ax = fig_ref.subplots(1)
 
+    time = ndres.stats.dimmax()[constants.D_TIMES]
+
+    ll, tl = np.sort(ndres.position_range)
+
+    xa = ndres.to_xarray()
+
+    x0 = xa.sel(positions_coordinates="x0", times=time).to_dataframe()
+
+    pos_index = np.arange(-25, 26)
+    pos_index = pos_index[pos_index != 0]
+
+    to_complete = pd.DataFrame(
+        {
+            "times": time,
+            "postion_coordinates": "x0",
+            "values": 0,
+        },
+        index=pd.MultiIndex.from_product(
+            [ndres.modes_, pos_index], names=x0.index.names
+        ),
+    )
+
+    x0 = pd.concat((x0, to_complete))
+
+    sns.lineplot(
+        ax=ref_ax,
+        x=constants.D_POSITIONS,
+        y=constants.XA_NAME,
+        hue=constants.D_MODES,
+        data=x0,
+        legend=True,
+        alpha=0.75,
+    )
+    ticks = ref_ax.get_xticks()
+    ticks_array = np.asarray(ticks, dtype=float)
+    tmin, tmax = np.min(ticks_array), np.max(ticks_array)
+    new_ticks = np.interp(ticks_array, (tmin, tmax), (ll, tl))
+
+    labels = np.array([f"{t:.2f}" for t in new_ticks])
+    labels[labels != labels[len(labels) // 2]] = ""
+
+    ref_ax.set_xticks(ticks)
+    ref_ax.set_xticklabels(labels)
+    ref_ax.set_title("x0")
+
+    fig_ref.suptitle(f"{ndres.mname} - Time {time}")
 
 
 @pytest.mark.plot
@@ -300,3 +348,72 @@ def test_ResultPlotter_invalid_number_of_axes(random_ndresult):
         plotter.line_positions(ax=plt.gca())
     with pytest.raises(ValueError):
         plotter.line_times(ax=plt.gca())
+
+
+@pytest.mark.plot
+@check_figures_equal()
+def test_ResultPlotter_line_positions_one_time(
+    random_ndresult, fig_test, fig_ref
+):
+    ndres = random_ndresult(
+        input_modes_min=1,
+        input_modes_max=1,
+        time_range=(0, 1),
+        time_res=1,
+        position_res=1,
+        position_coordinates_min=1,
+        position_coordinates_max=1,
+    )
+    plotter = plot_acc.ResultPlotter(ndres)
+    test_axes = fig_test.subplots()
+    plotter.line_times(ax=test_axes)
+
+    # EXPECTED
+    ref_ax = fig_ref.subplots(1)
+
+    position = ndres.stats.dimmax()[constants.D_POSITIONS]
+
+    ll, tl = np.sort(ndres.time_range)
+
+    xa = ndres.to_xarray()
+
+    x0 = xa.sel(positions_coordinates="x0", positions=position).to_dataframe()
+
+    time_index = np.arange(-25, 26)
+    time_index = time_index[time_index != 0]
+
+    to_complete = pd.DataFrame(
+        {
+            "positions": position,
+            "postion_coordinates": "x0",
+            "values": 0,
+        },
+        index=pd.MultiIndex.from_product(
+            [ndres.modes_, time_index], names=x0.index.names
+        ),
+    )
+
+    x0 = pd.concat((x0, to_complete))
+
+    sns.lineplot(
+        ax=ref_ax,
+        x=constants.D_TIMES,
+        y=constants.XA_NAME,
+        hue=constants.D_MODES,
+        data=x0,
+        legend=True,
+        alpha=0.75,
+    )
+    ticks = ref_ax.get_xticks()
+    ticks_array = np.asarray(ticks, dtype=float)
+    tmin, tmax = np.min(ticks_array), np.max(ticks_array)
+    new_ticks = np.interp(ticks_array, (tmin, tmax), (ll, tl))
+
+    labels = np.array([f"{t:.2f}" for t in new_ticks])
+    labels[labels != labels[len(labels) // 2]] = ""
+
+    ref_ax.set_xticks(ticks)
+    ref_ax.set_xticklabels(labels)
+    ref_ax.set_title("x0")
+
+    fig_ref.suptitle(f"{ndres.mname} - Position {position}")
