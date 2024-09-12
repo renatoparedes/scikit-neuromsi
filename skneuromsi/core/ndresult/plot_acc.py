@@ -25,11 +25,19 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
+import pandas as pd
+
 import seaborn as sns
 
 import xarray as xr
 
-from ..constants import D_MODES, D_POSITIONS, D_TIMES, XA_NAME
+from ..constants import (
+    D_MODES,
+    D_POSITIONS,
+    D_POSITIONS_COORDINATES,
+    D_TIMES,
+    XA_NAME,
+)
 from ...utils import AccessorABC
 
 
@@ -90,7 +98,7 @@ class ResultPlotter(AccessorABC):
 
         return np.asarray(ax)
 
-    def _complete_dimension(self, xa, dim, n, scalar_dim=True):
+    def _old_complete_dimension(self, xa, dim, n, scalar_dim=True):
         """Complete a dimension in the xarray.DataArray.
 
         This method creates a new xarray.DataArray with the specified dimension
@@ -129,6 +137,69 @@ class ResultPlotter(AccessorABC):
             completed.append(nxa)
 
         return xr.combine_nested(completed, dim)
+
+    def _complete_index_level(self, *, df, level, center, fill_value):
+        """Complete a DataFrame index level with missing values around a \
+        center point.
+
+        This function fills in missing values in a specified index level
+        of a DataFrame, creating a symmetric range of values around a center
+        point.
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The input DataFrame to be completed.
+        level : str
+            The name of the index level to be completed.
+        center : int
+            The center value around which to complete the index.
+        fill_value : scalar
+            The value to use for filling new rows.
+
+        Returns
+        -------
+        pandas.DataFrame
+            A new DataFrame with the completed index level.
+
+        Notes
+        -----
+        The function creates a range of 51 values centered around the given
+        center value, excluding the center itself. It then uses these values
+        to complete the specified index level.
+
+        """
+        # Create a range of values to complete the index,
+        # centered around the given center value
+        values_to_complete = np.arange(center - 25, center + 26)
+        values_to_complete = values_to_complete[values_to_complete != center]
+
+        # Prepare new index values for all levels
+        index_names, new_index_values = [], []
+        for lname, lvalues in zip(df.index.names, df.index.levels):
+            lvalues = lvalues.to_numpy()
+
+            # Replace the values for the specified level with the new range
+            if level == lname:
+                lvalues = values_to_complete
+
+            index_names.append(lname)
+            new_index_values.append(lvalues)
+
+        # Create a new DataFrame with the expanded index and fill it
+        # with the specified fill_value
+        for_complete_df = pd.DataFrame(
+            fill_value,
+            columns=df.columns.copy(),
+            index=pd.MultiIndex.from_product(
+                new_index_values, names=index_names
+            ),
+        )
+
+        # Concatenate the original DataFrame with the new one to
+        # create the completed DataFrame
+        completed_df = pd.concat((df, for_complete_df))
+        return completed_df
 
     def _scale_xtickslabels(self, *, limits, ticks, single_value):
         """Scale the x-tick labels based on the provided limits and ticks.
@@ -190,21 +261,25 @@ class ResultPlotter(AccessorABC):
 
         xa = self._result.to_xarray()
 
-        if has_single_position:
-            xa = self._complete_dimension(
-                xa, D_POSITIONS, 25, scalar_dim=False
-            )
-
         kwargs.setdefault("alpha", 0.75)
 
-        for coord, ax in zip(self._result.pcoords_, axes, strict=True):
-            df = xa.sel(positions_coordinates=coord, times=time).to_dataframe()
+        df = xa.sel(times=time).to_dataframe()
+        if has_single_position:
+            df = self._complete_index_level(
+                df=df,
+                level=D_POSITIONS,
+                center=self._result.positions_[0],
+                fill_value={"times": time, "values": 0},
+            )
+
+        for pcoord, ax in zip(self._result.pcoords_, axes, strict=True):
+            pcoord_df = df.xs(pcoord, level=D_POSITIONS_COORDINATES)
 
             sns.lineplot(
                 x=D_POSITIONS,
                 y=XA_NAME,
                 hue=D_MODES,
-                data=df,
+                data=pcoord_df,
                 ax=ax,
                 legend=(ax == axes[-1]),  # the last ax has the legend
                 **kwargs,
@@ -221,7 +296,7 @@ class ResultPlotter(AccessorABC):
             ax.set_xticklabels(labels)
 
             # title
-            ax.set_title(coord)
+            ax.set_title(pcoord)
 
         # retrieve the figure
         figure = ax.get_figure()
@@ -258,21 +333,25 @@ class ResultPlotter(AccessorABC):
 
         xa = self._result.to_xarray()
 
-        if has_single_time:
-            xa = self._complete_dimension(xa, D_TIMES, 25, scalar_dim=False)
-
         kwargs.setdefault("alpha", 0.75)
 
-        for coord, ax in zip(self._result.pcoords_, axes, strict=True):
-            df = xa.sel(
-                positions_coordinates=coord, positions=position
-            ).to_dataframe()
+        df = xa.sel(positions=position).to_dataframe()
+        if has_single_time:
+            df = self._complete_index_level(
+                df=df,
+                level=D_TIMES,
+                center=self._result.times_[0],
+                fill_value={"positions": position, "values": 0},
+            )
+
+        for pcoord, ax in zip(self._result.pcoords_, axes, strict=True):
+            pcoord_df = df.xs(pcoord, level=D_POSITIONS_COORDINATES)
 
             sns.lineplot(
                 x=D_TIMES,
                 y=XA_NAME,
                 hue=D_MODES,
-                data=df,
+                data=pcoord_df,
                 ax=ax,
                 legend=(ax == axes[-1]),  # the last ax has the legend
                 **kwargs,
@@ -287,7 +366,7 @@ class ResultPlotter(AccessorABC):
             ax.set_xticklabels(labels)
 
             # title
-            ax.set_title(coord)
+            ax.set_title(pcoord)
 
         figure = ax.get_figure()
         figure.suptitle(f"{self._result.mname} - Position {position}")
