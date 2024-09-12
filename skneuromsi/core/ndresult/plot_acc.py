@@ -98,46 +98,6 @@ class ResultPlotter(AccessorABC):
 
         return np.asarray(ax)
 
-    def _old_complete_dimension(self, xa, dim, n, scalar_dim=True):
-        """Complete a dimension in the xarray.DataArray.
-
-        This method creates a new xarray.DataArray with the specified dimension
-        `dim` completed by adding zero-valued entries around the original data.
-
-        Parameters
-        ----------
-        xa : xarray.DataArray
-            The input xarray.DataArray.
-        dim : str
-            The dimension to complete.
-        n : int
-            The number of entries to add on each side of the original data.
-        scalar_dim : bool, optional
-            Whether the dimension is scalar (True) or not (False).
-            Default is True.
-
-        Returns
-        -------
-        xarray.DataArray
-            The completed xarray.DataArray.
-
-        """
-        # the original array must be in the final data
-        completed = [xa]
-
-        zxa = xa.copy()
-        zxa.values = np.zeros_like(zxa.values)
-
-        for idx in np.arange(-n, n + 1):
-            if idx == 0:
-                continue
-
-            nxa = zxa.copy()
-            nxa[dim] = idx if scalar_dim else [idx]
-            completed.append(nxa)
-
-        return xr.combine_nested(completed, dim)
-
     def _complete_index_level(self, *, df, level, center, fill_value):
         """Complete a DataFrame index level with missing values around a \
         center point.
