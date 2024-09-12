@@ -29,8 +29,6 @@ import pandas as pd
 
 import seaborn as sns
 
-import xarray as xr
-
 from ..constants import (
     D_MODES,
     D_POSITIONS,
