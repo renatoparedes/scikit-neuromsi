@@ -15,6 +15,8 @@
 
 import numpy as np
 
+import pandas as pd
+
 from skneuromsi.core.ndresult import stats_acc
 
 
@@ -76,10 +78,10 @@ def test_ResultStatsAccessor_min(random_ndresult):
         seed=42,
     )
     stats = stats_acc.ResultStatsAccessor(ndres)
-    print(stats.min())
     np.testing.assert_allclose(stats.min(), 0.004379153251647949)
 
-def test_ResultStatsAccessor_dim(random_ndresult):
+
+def test_ResultStatsAccessor_dimmin(random_ndresult):
     ndres = random_ndresult(
         input_modes_min=1,
         input_modes_max=1,
@@ -90,5 +92,104 @@ def test_ResultStatsAccessor_dim(random_ndresult):
         seed=42,
     )
     stats = stats_acc.ResultStatsAccessor(ndres)
-    print(stats.dimmin())
-    np.testing.assert_allclose(stats.dimmin(), 0.004379153251647949)
+
+    expected = pd.Series(
+        {
+            "modes": "output",
+            "times": 4,
+            "positions": 18,
+            "positions_coordinates": "x1",
+            "values": 0.004379153251647949,
+        },
+        name="min",
+    )
+
+    pd.testing.assert_series_equal(stats.dimmin(), expected)
+
+
+def test_ResultStatsAccessor_max(random_ndresult):
+    ndres = random_ndresult(
+        input_modes_min=1,
+        input_modes_max=1,
+        time_res=1,
+        position_res=1,
+        position_coordinates_min=3,
+        position_coordinates_max=3,
+        seed=42,
+    )
+    stats = stats_acc.ResultStatsAccessor(ndres)
+    np.testing.assert_allclose(stats.max(), 0.9991046786308289)
+
+
+def test_ResultStatsAccessor_dimmax(random_ndresult):
+    ndres = random_ndresult(
+        input_modes_min=1,
+        input_modes_max=1,
+        time_res=1,
+        position_res=1,
+        position_coordinates_min=3,
+        position_coordinates_max=3,
+        seed=42,
+    )
+    stats = stats_acc.ResultStatsAccessor(ndres)
+
+    expected = pd.Series(
+        {
+            "modes": "output",
+            "times": 0,
+            "positions": 17,
+            "positions_coordinates": "x1",
+            "values": 0.9991046786308289,
+        },
+        name="max",
+    )
+
+    pd.testing.assert_series_equal(stats.dimmax(), expected)
+
+
+def test_ResultStatsAccessor_quantile(random_ndresult):
+    ndres = random_ndresult(
+        input_modes_min=1,
+        input_modes_max=1,
+        time_res=1,
+        position_res=1,
+        position_coordinates_min=3,
+        position_coordinates_max=3,
+        seed=42,
+    )
+    stats = stats_acc.ResultStatsAccessor(ndres)
+
+    np.testing.assert_allclose(
+        stats.quantile(q=(0.25, 0.5, 0.75)),
+        [0.25559422, 0.50596806, 0.75676683],
+    )
+
+
+def test_ResultStatsAccessor_describe(random_ndresult):
+    ndres = random_ndresult(
+        input_modes_min=1,
+        input_modes_max=1,
+        time_res=1,
+        position_res=1,
+        position_coordinates_min=3,
+        position_coordinates_max=3,
+        seed=42,
+    )
+    stats = stats_acc.ResultStatsAccessor(ndres)
+
+    expected = pd.DataFrame(
+        [
+            1200.0,
+            0.5046552419662476,
+            0.2873277962207794,
+            0.004379153251647949,
+            0.2555942237377167,
+            0.5059680640697479,
+            0.7567668259143829,
+            0.9991046786308289,
+        ],
+        index=["count", "mean", "std", "min", "25%", "50%", "75%", "max"],
+        columns=["describe"],
+    )
+
+    pd.testing.assert_frame_equal(stats.describe(), expected)
