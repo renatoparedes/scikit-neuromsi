@@ -568,7 +568,7 @@ def random_ndresultcollection(random_ndresult):
 # =============================================================================
 
 
-class SilencedTQDM(tqdm.tqdm):
+class _SilencedTQDM(tqdm.tqdm):
     """Silence TQDM.
 
     This class is used to silence TQDM progress bars.
@@ -578,3 +578,8 @@ class SilencedTQDM(tqdm.tqdm):
     def __init__(self, *args, **kwargs):
         kwargs["disable"] = True
         super().__init__(*args, **kwargs)
+
+
+@pytest.fixture(scope="session")
+def silenced_tqdm_cls():
+    return _SilencedTQDM

@@ -96,7 +96,8 @@ def calculate_single_peak_probability(peaks_values):
     elif peaks_values.size == 1:
         single_peak_probability = peaks_values.item()
 
-    # If multiple peaks were found, assign the complementary probability of multiple peaks
+    # If multiple peaks were found, assign the complementary
+    # probability of multiple peaks
     else:
         single_peak_probability = 1.0 - calculate_multiple_peaks_probability(
             peaks_values
@@ -215,11 +216,13 @@ def calculate_spatiotemporal_causes_from_peaks(
     """
     # Determine the dimension of interest
     if causes_dim == "space":
-        # If calculating spatial causes, get the data from time point the multi matrix
+        # If calculating spatial causes, get the data from
+        # time point the multi matrix
         mode_activity_data = mode_spatiotemporal_activity_data[time_point, :]
 
     elif causes_dim == "time":
-        # If calculating temporal causes, get data from position point in multi matrix
+        # If calculating temporal causes, get data from position
+        # oint in multi matrix
         mode_activity_data = mode_spatiotemporal_activity_data[
             :, spatial_point
         ]
