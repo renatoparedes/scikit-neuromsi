@@ -317,12 +317,6 @@ class NDResultCollection(Sequence):
         """
         # if the cache is None, we need to collect metadata
         if self._cache is None:
-            ndresult = self[0]
-            cache = _from_one_cache(ndresult)
-            self._cache = Bunch("_cache", cache)
-
-        # if the key is not present in the cache, we need to collect metadata
-        if key not in self._cache:
             ndresults = iter(self)
 
             # if tqdm_cls is not None, we need to show a progress bar

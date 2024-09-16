@@ -29,20 +29,18 @@ import pytest
 from skneuromsi.mle import AlaisBurr2004
 from skneuromsi import core, sweep
 
-from .conftest import SilencedTQDM
-
 # =============================================================================
 # TESTS
 # =============================================================================
 
 
-def test_ParameterSweep():
+def test_ParameterSweep(silenced_tqdm_cls):
 
     param_sweep = sweep.ParameterSweep(
         AlaisBurr2004(),
         target="auditory_position",
         repeat=1,
-        tqdm_cls=SilencedTQDM,
+        tqdm_cls=silenced_tqdm_cls,
         seed=42,
     )
 
@@ -53,7 +51,7 @@ def test_ParameterSweep():
         == np.random.default_rng(42).bit_generator.state
     )
     assert param_sweep.compression_params == core.DEFAULT_COMPRESSION_PARAMS
-    assert param_sweep.tqdm_cls is SilencedTQDM
+    assert param_sweep.tqdm_cls is silenced_tqdm_cls
 
     result = param_sweep.run()
     assert result.name == sweep.ParameterSweep.__name__

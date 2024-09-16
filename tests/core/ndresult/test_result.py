@@ -133,7 +133,7 @@ def test_modes_to_data_array_invalid():
         result.modes_to_data_array(modes_dict, None)
 
 
-def test_NDResult_creation():
+def test_NDResult():
     modes_dict = {
         "mode0": [[1, 2, 3], [4, 5, 6]],
         "output": [[1, 2, 3], [4, 5, 6]],
