@@ -36,7 +36,7 @@ def test_NDCollection(random_ndresult, silenced_tqdm_cls):
     sknmsi.testing.assert_ndresult_allclose(coll[1], ndres1)
     np.testing.assert_array_equal(coll.modes_, ["Mode_0", "output"])
     assert coll.output_mode_ == "output"
-    assert coll.run_parameters_ == ()
+    assert coll.run_parameters_ == ("p0",)
     np.testing.assert_array_equal(coll.causes_, [1, None])
 
 

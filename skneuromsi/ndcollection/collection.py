@@ -68,44 +68,6 @@ def _modes_describe(ndres):
     return {"var": modes.var()}
 
 
-def _from_one_cache(ndresult):
-    """Create a metadata cache from a single NDResult object.
-
-    This function creates a metadata cache from a single NDResult object.
-
-    Parameters
-    ----------
-    ndresult : NDResult
-        The NDResult object for which to create the metadata cache.
-
-    Returns
-    -------
-    cache : dict
-        A dictionary containing the metadata cache.
-
-    Notes
-    -----
-    The metadata cache contains the following keys:
-
-    - 'modes' : array-like
-        Modes associated with the NDResult.
-    - 'output_mode' : str
-        Output mode of the NDResult.
-    - 'run_parameters' : tuple
-        Tuple representing the run parameters of the NDResult.
-    - 'dims' : tuple
-        Tuple representing the dimensions of the NDResult.
-
-    """
-    cache = {
-        "modes": ndresult.modes_,
-        "output_mode": ndresult.output_mode,
-        "run_parameters": tuple(ndresult.run_parameters.to_dict()),
-        "dims": ndresult.dims,
-    }
-    return cache
-
-
 def _make_metadata_cache(ndresults):
     """Create a metadata cache from a collection of NDResult objects.
 
@@ -164,6 +126,8 @@ def _make_metadata_cache(ndresults):
     causes = []
     modes_variances = []
 
+    cache = {}
+
     for ndres in ndresults:
         mnames.append(ndres.mname)
         mtypes.append(ndres.mtype)
@@ -177,27 +141,33 @@ def _make_metadata_cache(ndresults):
         modes_describe_dict = _modes_describe(ndres)
         modes_variances.append(modes_describe_dict["var"])
 
+        # all the run_parameters/modes are the same, so lets take the first one
+        if not cache:
+            cache.update(
+                modes=ndres.modes_,
+                output_mode=ndres.output_mode,
+                run_parameters=tuple(ndres.run_parameters.to_dict()),
+                dims=ndres.dims,
+            )
+
     # Resume the series collection into a single one we use sum instead of
     # numpy sum, because we want a pandas.Series and not a numpy array.
     # Also we assign the name to the Series.
     modes_variances_sum = sum(modes_variances)
     modes_variances_sum.name = "VarSum"
 
-    cache = {
-        "mnames": np.asarray(mnames),
-        "mtypes": np.asarray(mtypes),
-        "nmaps": np.asarray(nmaps),
-        "time_ranges": np.asarray(time_ranges),
-        "position_ranges": np.asarray(position_ranges),
-        "time_resolutions": np.asarray(time_resolutions),
-        "position_resolutions": np.asarray(position_resolutions),
-        "run_parameters_values": np.asarray(run_parameters_values),
-        "causes": np.asarray(causes),
-        "modes_variances_sum": modes_variances_sum,
-    }
-
-    # all the run_parameters/modes are the same, so lets take the last one
-    cache.update(_from_one_cache(ndres))
+    cache.update(
+        mnames=np.asarray(mnames),
+        mtypes=np.asarray(mtypes),
+        nmaps=np.asarray(nmaps),
+        time_ranges=np.asarray(time_ranges),
+        position_ranges=np.asarray(position_ranges),
+        time_resolutions=np.asarray(time_resolutions),
+        position_resolutions=np.asarray(position_resolutions),
+        run_parameters_values=np.asarray(run_parameters_values),
+        causes=np.asarray(causes),
+        modes_variances_sum=modes_variances_sum,
+    )
 
     return cache
 
