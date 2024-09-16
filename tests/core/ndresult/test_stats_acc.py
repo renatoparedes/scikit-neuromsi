@@ -79,7 +79,7 @@ def test_ResultStatsAccessor_min(random_ndresult):
     print(stats.min())
     np.testing.assert_allclose(stats.min(), 0.004379153251647949)
 
-def test_ResultStatsAccessor_dim(random_ndresult):
+def test_ResultStatsAccessor_dimmin(random_ndresult):
     ndres = random_ndresult(
         input_modes_min=1,
         input_modes_max=1,
