@@ -117,12 +117,12 @@ def assert_ndresult_allclose(
     ), "nmap mismatch"
 
     assert dict_cmp.dict_allclose(
-        left.run_params,
-        right.run_params,
+        left.run_parameters,
+        right.run_parameters,
         rtol=rtol,
         atol=atol,
         equal_nan=equal_nan,
-    ), "run_params mismatch"
+    ), "run_parameters mismatch"
 
     assert dict_cmp.dict_allclose(
         left.extra_, right.extra_, rtol=rtol, atol=atol, equal_nan=equal_nan

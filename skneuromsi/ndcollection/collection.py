@@ -100,7 +100,7 @@ def _from_one_cache(ndresult):
     cache = {
         "modes": ndresult.modes_,
         "output_mode": ndresult.output_mode,
-        "run_parameters": tuple(ndresult.run_params.to_dict()),
+        "run_parameters": tuple(ndresult.run_parameters.to_dict()),
         "dims": ndresult.dims,
     }
     return cache
@@ -172,7 +172,7 @@ def _make_metadata_cache(ndresults):
         position_ranges.append(ndres.position_range)
         time_resolutions.append(ndres.time_res)
         position_resolutions.append(ndres.position_res)
-        run_parameters_values.append(ndres.run_params.to_dict())
+        run_parameters_values.append(ndres.run_parameters.to_dict())
         causes.append(ndres.causes_)
         modes_describe_dict = _modes_describe(ndres)
         modes_variances.append(modes_describe_dict["var"])

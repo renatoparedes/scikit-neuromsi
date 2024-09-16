@@ -524,7 +524,7 @@ class SKNMSIRunConfig:
                 time_res=time_res,
                 position_res=position_res,
                 causes=causes,
-                run_params=dict(bound_params.arguments),
+                run_parameters=dict(bound_params.arguments),
                 extra=extra_aliased,
             )
 

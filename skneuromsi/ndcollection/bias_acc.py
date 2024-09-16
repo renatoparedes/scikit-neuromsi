@@ -190,7 +190,7 @@ class NDResultBiasAcc(AccessorABC):
 
         bias_arr = np.zeros(len(ndresults))
         for idx, res in enumerate(ndresults):
-            ref_value = res.run_params[changing_parameter]
+            ref_value = res.run_parameters[changing_parameter]
 
             # here we extract all the values of the mode we are interested in
             modes_values = res.get_modes(mode)

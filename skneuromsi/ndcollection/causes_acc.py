@@ -81,11 +81,11 @@ class NDResultCausesAcc(AccessorABC):
 
         parameter = nd_collection.coerce_parameter(parameter)
 
-        run_params_values = nd_collection.run_parameters_values
+        run_parameters_values = nd_collection.run_parameters_values
         causes = nd_collection.causes_
 
         columns = defaultdict(list)
-        for rp_value, causes in zip(run_params_values, causes):
+        for rp_value, causes in zip(run_parameters_values, causes):
             columns[("Parameters", parameter)].append(rp_value[parameter])
             columns[("", "Causes")].append(causes)
 

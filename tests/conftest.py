@@ -387,7 +387,7 @@ def random_ndresult(random_modes_da):
         position_range=(0, 20),
         time_res=0.1,
         position_res=1,
-        run_params=None,
+        run_parameters=None,
         extra=None,
         causes=None,
         seed=None,
@@ -412,7 +412,7 @@ def random_ndresult(random_modes_da):
             Time resolution of the model.
         position_res : float, default 1
             Position resolution of the model.
-        run_params : dict, optional
+        run_parameters : dict, optional
             Dictionary of run parameters. If not provided, an empty dictionary
             will be used.
         extra : dict, optional
@@ -445,7 +445,7 @@ def random_ndresult(random_modes_da):
         nmap = {} if nmap is None else dict(nmap)
         time_res = float(time_res)
         position_res = float(position_res)
-        run_params = {} if run_params is None else dict(run_params)
+        run_parameters = {} if run_parameters is None else dict(run_parameters)
         extra = {} if extra is None else dict(extra)
 
         times = int(np.abs(np.subtract(*time_range)) / time_res)
@@ -476,7 +476,7 @@ def random_ndresult(random_modes_da):
             time_res=time_res,
             position_res=position_res,
             causes=causes,
-            run_params=run_params,
+            run_parameters=run_parameters,
             extra=extra,
             ensure_dtype=None,
         )

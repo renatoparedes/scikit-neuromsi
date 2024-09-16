@@ -149,7 +149,7 @@ def test_NDResult():
         time_res=0.5,
         position_res=1.0,
         causes=1,
-        run_params={},
+        run_parameters={},
         extra={},
         ensure_dtype=float,
     )
@@ -164,7 +164,7 @@ def test_NDResult():
     assert ndres.time_res == 0.5
     assert ndres.position_res == 1.0
     assert ndres.causes_ == 1
-    assert ndres.run_params == {}
+    assert ndres.run_parameters == {}
     assert ndres.extra_ == {}
     np.testing.assert_array_equal(ndres.dims, constants.DIMENSIONS)
     np.testing.assert_array_equal(ndres.modes_, ["mode0", "output"])
@@ -204,7 +204,7 @@ def test_NDResult_output_mode_not_found():
             time_res=0.5,
             position_res=1.0,
             causes=1,
-            run_params={},
+            run_parameters={},
             extra={},
             ensure_dtype=None,
         )
@@ -226,7 +226,7 @@ def test_NDResult_lt_2_modes():
             time_res=0.5,
             position_res=1.0,
             causes=1,
-            run_params={},
+            run_parameters={},
             extra={},
             ensure_dtype=None,
         )
@@ -252,7 +252,7 @@ def test_NDResult_invalid_time_range():
             time_res=0.5,
             position_res=1.0,
             causes=1,
-            run_params={},
+            run_parameters={},
             extra={},
             ensure_dtype=None,
         )
@@ -271,7 +271,7 @@ def test_NDResult_invalid_time_range():
             time_res=0.5,
             position_res=1.0,
             causes=1,
-            run_params={},
+            run_parameters={},
             extra={},
             ensure_dtype=None,
         )
@@ -300,7 +300,7 @@ def test_NDResult_invalid_times():
             time_res=0.5,
             position_res=1.0,
             causes=1,
-            run_params={},
+            run_parameters={},
             extra={},
             ensure_dtype=None,
         )
@@ -326,7 +326,7 @@ def test_NDResult_invalid_position_range():
             time_res=0.5,
             position_res=1.0,
             causes=1,
-            run_params={},
+            run_parameters={},
             extra={},
             ensure_dtype=None,
         )
@@ -345,7 +345,7 @@ def test_NDResult_invalid_position_range():
             time_res=0.5,
             position_res=1.0,
             causes=1,
-            run_params={},
+            run_parameters={},
             extra={},
             ensure_dtype=None,
         )
@@ -374,7 +374,7 @@ def test_NDResult_invalid_positions():
             time_res=0.5,
             position_res=1.0,
             causes=1,
-            run_params={},
+            run_parameters={},
             extra={},
             ensure_dtype=None,
         )
@@ -396,7 +396,7 @@ def test_NDResult_get_modes():
         time_res=0.5,
         position_res=1.0,
         causes=1,
-        run_params={},
+        run_parameters={},
         extra={},
         ensure_dtype=float,
     )
@@ -435,7 +435,7 @@ def test_NDResult_get_times():
         time_res=0.5,
         position_res=1.0,
         causes=1,
-        run_params={},
+        run_parameters={},
         extra={},
         ensure_dtype=float,
     )
@@ -477,7 +477,7 @@ def test_NDResult_get_positions():
         time_res=0.5,
         position_res=1.0,
         causes=1,
-        run_params={},
+        run_parameters={},
         extra={},
         ensure_dtype=float,
     )
@@ -520,7 +520,7 @@ def test_NDResult_get_position_coordinates():
         time_res=0.5,
         position_res=1.0,
         causes=1,
-        run_params={},
+        run_parameters={},
         extra={},
         ensure_dtype=float,
     )
@@ -562,7 +562,7 @@ def test_NDResult_to_xarray():
         time_res=0.5,
         position_res=1.0,
         causes=1,
-        run_params={},
+        run_parameters={},
         extra={},
         ensure_dtype=float,
     )
@@ -601,7 +601,7 @@ def test_NDResult_to_dict():
         time_res=0.5,
         position_res=1.0,
         causes=1,
-        run_params={},
+        run_parameters={},
         extra={},
         ensure_dtype=float,
     )
@@ -616,7 +616,7 @@ def test_NDResult_to_dict():
         "time_res": 0.5,
         "position_res": 1.0,
         "causes": 1,
-        "run_params": {},
+        "run_parameters": {},
         "extra": {},
         "nddata": xa.DataArray(
             data=[
@@ -672,7 +672,7 @@ def test_NDResult_astype_compared_with_deep_dtypes(random_ndresult):
         time_res=0.5,
         position_res=1.0,
         causes=1,
-        run_params={},
+        run_parameters={},
         extra={},
         ensure_dtype=float,
     )
@@ -687,7 +687,7 @@ def test_NDResult_astype_compared_with_deep_dtypes(random_ndresult):
         "time_res": (float, None),
         "position_res": (float, None),
         "causes": (int, None),
-        "run_params": (dict, {}),
+        "run_parameters": (dict, {}),
         "extra": (dict, {}),
         "nddata": (xa.DataArray, np.dtype("float64")),
     }
@@ -706,7 +706,7 @@ def test_NDResult_astype_compared_with_deep_dtypes(random_ndresult):
         "time_res": (float, None),
         "position_res": (float, None),
         "causes": (int, None),
-        "run_params": (dict, {}),
+        "run_parameters": (dict, {}),
         "extra": (dict, {}),
         "nddata": (xa.DataArray, np.dtype("int64")),
     }
@@ -730,7 +730,7 @@ def test_NDResult_dtypes(random_ndresult):
         time_res=0.5,
         position_res=1.0,
         causes=1,
-        run_params={},
+        run_parameters={},
         extra={},
         ensure_dtype=float,
     )
@@ -790,7 +790,7 @@ def test_NDResult_dtypes(random_ndresult):
             "time_res",
             "position_res",
             "causes",
-            "run_params",
+            "run_parameters",
             "extra",
             "nddata",
         ],

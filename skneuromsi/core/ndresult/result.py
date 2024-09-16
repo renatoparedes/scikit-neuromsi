@@ -147,7 +147,7 @@ class NDResult:
         The resolution of position values.
     causes : int
         The number of causes in the result.
-    run_params : dict
+    run_parameters : dict
         The parameters used for running the model.
     extra : dict
         Extra information associated with the result.
@@ -176,7 +176,7 @@ class NDResult:
         The resolution of time values.
     position_res : float
         The resolution of position values.
-    run_params : Bunch
+    run_parameters : Bunch
         The parameters used for running the model.
     dtypes : numpy.dtype
         The data type of the result data.
@@ -209,7 +209,7 @@ class NDResult:
         time_res,
         position_res,
         causes,
-        run_params,
+        run_parameters,
         extra,
         ensure_dtype=None,
     ):
@@ -224,7 +224,7 @@ class NDResult:
         self._position_range = np.asarray(position_range, dtype=ensure_dtype)
         self._time_res = float(time_res)
         self._position_res = float(position_res)
-        self._run_params = dict(run_params)
+        self._run_parameters = dict(run_parameters)
         self._extra = dict(extra)
         self._causes = None if causes is None else int(causes)
         self._nddata = nddata
@@ -355,11 +355,11 @@ class NDResult:
         return self._position_res
 
     @property
-    def run_params(self):
+    def run_parameters(self):
         """Bunch: The parameters used for running the model."""
-        return Bunch("run_params", self._run_params)
+        return Bunch("run_parameters", self._run_parameters)
 
-    rp = run_params
+    rp = run_parameters
 
     # dtypes are at the end <===================================!!!
 
@@ -606,7 +606,7 @@ class NDResult:
             "time_res": self.time_res,
             "position_res": self.position_res,
             "causes": self.causes_,
-            "run_params": self.run_params.to_dict(),
+            "run_parameters": self.run_parameters.to_dict(),
             "extra": self.extra_.to_dict(),
             "nddata": self.to_xarray(),
         }
