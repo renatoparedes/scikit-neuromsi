@@ -78,6 +78,46 @@ def test_NDCollection(random_ndresult, silenced_tqdm_cls):
     assert repr(coll) == "<NDResultCollection 'collection' len=2>"
 
 
+def test_NDCollection_empty_collection():
+    expected_error = "Empty NDResultCollection not allowed"
+    with pytest.raises(ValueError, match=expected_error):
+        collection.NDResultCollection("collection", [])
+
+
+def test_NDCollection_invalid_tqdm_class(random_ndresult, silenced_tqdm_cls):
+    ndres0 = random_ndresult(
+        input_modes_min=1,
+        input_modes_max=1,
+        time_res=1,
+        position_res=1,
+        position_coordinates_min=3,
+        position_coordinates_max=3,
+        causes=1,
+        run_parameters={"p0": 1},
+    )
+    ndres1 = random_ndresult(
+        input_modes_min=1,
+        input_modes_max=1,
+        time_res=1,
+        position_res=1,
+        position_coordinates_min=3,
+        position_coordinates_max=3,
+        causes=1,
+        run_parameters={"p0": 2},
+    )
+    expected_error = "'tqdm_cls' must be an instance of tqdm.tqdm or None"
+    with pytest.raises(TypeError, match=expected_error):
+        collection.NDResultCollection.from_ndresults(
+            "collection", [ndres0, ndres1], tqdm_cls=object
+        )
+
+
+def test_NDCollection_not_compressed_NDResult():
+    expected_error = "Not all results are CompressedNDResult objects"
+    with pytest.raises(ValueError, match=expected_error):
+        collection.NDResultCollection("collection", [0, 0])
+
+
 def test_NDCollection_invalid_common_metadata(
     random_ndresult, silenced_tqdm_cls
 ):

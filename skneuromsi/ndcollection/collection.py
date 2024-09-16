@@ -237,7 +237,7 @@ class NDResultCollection(Sequence):
             self._tqdm_cls is None or issubclass(self._tqdm_cls, tqdm.tqdm)
         ):
             raise TypeError(
-                "tqdm_cls must be an instance of tqdm.tqdm or None"
+                "'tqdm_cls' must be an instance of tqdm.tqdm or None"
             )
         if not all(
             isinstance(ndr, core.CompressedNDResult)
