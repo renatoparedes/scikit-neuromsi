@@ -61,32 +61,6 @@ def test_NDResultCollection_store_and_open(random_ndresult, silenced_tqdm_cls):
     sknmsi.testing.assert_ndresult_collection_allclose(collection, restored)
 
 
-def test_NDResultCollection_oostore_equivalent(
-    random_ndresult, silenced_tqdm_cls
-):
-    ndres = random_ndresult()
-    collection = sknmsi.NDResultCollection.from_ndresults(
-        "collection", [ndres, ndres], tqdm_cls=silenced_tqdm_cls
-    )
-
-    oo_buffer = io.BytesIO()
-    collection.to_ndc(oo_buffer, quiet=True)
-    oo_buffer.seek(0)
-
-    func_buffer = io.BytesIO()
-    sknmsi.to_ndc(func_buffer, collection, tqdm_cls=silenced_tqdm_cls)
-    func_buffer.seek(0)
-
-    restored_from_oo = sknmsi.read_ndc(oo_buffer, tqdm_cls=silenced_tqdm_cls)
-    restored_from_func = sknmsi.read_ndc(
-        func_buffer, tqdm_cls=silenced_tqdm_cls
-    )
-
-    sknmsi.testing.assert_ndresult_collection_allclose(
-        restored_from_func, restored_from_oo
-    )
-
-
 def test_store_ndresults_collection_not_instace_of_ndcollection():
     with pytest.raises(TypeError):
         sknmsi.to_ndc("", None)

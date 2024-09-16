@@ -37,7 +37,7 @@ from ..utils import AccessorABC
 # =============================================================================
 
 
-class NDResultCausesAcc(AccessorABC):
+class NDResultCollectionCausesAcc(AccessorABC):
     """Accessor for calculating causes in an NDResultCollection.
 
     Causal analysis in the context of multisensory integration refers to the

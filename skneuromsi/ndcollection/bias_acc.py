@@ -38,7 +38,7 @@ from ..utils import AccessorABC
 # =============================================================================
 
 
-class NDResultBiasAcc(AccessorABC):
+class NDResultCollectionBiasAcc(AccessorABC):
     """Accessor for calculating biases in an NDResultCollection.
 
     Bias analysis in multisensory integration refers to the examination and

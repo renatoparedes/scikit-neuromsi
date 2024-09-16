@@ -76,25 +76,12 @@ def test_assert_ndresult_allclose_equals_different_seed(random_ndresult):
 def test_assert_ndresult_collection_allclose_different_seed(
     random_ndresult, silenced_tqdm_cls
 ):
-    ndres0 = random_ndresult(
-        input_modes_min=2,
-        input_modes_max=2,
-        position_coordinates_min=1,
-        position_coordinates_max=1,
-        seed=42,
-    )
-    ndres1 = random_ndresult(
-        input_modes_min=2,
-        input_modes_max=2,
-        position_coordinates_min=1,
-        position_coordinates_max=1,
-        seed=43,
-    )
-
+    ndres0 = random_ndresult(seed=42)
     collection0 = sknmsi.NDResultCollection.from_ndresults(
         "collection", [ndres0, ndres0], tqdm_cls=silenced_tqdm_cls
     )
 
+    ndres1 = random_ndresult(seed=43)
     collection1 = sknmsi.NDResultCollection.from_ndresults(
         "collection", [ndres1, ndres1], tqdm_cls=silenced_tqdm_cls
     )

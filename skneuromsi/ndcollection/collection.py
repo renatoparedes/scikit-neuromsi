@@ -173,7 +173,7 @@ def _make_metadata_cache(ndresults):
             if not dict_cmp.dict_allclose(
                 same_value_for_all_ndres_cache, other_ndres
             ):
-                same_keys = set(same_value_for_all_ndres_cache.keys())
+                same_keys = sorted(same_value_for_all_ndres_cache.keys())
                 raise ValueError(
                     "All NDResults must have "
                     f"the same metadata in {same_keys}."
@@ -332,6 +332,12 @@ class NDResultCollection(Sequence):
     def modes_(self):
         """Modes of all the results in the NDResultCollection."""
         return self._cache["modes"]
+
+    @property
+    def dims_(self):
+        """Dimensions of all the results in the \
+        NDResultCollection."""
+        return self._cache["dims"]
 
     @property
     def output_mode_(self):
@@ -512,7 +518,8 @@ class NDResultCollection(Sequence):
             if candidates_len != 1:
                 raise ValueError(
                     "The value of 'mode' is ambiguous since it has "
-                    f"{candidates_len} candidates: {candidates}"
+                    f"{candidates_len} candidates. "
+                    f"Candidates: {candidates.to_numpy()}"
                 )
 
             prefer = candidates[0]
@@ -551,7 +558,7 @@ class NDResultCollection(Sequence):
         if prefer is None:
             prefer = core.constants.D_TIMES
         elif prefer not in self.dims_:
-            raise ValueError(f"Unknow dimension {prefer}")
+            raise ValueError(f"Unknown dimension {prefer!r}")
         return prefer
 
     # ACCESORS ================================================================
@@ -561,13 +568,13 @@ class NDResultCollection(Sequence):
     def causes(self):
         """Accessor for NDResultCausesAcc providing access to causes \
         analysis."""
-        return causes_acc.NDResultCausesAcc(self)
+        return causes_acc.NDResultCollectionCausesAcc(self)
 
     @methodtools.lru_cache(maxsize=None)
     @property
     def bias(self):
         """Accessor for NDResultBiasAcc providing access to bias analysis."""
-        return bias_acc.NDResultBiasAcc(self, self._tqdm_cls)
+        return bias_acc.NDResultCollectionBiasAcc(self, self._tqdm_cls)
 
     @methodtools.lru_cache(maxsize=None)
     @property
