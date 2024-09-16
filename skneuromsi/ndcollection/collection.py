@@ -35,7 +35,7 @@ import pandas as pd
 import tqdm
 
 from .. import core
-from ..utils import Bunch
+from ..utils import Bunch, dict_cmp
 from . import bias_acc, causes_acc, cplot_acc
 
 
@@ -66,6 +66,30 @@ def _modes_describe(ndres):
     """
     modes = ndres.get_modes()
     return {"var": modes.var()}
+
+
+def _common_metadata_cache(ndres):
+    """Get the metadata cache from an NDResult object.
+
+    This function returns the metadata cache from an NDResult object.
+
+    Parameters
+    ----------
+    ndres : NDResult
+        The NDResult object from which to get the metadata cache.
+
+    Returns
+    -------
+    Bunch
+        The metadata cache of the NDResult object.
+
+    """
+    return {
+        "modes": ndres.modes_,
+        "output_mode": ndres.output_mode,
+        "run_parameters": tuple(ndres.run_parameters.to_dict()),
+        "dims": ndres.dims,
+    }
 
 
 def _make_metadata_cache(ndresults):
@@ -126,7 +150,7 @@ def _make_metadata_cache(ndresults):
     causes = []
     modes_variances = []
 
-    cache = {}
+    same_value_for_all_ndres_cache = None
 
     for ndres in ndresults:
         mnames.append(ndres.mname)
@@ -142,13 +166,18 @@ def _make_metadata_cache(ndresults):
         modes_variances.append(modes_describe_dict["var"])
 
         # all the run_parameters/modes are the same, so lets take the first one
-        if not cache:
-            cache.update(
-                modes=ndres.modes_,
-                output_mode=ndres.output_mode,
-                run_parameters=tuple(ndres.run_parameters.to_dict()),
-                dims=ndres.dims,
-            )
+        if same_value_for_all_ndres_cache is None:
+            same_value_for_all_ndres_cache = _common_metadata_cache(ndres)
+        else:
+            other_ndres = _common_metadata_cache(ndres)
+            if not dict_cmp.dict_allclose(
+                same_value_for_all_ndres_cache, other_ndres
+            ):
+                same_keys = set(same_value_for_all_ndres_cache.keys())
+                raise ValueError(
+                    "All NDResults must have "
+                    f"the same metadata in {same_keys}."
+                )
 
     # Resume the series collection into a single one we use sum instead of
     # numpy sum, because we want a pandas.Series and not a numpy array.
@@ -156,18 +185,19 @@ def _make_metadata_cache(ndresults):
     modes_variances_sum = sum(modes_variances)
     modes_variances_sum.name = "VarSum"
 
-    cache.update(
-        mnames=np.asarray(mnames),
-        mtypes=np.asarray(mtypes),
-        nmaps=np.asarray(nmaps),
-        time_ranges=np.asarray(time_ranges),
-        position_ranges=np.asarray(position_ranges),
-        time_resolutions=np.asarray(time_resolutions),
-        position_resolutions=np.asarray(position_resolutions),
-        run_parameters_values=np.asarray(run_parameters_values),
-        causes=np.asarray(causes),
-        modes_variances_sum=modes_variances_sum,
-    )
+    cache = {
+        "mnames": np.asarray(mnames),
+        "mtypes": np.asarray(mtypes),
+        "nmaps": np.asarray(nmaps),
+        "time_ranges": np.asarray(time_ranges),
+        "position_ranges": np.asarray(position_ranges),
+        "time_resolutions": np.asarray(time_resolutions),
+        "position_resolutions": np.asarray(position_resolutions),
+        "run_parameters_values": np.asarray(run_parameters_values),
+        "causes": np.asarray(causes),
+        "modes_variances_sum": modes_variances_sum,
+    }
+    cache.update(same_value_for_all_ndres_cache)
 
     return cache
 
@@ -214,6 +244,9 @@ class NDResultCollection(Sequence):
             for ndr in self._cndresults
         ):
             raise ValueError("Not all results are CompressedNDResult objects")
+
+        # populate the cache
+        self._populate_cache()
 
     @classmethod
     def from_ndresults(
@@ -272,19 +305,8 @@ class NDResultCollection(Sequence):
 
     # PROPERTIES =============================================================
 
-    def _get_from_cache(self, key):
-        """Get a value from the cache based on the given key.
-
-        This function retrieves a value from the cache based on the given key.
-        If the cache is None, it initializes it by decompressing the first
-        NDResult object in the collection and storing the metadata cache in the
-        cache attribute. If the key is not present in the cache, it collects
-        metadata from all the NDResult objects in the collection using an
-        iterator and stores the metadata cache in the cache attribute.
-        Finally, it returns the value associated with the given key in the
-        cache.
-
-        """
+    def _populate_cache(self):
+        """Populate the cache of the NDResultCollection."""
         # if the cache is None, we need to collect metadata
         if self._cache is None:
             ndresults = iter(self)
@@ -301,9 +323,6 @@ class NDResultCollection(Sequence):
             cache = _make_metadata_cache(ndresults)
             self._cache = Bunch("_cache", cache)
 
-        # return the value associated with the given key
-        return self._cache[key]
-
     @property
     def name(self):
         """Name of the NDResultCollection."""
@@ -312,31 +331,31 @@ class NDResultCollection(Sequence):
     @property
     def modes_(self):
         """Modes of all the results in the NDResultCollection."""
-        return self._get_from_cache("modes")
+        return self._cache["modes"]
 
     @property
     def output_mode_(self):
         """Output mode of all the results in the \
         NDResultCollection."""
-        return self._get_from_cache("output_mode")
+        return self._cache["output_mode"]
 
     @property
     def run_parameters_(self):
         """Run parameters of all the results in the \
         NDResultCollection."""
-        return self._get_from_cache("run_parameters")
+        return self._cache["run_parameters"]
 
     @property
     def causes_(self):
         """Causes of all the results in the \
         NDResultCollection."""
-        return self._get_from_cache("causes")
+        return self._cache["causes"]
 
     @property
     def run_parameters_values(self):
         """Run parameters values of all the results in the \
         NDResultCollection."""
-        return self._get_from_cache("run_parameters_values")
+        return self._cache["run_parameters_values"]
 
     @property
     def input_modes_(self):
@@ -369,9 +388,8 @@ class NDResultCollection(Sequence):
             A DataFrame representing the disparity matrix.
 
         """
-        run_parameters_values = self._get_from_cache("run_parameters_values")
+        run_parameters_values = self._cache["run_parameters_values"]
         df = pd.DataFrame(list(run_parameters_values))
-        df.index.name = "Iteration"
         df.columns.name = "Parameters"
         return df
 
@@ -390,8 +408,7 @@ class NDResultCollection(Sequence):
 
         """
         dm = self.disparity_matrix()
-        uniques = dm.apply(set)
-        changes = uniques.apply(len) != 1
+        changes = dm.nunique() > 1
         changes.name = "Changes"
         return changes
 
@@ -428,9 +445,12 @@ class NDResultCollection(Sequence):
             candidates = wpc[wpc].index.to_numpy()
             candidates_len = len(candidates)
             if candidates_len != 1:
+                candidates_str = (
+                    f"Candidates: {candidates}" if candidates_len > 0 else ""
+                )
                 raise ValueError(
-                    "The value of 'parameter' is ambiguous since it has "
-                    f"{candidates_len} candidates: {candidates}"
+                    "The value of 'run_parameter' is ambiguous since it has "
+                    f"{candidates_len} candidates. {candidates_str}".strip()
                 )
             prefer = candidates[0]
         elif prefer not in self.run_parameters_:
@@ -448,7 +468,7 @@ class NDResultCollection(Sequence):
             The sum of variances for modes.
 
         """
-        modes_variances_sum = self._get_from_cache("modes_variances_sum")
+        modes_variances_sum = self._cache["modes_variances_sum"]
         varsum = modes_variances_sum.copy()
         return varsum
 

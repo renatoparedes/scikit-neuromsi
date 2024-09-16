@@ -34,7 +34,7 @@ import skneuromsi as sknmsi
 # =============================================================================
 
 
-def test_ndresult_store_and_open(random_ndresult):
+def test_NDResult_store_and_open(random_ndresult):
     ndres = random_ndresult()
 
     buffer = io.BytesIO()
@@ -46,10 +46,11 @@ def test_ndresult_store_and_open(random_ndresult):
     sknmsi.testing.assert_ndresult_allclose(ndres, restored)
 
 
-def test_ndcollection_store_and_open(
-    random_ndresultcollection, silenced_tqdm_cls
-):
-    collection = random_ndresultcollection(length_max=2, length_min=2)
+def test_NDResultCollection_store_and_open(random_ndresult, silenced_tqdm_cls):
+    ndres = random_ndresult()
+    collection = sknmsi.NDResultCollection.from_ndresults(
+        "collection", [ndres, ndres], tqdm_cls=silenced_tqdm_cls
+    )
 
     buffer = io.BytesIO()
 
@@ -60,10 +61,14 @@ def test_ndcollection_store_and_open(
     sknmsi.testing.assert_ndresult_collection_allclose(collection, restored)
 
 
-def test_ndcollection_oostore_equivalent(
-    random_ndresultcollection, silenced_tqdm_cls
+def test_NDResultCollection_oostore_equivalent(
+    random_ndresult, silenced_tqdm_cls
 ):
-    collection = random_ndresultcollection(length_max=2, length_min=2)
+    ndres = random_ndresult()
+    collection = sknmsi.NDResultCollection.from_ndresults(
+        "collection", [ndres, ndres], tqdm_cls=silenced_tqdm_cls
+    )
+
     oo_buffer = io.BytesIO()
     collection.to_ndc(oo_buffer, quiet=True)
     oo_buffer.seek(0)

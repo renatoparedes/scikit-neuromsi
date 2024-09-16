@@ -460,11 +460,6 @@ def random_ndresult(random_modes_da):
             **kwargs,
         )
 
-        # random.choice([True, False]) is a valid causes, so lets give them
-        # 50% chances to survive
-        if causes is None and random.choice([True, False]):
-            causes = random.integers(0, len(nddata.modes) - 1, endpoint=True)
-
         return NDResult(
             mname=mname,
             mtype=mtype,
@@ -480,85 +475,6 @@ def random_ndresult(random_modes_da):
             extra=extra,
             ensure_dtype=None,
         )
-
-    return maker
-
-
-@pytest.fixture(scope="session")
-def random_ndresultcollection(random_ndresult):
-    """Fixture for generating an NDResultCollection with a specified number \
-    of randomly generated NDResult objects.
-
-    """
-
-    def maker(
-        *,
-        collection_name=None,
-        length_min=5,
-        length_max=10,
-        mtype="test",
-        seed=None,
-        tqdm_cls=tqdm.tqdm,
-        **kwargs,
-    ):
-        """Generate an NDResultCollection with a specified number of randomly \
-        generated NDResult objects.
-
-        Parameters
-        ----------
-        collection_name : str, optional
-            The name of the collection. If not provided, a default name will be
-            generated.
-        length_min : int, optional
-            The minimum number of NDResult objects to generate. Defaults to 5.
-        length_max : int, optional
-            The maximum number of NDResult objects to generate. Defaults to 10.
-        mtype : str, optional
-            The type of the NDResult objects. Defaults to "test".
-        seed : int, optional
-            The seed for the random number generator. Defaults to None.
-        tqdm_cls : type, optional
-            The class to use for the progress bar. Defaults to tqdm.tqdm.
-        **kwargs
-            Additional keyword arguments to pass to the random_ndresult
-            function.
-
-        Returns
-        -------
-        NDResultCollection
-            The generated NDResultCollection.
-
-        """
-        random = np.random.default_rng(seed)
-
-        # name
-        if collection_name is None:
-            iinfo = np.iinfo(int)
-            idx = random.integers(0, iinfo.max, dtype=int, endpoint=True)
-            collection_name = f"NDCollection{idx}"
-            mname = f"ModelOfNDCollection{idx}"
-
-        # length
-        check_min_max(
-            "length_min", "length_max", length_min, length_max, 1, None
-        )
-        length = random.integers(length_min, length_max, endpoint=True)
-
-        # create ndresults and compress them
-        compressed_ndresults = []
-        for _ in range(length):
-            ndresult = random_ndresult(mname=mname, seed=random, **kwargs)
-            cndres = compress_ndresult(ndresult)
-            compressed_ndresults.append(cndres)
-
-        # create collection
-        ndcol = NDResultCollection(
-            name=collection_name,
-            compressed_results=compressed_ndresults,
-            tqdm_cls=tqdm_cls,
-        )
-
-        return ndcol
 
     return maker
 

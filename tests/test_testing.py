@@ -21,6 +21,7 @@
 
 import pytest
 
+import skneuromsi as sknmsi
 from skneuromsi import testing
 
 
@@ -34,8 +35,13 @@ def test_assert_ndresult_same_object(random_ndresult):
     testing.assert_ndresult_allclose(ndres, ndres)
 
 
-def test_assert_ndresult_collection_same_object(random_ndresultcollection):
-    collection = random_ndresultcollection(length_max=2, length_min=2)
+def test_assert_ndresult_collection_same_object(
+    random_ndresult, silenced_tqdm_cls
+):
+    ndres = random_ndresult()
+    collection = sknmsi.NDResultCollection.from_ndresults(
+        "collection", [ndres, ndres], tqdm_cls=silenced_tqdm_cls
+    )
     testing.assert_ndresult_collection_allclose(collection, collection)
 
 
@@ -46,12 +52,15 @@ def test_assert_ndresult_allclose_equals(random_ndresult):
     testing.assert_ndresult_allclose(ndres0, ndres1)
 
 
-def test_assert_ndresult_collection_allclose_equals(random_ndresultcollection):
-    collection0 = random_ndresultcollection(
-        seed=42, length_max=2, length_min=2
+def test_assert_ndresult_collection_allclose_equals(
+    random_ndresult, silenced_tqdm_cls
+):
+    ndres = random_ndresult()
+    collection0 = sknmsi.NDResultCollection.from_ndresults(
+        "collection", [ndres, ndres], tqdm_cls=silenced_tqdm_cls
     )
-    collection1 = random_ndresultcollection(
-        seed=42, length_max=2, length_min=2
+    collection1 = sknmsi.NDResultCollection.from_ndresults(
+        "collection", [ndres, ndres], tqdm_cls=silenced_tqdm_cls
     )
     assert collection0 is not collection1
     testing.assert_ndresult_collection_allclose(collection0, collection1)
@@ -65,13 +74,29 @@ def test_assert_ndresult_allclose_equals_different_seed(random_ndresult):
 
 
 def test_assert_ndresult_collection_allclose_different_seed(
-    random_ndresultcollection,
+    random_ndresult, silenced_tqdm_cls
 ):
-    collection0 = random_ndresultcollection(
-        seed=42, length_max=2, length_min=2
+    ndres0 = random_ndresult(
+        input_modes_min=2,
+        input_modes_max=2,
+        position_coordinates_min=1,
+        position_coordinates_max=1,
+        seed=42,
     )
-    collection1 = random_ndresultcollection(
-        seed=43, length_max=2, length_min=2
+    ndres1 = random_ndresult(
+        input_modes_min=2,
+        input_modes_max=2,
+        position_coordinates_min=1,
+        position_coordinates_max=1,
+        seed=43,
+    )
+
+    collection0 = sknmsi.NDResultCollection.from_ndresults(
+        "collection", [ndres0, ndres0], tqdm_cls=silenced_tqdm_cls
+    )
+
+    collection1 = sknmsi.NDResultCollection.from_ndresults(
+        "collection", [ndres1, ndres1], tqdm_cls=silenced_tqdm_cls
     )
     with pytest.raises(AssertionError):
         testing.assert_ndresult_collection_allclose(collection0, collection1)
