@@ -150,7 +150,7 @@ def _make_metadata_cache(ndresults):
     causes = []
     modes_variances = []
 
-    same_value_for_all_ndres_cache = None
+    common_cache = None
 
     for ndres in ndresults:
         mnames.append(ndres.mname)
@@ -166,14 +166,14 @@ def _make_metadata_cache(ndresults):
         modes_variances.append(modes_describe_dict["var"])
 
         # all the run_parameters/modes are the same, so lets take the first one
-        if same_value_for_all_ndres_cache is None:
-            same_value_for_all_ndres_cache = _common_metadata_cache(ndres)
+        if common_cache is None:
+            common_cache = _common_metadata_cache(ndres)
         else:
             other_ndres = _common_metadata_cache(ndres)
             if not dict_cmp.dict_allclose(
-                same_value_for_all_ndres_cache, other_ndres
+                common_cache, other_ndres
             ):
-                same_keys = sorted(same_value_for_all_ndres_cache.keys())
+                same_keys = sorted(common_cache.keys())
                 raise ValueError(
                     "All NDResults must have "
                     f"the same metadata in {same_keys}."
@@ -197,7 +197,7 @@ def _make_metadata_cache(ndresults):
         "causes": np.asarray(causes),
         "modes_variances_sum": modes_variances_sum,
     }
-    cache.update(same_value_for_all_ndres_cache)
+    cache.update(common_cache)
 
     return cache
 
