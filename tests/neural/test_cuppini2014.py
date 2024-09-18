@@ -116,7 +116,7 @@ def test_cuppini2014_fission_illusion():
         soa=56,
     )
     fp = findpeaks(method="peakdetect", verbose=0, lookahead=10, interpolate=5)
-    X = res.get_modes("visual").query("positions==90").visual.values
+    X = res.get_modes(include="visual").query("positions==90").visual.values
     results = fp.fit(X)
     visual_peaks_df = results["df"].query("peak==True & valley==False")
     visual_peaks = visual_peaks_df[visual_peaks_df["y"] > 0.40]

@@ -193,7 +193,7 @@ class NDResultCollectionBiasAcc(AccessorABC):
             ref_value = res.run_parameters[changing_parameter]
 
             # here we extract all the values of the mode we are interested in
-            modes_values = res.get_modes(mode)
+            modes_values = res.get_modes(include=mode)
 
             # we determine the values of the mode in the dimension
             # that interests us

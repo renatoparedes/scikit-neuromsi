@@ -120,7 +120,7 @@ def test_paredes2022_fission_illusion():
         auditory_soa=56,
     )
     fp = findpeaks(method="peakdetect", verbose=0, lookahead=10, interpolate=5)
-    X = res.get_modes("visual").query("positions==45").visual.values
+    X = res.get_modes(include="visual").query("positions==45").visual.values
     results = fp.fit(X)
     visual_peaks_df = results["df"].query("peak==True & valley==False")
     visual_peaks = visual_peaks_df[visual_peaks_df["y"] > 0.15]
@@ -147,7 +147,7 @@ def test_paredes2022_supraddivity_effect():
         visual_onset=0,
     )
     fp = findpeaks(method="peakdetect", verbose=0, lookahead=10, interpolate=5)
-    X = res.get_modes("multi").query("positions==45").multi.values
+    X = res.get_modes(include="multi").query("positions==45").multi.values
     results = fp.fit(X)
     multisensory_peaks_df = results["df"].query("peak==True & valley==False")
     multisensory_peaks = multisensory_peaks_df[

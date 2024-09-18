@@ -170,9 +170,7 @@ def _make_metadata_cache(ndresults):
             common_cache = _common_metadata_cache(ndres)
         else:
             other_ndres = _common_metadata_cache(ndres)
-            if not dict_cmp.dict_allclose(
-                common_cache, other_ndres
-            ):
+            if not dict_cmp.dict_allclose(common_cache, other_ndres):
                 same_keys = sorted(common_cache.keys())
                 raise ValueError(
                     "All NDResults must have "
@@ -327,6 +325,11 @@ class NDResultCollection(Sequence):
     def name(self):
         """Name of the NDResultCollection."""
         return self._name
+
+    @property
+    def tqdm_cls(self):
+        """The tqdm class to use."""
+        return self._tqdm_cls
 
     @property
     def modes_(self):

@@ -64,6 +64,7 @@ def test_NDCollection(random_ndresult, silenced_tqdm_cls):
     )
 
     assert coll.name == "collection"
+    assert coll.tqdm_cls == silenced_tqdm_cls
     assert len(coll) == 2
     sknmsi.testing.assert_ndresult_allclose(coll[0], ndres0)
     sknmsi.testing.assert_ndresult_allclose(coll[1], ndres1)

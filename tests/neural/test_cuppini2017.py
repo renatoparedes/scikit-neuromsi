@@ -34,7 +34,9 @@ def test_cuppini2017_run_zero(visual, auditory, multi):
     )
 
     time = result.to_xarray()["times"].max().values
-    m_loc = result.get_modes("multi").query("times==@time").values.argmax()
+    m_loc = (
+        result.get_modes(include="multi").query("times==@time").values.argmax()
+    )
     np.testing.assert_almost_equal(m_loc, multi)
 
 
@@ -79,7 +81,7 @@ def test_cuppini2017_unisensory_multisensory_integration(
     )
 
     n_cause = 0
-    if result.get_modes("multi").multi.max() > 0.2:
+    if result.get_modes(include="multi").multi.max() > 0.2:
         n_cause = 1
 
     np.testing.assert_equal(n_cause, causes)

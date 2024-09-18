@@ -18,6 +18,8 @@
 # IMPORTS
 # =============================================================================
 
+import copy
+
 import numpy as np
 
 import matplotlib
@@ -479,8 +481,57 @@ def random_ndresult(random_modes_da):
     return maker
 
 
+@pytest.fixture(scope="session")
+def random_ndcollection(random_ndresult, silenced_tqdm_cls):
+    def maker(
+        *,
+        size=2,
+        input_modes=2,
+        position_coordinates=3,
+        run_parameters=None,
+        sweep_parameter=None,
+        causes=None,
+        seed=None,
+        **kwargs,
+    ):
+        random = np.random.default_rng(seed=seed)
+        causes = (
+            np.asarray(causes)
+            if isinstance(causes, (list, tuple, np.ndarray))
+            else np.array([causes])
+        )
+        run_parameters = {} if run_parameters is None else run_parameters
+
+        kwargs.update(
+            input_modes_min=input_modes,
+            input_modes_max=input_modes,
+            position_coordinates_min=position_coordinates,
+            position_coordinates_max=position_coordinates,
+            seed=random,
+        )
+
+        def generator():
+            for sweep in range(size):
+                curr_causes = random.choice(causes)
+                curr_run_parameters = copy.deepcopy(run_parameters)
+                if sweep_parameter is not None:
+                    curr_run_parameters[sweep_parameter] = sweep
+                coll = random_ndresult(
+                    causes=curr_causes,
+                    run_parameters=curr_run_parameters,
+                    **kwargs,
+                )
+                yield coll
+
+        return NDResultCollection.from_ndresults(
+            "collection", generator(), tqdm_cls=silenced_tqdm_cls
+        )
+
+    return maker
+
+
 # =============================================================================
-# SOME HELPERS
+# TQDM
 # =============================================================================
 
 
