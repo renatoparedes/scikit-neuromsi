@@ -20,25 +20,19 @@
 # IMPORTS
 # =============================================================================
 
-import io
-from unittest import mock
-
 import numpy as np
 
 import pandas as pd
 
-import pytest
-
-import skneuromsi as sknmsi
-from skneuromsi.ndcollection import bias_acc, collection
+from skneuromsi.ndcollection import bias_acc
 
 
-# ==============================================================================
+# =============================================================================
 # TESTS
 # =============================================================================
 
 
-def test_BiasAcc_bias(random_ndcollection):
+def test_NDResultCollectionBiasAcc_bias(random_ndcollection):
     coll = random_ndcollection(
         size=10, seed=42, run_parameters={"p0": 1}, sweep_parameter="p1"
     )
@@ -66,7 +60,7 @@ def test_BiasAcc_bias(random_ndcollection):
     pd.testing.assert_frame_equal(bias.bias("p0"), expected)
 
 
-def test_BiasAcc_bias_mean(random_ndcollection):
+def test_NDResultCollectionBiasAcc_bias_mean(random_ndcollection):
     coll = random_ndcollection(
         size=10, seed=42, run_parameters={"p0": 1}, sweep_parameter="p1"
     )

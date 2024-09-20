@@ -585,7 +585,6 @@ def _recreate(cls_id):
 
 
 def test_SKNMSIMethodABC_serialize():
-
     class Method(modelabc.SKNMSIMethodABC):
         _model_type = "MLE"
         _run_input = []
