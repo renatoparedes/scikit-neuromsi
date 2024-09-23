@@ -34,10 +34,9 @@ import pandas as pd
 
 import tqdm
 
+from . import bias_acc, causes_acc, cplot_acc
 from .. import core
 from ..utils import Bunch, dict_cmp
-from . import bias_acc, causes_acc, cplot_acc
-
 
 # =============================================================================
 # RESULT COLLECTION

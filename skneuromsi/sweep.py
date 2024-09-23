@@ -160,7 +160,7 @@ class ParameterSweep:
         model,
         target,
         *,
-        range=None,
+        range=None,  # noqa: A002 "range" is shadowing a Python builtin
         repeat=2,
         n_jobs=None,
         seed=None,
@@ -199,7 +199,7 @@ class ParameterSweep:
             DEFAULT_RANGE.copy() if range is None else np.asarray(range)
         )
         self._repeat = int(repeat)
-        self._n_jobs = int(n_jobs) if n_jobs != None else n_jobs
+        self._n_jobs = None if n_jobs is None else int(n_jobs)
         self._target = str(target)
         self._random = np.random.default_rng(seed)
         self._mem_warning_ratio = float(mem_warning_ratio)
@@ -217,7 +217,7 @@ class ParameterSweep:
         return self._model
 
     @property
-    def range(self):
+    def range(self):  # noqa: A003 "range" is shadowing a Python builtin
         """The range of values to sweep over."""
         return self._range
 
