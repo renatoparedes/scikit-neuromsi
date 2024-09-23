@@ -20,17 +20,11 @@
 # IMPORTS
 # =============================================================================
 
-import io
-from unittest import mock
-
 import numpy as np
 
 import pandas as pd
 
-import pytest
-
-import skneuromsi as sknmsi
-from skneuromsi.ndcollection import bias_acc, causes_acc, collection, cplot_acc
+from skneuromsi.ndcollection import causes_acc
 
 # =============================================================================
 # TESTS
