@@ -157,119 +157,128 @@ class NDResultCollectionPlotter(AccessorABC):
         dim=None,
         mode=None,
         quiet=False,
+        show_iterations=True,
+        show_mean=True,
         ax=None,
+        legend=True,
+        it_linestyle="--",
+        it_alpha=0.25,
+        mean_color="black",
         **kws,
     ):
-        """Line plot of the bias for a given influence parameter.
+        """Line plot of bias.
 
         Parameters
         ----------
-        influence_parameter : str
-            The influence parameter for the bias plot.
-        changing_parameter : str, optional
-            The changing parameter, by default None.
-        dim : str, optional
-            The dimension to plot, by default None.
-        mode : str, optional
-            The mode of the plot, by default None.
-        quiet : bool, optional
-            Whether to suppress output, by default False.
+        influence_parameter : object
+            The parameter that influences the bias calculation.
+        changing_parameter : object, optional
+            The parameter that changes across the bias calculation.
+        dim : object, optional
+            The dimension to use for the bias calculation.
+        mode : object, optional
+            The mode to use for the bias calculation.
+        quiet : bool, default False
+            If True, suppress output messages.
+        show_iterations : bool, default True
+            If True, plot individual iterations of bias data.
+        show_mean : bool, default True
+            If True, plot the mean bias data.
         ax : matplotlib.axes.Axes, optional
-            The axes object to plot on, by default None.
-        **kws
-            Additional keyword arguments for the plot.
-
-        Returns
-        -------
-        ax : matplotlib.axes.Axes
-            The plotted axes object.
-        """
-        bias_acc = self._nd_collection.bias
-        the_bias = bias_acc.bias(
-            influence_parameter,
-            changing_parameter=changing_parameter,
-            dim=dim,
-            mode=mode,
-            quiet=quiet,
-        )
-
-        legend = kws.pop("legend", True)
-
-        kws.setdefault("estimator", "mean")
-
-        changing_parameter, influence_parameter, _ = the_bias.columns[0]
-        estimator = kws["estimator"].title()
-
-        kws.setdefault(
-            "label", f"{estimator} {changing_parameter}({influence_parameter})"
-        )
-
-        ax = sns.lineplot(data=the_bias, ax=ax, legend=False, **kws)
-
-        if legend:
-            ax.legend()
-
-        ax.set_ylabel("Bias")
-
-        return ax
-
-    def bias_mean(
-        self,
-        influence_parameter,
-        *,
-        changing_parameter=None,
-        dim=None,
-        mode=None,
-        quiet=False,
-        ax=None,
-        **kws,
-    ):
-        """Line plot ot the mean bias.
-
-        Parameters
-        ----------
-        influence_parameter : str
-            The influencing parameter.
-        changing_parameter : str, optional
-            The changing parameter (default is None).
-        dim : str, optional
-            Dimension (default is None).
-        mode : str, optional
-            Mode (default is None).
-        quiet : bool, optional
-            If True, suppress warnings (default is False).
-        ax : matplotlib.axes.Axes, optional
-            The axes to plot onto (default is None).
+            The matplotlib axes to plot on. If None, a new figure and axes
+            will be created.
+        legend : bool, default True
+            If True, add a legend to the plot.
+        it_linestyle : str, default '--'
+            The line style to use for iteration plots.
+        it_alpha : float, default 0.25
+            The alpha (transparency) value for iteration plots.
+        mean_color : str, default 'black'
+            The color to use for the mean bias plot.
         **kws : dict
-            Additional keyword arguments to pass to seaborn lineplot.
+            Additional keyword arguments to pass to seaborn's lineplot.
 
         Returns
         -------
         matplotlib.axes.Axes
-            The axes with the plotted mean bias.
+            The matplotlib axes containing the plot.
+
+        Raises
+        ------
+        ValueError
+            If both show_iterations and show_mean are False.
+
         """
-        bias_acc = self._nd_collection.bias
-        the_bias = bias_acc.bias_mean(
-            influence_parameter,
-            changing_parameter=changing_parameter,
-            dim=dim,
-            mode=mode,
-            quiet=quiet,
+        if not (show_iterations or show_mean):
+            raise ValueError(
+                "If 'show_iterations' and 'show_mean' are False, "
+                "yout plot are empty"
+            )
+
+        coll = self._nd_collection
+        changing_parameter = coll.coerce_parameter(changing_parameter)
+        dim = coll.coerce_dimension(dim)
+        mode = coll.coerce_mode(mode)
+
+        bias_acc = coll.bias
+
+        kws.setdefault("estimator", "mean")
+
+        if show_iterations:
+            the_bias = bias_acc.bias(
+                influence_parameter,
+                changing_parameter=changing_parameter,
+                dim=dim,
+                mode=mode,
+                quiet=quiet,
+            )
+
+            x = the_bias.index
+            for column in the_bias.columns:
+                y = the_bias[column]
+                label = (
+                    "Iterations" if (column == the_bias.columns[0]) else None
+                )
+                ax = sns.lineplot(
+                    x=x,
+                    y=y,
+                    ax=ax,
+                    linestyle=it_linestyle,
+                    alpha=it_alpha,
+                    legend=False,
+                    label=label,
+                    **kws,
+                )
+
+        if show_mean:
+            the_bias_mean = bias_acc.bias_mean(
+                influence_parameter,
+                changing_parameter=changing_parameter,
+                dim=dim,
+                mode=mode,
+                quiet=quiet,
+            )
+            x_mean = the_bias_mean.index
+            y_mean = the_bias_mean[the_bias_mean.columns[0]]
+            ax = sns.lineplot(
+                x=x_mean,
+                y=y_mean,
+                ax=ax,
+                legend=False,
+                label="Bias Mean",
+                color=mean_color,
+                **kws,
+            )
+
+        ax.set_ylabel("Bias")
+        ax.set_title(
+            f"Fixed={influence_parameter}, Target={changing_parameter}\n"
+            f"Mode={mode}, Dimension={dim}"
         )
-
-        legend = kws.pop("legend", True)
-
-        changing_parameter, influence_parameter, _ = the_bias.columns[0]
-
-        kws.setdefault(
-            "label", f"Mean {changing_parameter}({influence_parameter})"
-        )
-
-        ax = sns.lineplot(data=the_bias, ax=ax, legend=False, **kws)
 
         if legend:
             ax.legend()
-
-        ax.set_ylabel("Bias")
+            leg = ax.get_legend()
+            leg.legend_handles[0].set_color(mean_color)
 
         return ax
