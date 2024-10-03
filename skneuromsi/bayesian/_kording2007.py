@@ -26,11 +26,13 @@ from ..core import SKNMSIMethodABC
 
 class Kording2007(SKNMSIMethodABC):
     """
-    Bayesian Causal Inference model for multisensory integration based on Kording (2007).
+    Bayesian Causal Inference model for multisensory integration
+    based on Kording (2007).
 
-    This model uses Bayesian principles to infer whether two unimodal signals come from
-    a common cause or different causes. It combines auditory and visual signals and evaluates
-    the probability of a common cause based on the observed signals.
+    This model uses Bayesian principles to infer whether two unimodal signals
+    come from a common cause or different causes. It combines auditory and
+    visual signals and evaluates the probability of a common cause based on
+    the observed signals.
 
     This implementation is inspired on the Matlab version of the BCI Toolbox
     (Zhu, Beierholm & Shams, 2004).
@@ -41,36 +43,41 @@ class Kording2007(SKNMSIMethodABC):
     :cite:p:`kording2007causal`
     :cite:p:`zhu2024bci`
 
-
     Notes
     -----
     The Bayesian Causal Inference model uses the following formulation:
 
     .. math::
-        p(C \mid x_{1}, x_{2}) = \\frac{p(x_{1}, x_{2} \mid C) \, p(C)}{p(x_{1}, x_{2})}
+       p(C \mid x_{1}, x_{2}) = \frac{p(x_{1}, x_{2} \mid C), p(C)}{p(x_{1},
+       x_{2})}
 
-    where :math:`x_{1}` and :math:`x_{2}` are two unimodal signals, and :math:`C` is
-    a binary variable representing the number of causes in the environment.
+    where :math:`x_{1}` and :math:`x_{2}` are two unimodal signals, and
+    :math:`C` is a binary variable representing the number of causes in the
+    environment.
 
-    The posterior probability of the signals having a single cause in the environment
-    is defined as follows:
-
-    .. math::
-        p(C = 1 \mid x_{1}, x_{2}) = \\frac{p(x_{1}, x_{2} \mid C=1) \, p(C=1)}{p(x_{1}, x_{2} \mid C=1) \, p(C=1) + p(x_{1}, x_{2} \mid C=2) \, (1 - p(C=1))}
-
-    and the likelihood is computed as:
+    The posterior probability of the signals having a single cause in the
+    environment is defined as follows:
 
     .. math::
-        p(x_{1}, x_{2} \mid C = 1) = \\iint p(x_{1}, x_{2} \mid X) \, p(X) \, dX
+        p(C = 1 \mid x_{1}, x_{2}) = \frac{p(x_{1}, x_{2} \mid C=1),
+        p(C=1)}{p(x_{1}, x_{2} \mid C=1) \, p(C=1) + p(x_{1}, x_{2} \mid
+        C=2), (1 - p(C=1))}
 
-    Here, :math:`p(C = 1)` is the prior probability of a common cause (default is 0.5).
-    :math:`X` denotes the attributes of the stimuli (e.g., distance), which are then
-    represented in the nervous system as :math:`x_{1}` and :math:`x_{2}`.
+    The likelihood is computed as:
 
-    These equations show that the inference of a common cause of two unisensory signals
-    is computed by combining the likelihood and prior of signals having a common cause.
-    A higher likelihood occurs if the two unisensory signals are similar, which in turn
-    increases the probability of inferring that the signals have a common cause.
+    .. math::
+        p(x_{1}, x_{2} \mid C = 1) = \int p(x_{1}, x_{2} \mid X), p(X), dX
+
+    Here, :math:`p(C = 1)` is the prior probability of a common cause
+    (default is 0.5). :math:`X` denotes the attributes of the stimuli
+    (e.g., distance), which are then represented in the nervous system as
+    :math:`x_{1}` and :math:`x_{2}`.
+
+    These equations show that the inference of a common cause of
+    two unisensory signals is computed by combining the likelihood and prior
+    of signals having a common cause. A higher likelihood occurs if the
+    two unisensory signals are similar, which in turn increases the
+    probability of inferring that the signals have a common cause.
 
     """
 
@@ -121,7 +128,8 @@ class Kording2007(SKNMSIMethodABC):
         time_res : int
             The resolution of time steps. E.g., 1.
         seed : int or None
-            Seed for the random number generator. If None, the random number generator will not be seeded.
+            Seed for the random number generator.
+            If None, the random number generator will not be seeded.
         """
         self._n = n
         self._mode0 = mode0
@@ -342,7 +350,8 @@ class Kording2007(SKNMSIMethodABC):
         p_common : float
             The prior probability of a common cause.
         strategy : str
-            The strategy for model selection ("selection", "averaging", "matching").
+            The strategy for model selection
+            ("selection", "averaging", "matching").
         possible_locations : np.ndarray
             The possible positions to consider for estimation.
         auditory_input : float
@@ -496,7 +505,8 @@ class Kording2007(SKNMSIMethodABC):
         prior_mu : float
             The mean of the prior cause.
         strategy : str
-            The strategy for model selection ("selection", "averaging", "matching").
+            The strategy for model selection
+            ("selection", "averaging", "matching").
         noise : bool
             Whether to include noise in the computation.
         causes_kind : str
@@ -506,8 +516,10 @@ class Kording2007(SKNMSIMethodABC):
         -------
         tuple
             A tuple containing:
-            - dict: Response dictionary with "auditory", "visual", and "multi" keys.
-            - dict: Extra information with "mean_p_common_cause", "p_common_cause", and "causes_kind".
+            - dict: Response dictionary with "auditory", "visual",
+            and "multi" keys.
+            - dict: Extra information with "mean_p_common_cause",
+            "p_common_cause", and "causes_kind".
         """
         possible_locations = np.arange(
             self._position_range[0],
@@ -613,7 +625,8 @@ class Kording2007(SKNMSIMethodABC):
         """
         # Determine the type of cause to calculate
         if causes_kind == "count":
-            # If counting the number of causes, determine the number of simulations executed
+            # If counting the number of causes,
+            # determine the number of simulations executed
             if self.n > 1:
                 # If more than one simulation, evaluate the average probability
                 # of perciving a common cause
@@ -621,7 +634,8 @@ class Kording2007(SKNMSIMethodABC):
                     causes = 1
                 else:
                     causes = 2
-            # If only one simulation, evaluate the probability of perceiving a common cause
+            # If only one simulation,
+            # evaluate the probability of perceiving a common cause
             else:
                 if p_common_cause > 0.5:
                     causes = 1
@@ -629,7 +643,8 @@ class Kording2007(SKNMSIMethodABC):
                     causes = 2
 
         elif causes_kind == "prob":
-            # If calculating the probability of a unique cause, assign the probability
+            # If calculating the probability of a unique cause,
+            # assign the probability
             # of perceiving a common cause
             causes = p_common_cause
         else:

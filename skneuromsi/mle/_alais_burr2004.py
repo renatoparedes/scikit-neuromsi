@@ -27,40 +27,46 @@ from ..core import SKNMSIMethodABC
 
 class AlaisBurr2004(SKNMSIMethodABC):
     """
-    Multisensory integration model based on the approach developed by Alais and Burr (2004).
+    Multisensory integration model based on the approach developed by
+    Alais and Burr (2004).
 
-    This model estimates multisensory integration by combining unisensory estimates with weights
-    derived from the standard deviations of sensory modalities. It follows the Near-optimal Bimodal 
-    Integrator model described in Alais and Burr (2004) for integrating auditory and visual information.
+    This model estimates multisensory integration by combining
+    unisensory estimates with weights derived from the standard
+    deviations of sensory modalities. It follows the Near-optimal Bimodal
+    Integrator model described in Alais and Burr (2004) for
+    integrating auditory and visual information.
 
-    
+
     References
     ----------
     :cite:p:`alais2004ventriloquist`
 
-    
+
     Notes
     -----
-    The Near-optimal Bimodal Integrator for visual (V) and auditory (A) signals can be computed as:
+    The Near-optimal Bimodal Integrator for visual (V) and auditory (A) signals
+    can be computed as:
 
     .. math::
         \\hat{S}_{VA} = w_{V} \\hat{S}_{V} + w_{A} \\hat{S}_{A}
 
-    where :math:`\\hat{S}_{V}` and :math:`\\hat{S}_{A}` are unimodal auditory and visual estimates,
-    respectively, and :math:`\\hat{S}_{VA}` is the multimodal estimate.
+    where :math:`\\hat{S}_{V}` and :math:`\\hat{S}_{A}` are unimodal auditory
+    and visual estimates, respectively, and :math:`\\hat{S}_{VA}`
+    is the multimodal estimate.
 
-    In addition, :math:`w_{A}` and :math:`w_{V}` are the relative weights for each modality,
-    defined as:
+    In addition, :math:`w_{A}` and :math:`w_{V}` are the relative weights
+    for each modality, defined as:
 
     .. math::
-        w_{A} = \\frac{\\sigma_{V}^{2}}{\\sigma_{A}^{2} + \\sigma_{V}^{2}} \\ 
+        w_{A} = \\frac{\\sigma_{V}^{2}}{\\sigma_{A}^{2} + \\sigma_{V}^{2}} \\
         w_{V} = \\frac{\\sigma_{A}^{2}}{\\sigma_{V}^{2} + \\sigma_{A}^{2}}
 
-    where :math:`\\sigma_{A}` and :math:`\\sigma_{V}` are the standard deviations (or square roots of the variances)
-    of each unimodal stimuli, respectively.
+    where :math:`\\sigma_{A}` and :math:`\\sigma_{V}` are the
+    standard deviations (or square roots of the variances) of each
+    unimodal stimuli, respectively.
 
-    These equations show that the optimal multisensory estimate combines the unisensory estimates weighted
-    by their normalized reciprocal variances.
+    These equations show that the optimal multisensory estimate combines
+    the unisensory estimates weighted by their normalized reciprocal variances.
 
     """
 
@@ -106,7 +112,8 @@ class AlaisBurr2004(SKNMSIMethodABC):
         position_res : float
             The resolution of positions to consider for estimation. E.g., 0.01.
         seed : int or None
-            Seed for the random number generator. If None, the random number generator will not be seeded.
+            Seed for the random number generator.
+            If None, the random number generator will not be seeded.
         """
 
         self._mode0 = mode0
@@ -213,7 +220,8 @@ class AlaisBurr2004(SKNMSIMethodABC):
         Returns
         -------
         numpy.ndarray
-            The estimated probability density function for the given sensory modality.
+            The estimated probability density function
+            for the given sensory modality.
         """
         sigma = unisensory_sigma
         location = unisensory_position
@@ -318,7 +326,8 @@ class AlaisBurr2004(SKNMSIMethodABC):
         noise=None,
     ):
         """
-        Runs the multisensory model with the given parameters and returns the estimates.
+        Runs the multisensory model with the given parameters
+        and returns the estimates.
 
         Parameters
         ----------
@@ -331,18 +340,21 @@ class AlaisBurr2004(SKNMSIMethodABC):
         visual_sigma : float
             The standard deviation for the visual modality.
         noise : any, optional
-            Additional noise to apply, if needed (not used in this implementation).
+            Additional noise to apply, if needed
+            (not used in this implementation).
 
         Returns
         -------
         tuple
             A tuple containing:
             - response : dict
-                A dictionary with keys 'auditory', 'visual', and 'multi' containing the auditory,
+                A dictionary with keys 'auditory', 'visual',
+                and 'multi' containing the auditory,
                 visual, and multisensory estimates respectively.
             - extra : dict
-                A dictionary with keys 'auditory_weight' and 'visual_weight' containing the weights
-                for the auditory and visual modalities respectively.
+                A dictionary with keys 'auditory_weight' and 'visual_weight'
+                containing the weights for the auditory and visual
+                modalities respectively.
         """
         possible_locations = np.arange(
             self._position_range[0],
