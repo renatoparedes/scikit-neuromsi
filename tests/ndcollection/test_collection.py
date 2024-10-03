@@ -318,7 +318,6 @@ def test_NDCollection_coerce_parameter(random_ndresult, silenced_tqdm_cls):
 
 
 def test_NDCollection_modes_variance_sum(random_ndresult, silenced_tqdm_cls):
-
     seed = np.random.default_rng(42)
 
     ndres0 = random_ndresult(
@@ -367,7 +366,6 @@ def test_NDCollection_modes_variance_sum(random_ndresult, silenced_tqdm_cls):
 
 
 def test_NDCollection_coerce_mode(random_ndresult, silenced_tqdm_cls):
-
     seed = np.random.default_rng(42)
 
     ndres0 = random_ndresult(
@@ -435,7 +433,6 @@ def test_NDCollection_coerce_mode(random_ndresult, silenced_tqdm_cls):
 
 
 def test_NDCollection_coerce_dimension(random_ndresult, silenced_tqdm_cls):
-
     seed = np.random.default_rng(42)
 
     ndres0 = random_ndresult(

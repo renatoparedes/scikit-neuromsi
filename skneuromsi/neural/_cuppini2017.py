@@ -34,14 +34,16 @@ class Cuppini2017IntegratorFunction:
     """
     Integrator function for the Cuppini2017 model.
 
-    This class represents the integrator function used to compute the dynamics of
-    the neural network according to the Cuppini (2017) model. It handles the update
-    rules for the neurons' activities based on their net inputs.
+    This class represents the integrator function used to compute
+    the dynamics of the neural network according to the Cuppini (2017) model.
+    It handles the update rules for the neurons' activities based on
+    their net inputs.
 
     Parameters
     ----------
     tau : tuple of 3 float
-        Time constants for the auditory, visual, and multisensory neurons, respectively.
+        Time constants for the auditory, visual,
+        and multisensory neurons, respectively.
     s : float
         Slope of the sigmoid activation function.
     theta : float
@@ -59,7 +61,8 @@ class Cuppini2017IntegratorFunction:
     Methods
     -------
     __call__(y_a, y_v, y_m, t, u_a, u_v, u_m)
-        Computes the updated activities of auditory, visual, and multisensory neurons.
+        Computes the updated activities of auditory, visual,
+        and multisensory neurons.
     """
 
     tau: tuple
@@ -88,55 +91,70 @@ class Cuppini2017IntegratorFunction:
 
 
 class Cuppini2017(SKNMSIMethodABC):
-    """Network model for audio-visual integration and causal inference based on Cuppini et al. (2007).
+    """Network model for audio-visual integration and causal inference
+    based on Cuppini et al. (2007).
 
-    This model simulates neural responses in a multisensory system, consisting of auditory, visual, and multisensory layers.
-    The model consists of three layers: two encode auditory and visual stimuli separately, and connect to a multisensory 
-    layer where causal inference is computed. By default, each of these layers consists of 180 neurons arranged topologically 
-    to encode a 180° space. In this way, each neuron encodes 1° of space and neurons close to each other encode close spatial positions.
+    This model simulates neural responses in a multisensory system,
+    consisting of auditory, visual, and multisensory layers.
+    The model consists of three layers: two encode auditory and visual stimuli
+    separately, and connect to a multisensory layer where causal inference
+    is computed. By default, each of these layers consists of 180 neurons
+    arranged topologically to encode a 180° space. In this way, each neuron
+    encodes 1° of space and neurons close to each other encode
+    close spatial positions.
 
-    
+
     References
     ----------
     :cite:p:`cuppini2017biologically`
 
     Notes
     ----------
-    Each neuron is indicated with a superscript \( c \) for a specific cortical area (a for auditory, v for visual, m for 
-    multisensory). Each neuron also has a subscript \( j \) referring to its spatial position within a given area.
+    Each neuron is indicated with a superscript \( c \) for a specific cortical
+    area (a for auditory, v for visual, m for multisensory). Each neuron
+    also has a subscript \( j \) referring to its spatial position
+    within a given area.
 
     The neurons use a sigmoid activation function and first-order dynamics:
 
     .. math::
-        \\tau^{c} \\frac{dy^{c}_{j}(t)}{dt} = - y^{c}_{j}(t) + F(u^{c}_{j}(t)), && c = a, v, m
+        \\tau^{c} \\frac{dy^{c}_{j}(t)}{dt} = - y^{c}_{j}(t) +
+        F(u^{c}_{j}(t)), && c = a, v, m
 
     where:
-    - \( u(t) \) and \( y(t) \) are the net input and output of a neuron at time \( t \).
+    - \( u(t) \) and \( y(t) \) are the net input and output of a neuron
+    at time \( t \).
     - \( \\tau^{c} \) is the time constant of neurons in area \( c \).
     - \( F(u) \) is the sigmoid function:
 
     .. math::
         F(u_{j}^{c}) = \\frac{1}{1 + \\exp^{-s (u_{j}^{c} - \\theta)}}
 
-    Here, \( s \) and \( \\theta \) denote the slope and the central position of the sigmoid function, respectively.
+    Here, \( s \) and \( \\theta \) denote the slope and the
+    central position of the sigmoid function, respectively.
 
-    Neurons in all regions differ only in their time constants, with faster sensory processing for auditory stimuli compared
-    to visual stimuli.
+    Neurons in all regions differ only in their time constants, with faster
+    sensory processing for auditory stimuli compared to visual stimuli.
 
-    Neurons are connected in a "Mexican hat" pattern within each layer, defined by:
+    Neurons are connected in a "Mexican hat" pattern within each layer,
+    defined by:
 
     .. math::
         L_{jk}^{s} = \\left\\{
         \\begin{matrix}
-        L_{ex}^{c} \\cdot \\exp\\left(- \\frac{(D_{jk})^{2}}{2 \\cdot (\\sigma_{ex}^{c})^{2}}\\right) - L_{in}^{c} \\cdot \\exp\\left(- \\frac{(D_{jk})^{2}}{2 \\cdot (\\sigma_{in}^{c})^{2}}\\right), & D_{jk} \\neq 0 \\
+        L_{ex}^{c} \\cdot \\exp\\left(- \\frac{(D_{jk})^{2}}
+        {2 \\cdot (\\sigma_{ex}^{c})^{2}}\\right) - L_{in}^{c} \\cdot
+        \\exp\\left(- \\frac{(D_{jk})^{2}}{2 \\cdot
+        (\\sigma_{in}^{c})^{2}}\\right), & D_{jk} \\neq 0 \\
         0, & D_{jk} = 0
         \\end{matrix}
         \\right.
 
     where:
-    - \( L_{jk}^{c} \) is the synaptic weight from the pre-synaptic neuron at position \( k \) to the post-synaptic neuron
-      at position \( j \).
-    - \( D_{jk} \) is the distance between pre-synaptic and post-synaptic neurons:
+    - \( L_{jk}^{c} \) is the synaptic weight from the pre-synaptic neuron
+    at position \( k \) to the post-synaptic neuron at position \( j \).
+    - \( D_{jk} \) is the distance between pre-synaptic and
+    post-synaptic neurons:
 
     .. math::
         D_{jk} = \\left\\{
@@ -146,31 +164,40 @@ class Cuppini2017(SKNMSIMethodABC):
         \\end{matrix}
         \\right.
 
-    Neurons in the unisensory layers are reciprocally connected with neurons in the opposite layer (e.g., auditory to visual).
+    Neurons in the unisensory layers are reciprocally connected with
+    neurons in the opposite layer (e.g., auditory to visual).
     These connections are defined by:
 
     .. math::
-        W^{cd}_{jk} = W^{cd}_{0} \\cdot \\exp\\left(- \\frac{(D_{jk})^{2}}{2 (\\sigma^{cd})^{2}}\\right), && cd = av\\text{ or } va
+        W^{cd}_{jk} = W^{cd}_{0} \\cdot
+        \\exp\\left(- \\frac{(D_{jk})^{2}}{2 (\\sigma^{cd})^{2}}\\right),
+        && cd = av\\text{ or } va
 
     where:
     - \( W_{0}^{cd} \) is the maximum synaptic efficacy.
-    - \( D_{jk} \) is the distance between neurons in different sensory regions.
+    - \( D_{jk} \) is the distance between neurons
+    in different sensory regions.
     - \( \\sigma^{cd} \) is the width of the cross-modal synapses.
 
-    Neurons in unisensory layers also have excitatory connections to the multisensory layer:
+    Neurons in unisensory layers also have excitatory connections
+    to the multisensory layer:
 
     .. math::
-        W^{mc}_{jk} = W^{mc}_{0} \\cdot \\exp\\left(- \\frac{(D_{jk})^{2}}{2 (\\sigma^{mc})^{2}}\\right), && c = a,v
+        W^{mc}_{jk} = W^{mc}_{0} \\cdot 
+        \\exp\\left(- \\frac{(D_{jk})^{2}}{2 (\\sigma^{mc})^{2}}\\right),
+        && c = a,v
 
     where:
     - \( W^{mc}_{0} \) is the highest value of synaptic efficacy.
-    - \( D_{jk} \) is the distance between neurons in multisensory and unisensory areas.
+    - \( D_{jk} \) is the distance between neurons in multisensory and
+    unisensory areas.
     - \( \\sigma^{mc} \) is the width of the feedforward synapses.
 
     The visual and auditory stimuli are modeled as Gaussian functions:
 
     .. math::
-        e^{c}_{j}(t) = E^{c}_{0} \\cdot \\exp\\left(- \\frac{(d^{c}_{j})^{2}}{2 (\\sigma^{c})^{2}}\\right)
+        e^{c}_{j}(t) = E^{c}_{0} \\cdot 
+        \\exp\\left(- \\frac{(d^{c}_{j})^{2}}{2 (\\sigma^{c})^{2}}\\right)
 
     where:
     - \( E^{c}_{0} \) is the stimulus strength.
@@ -188,7 +215,8 @@ class Cuppini2017(SKNMSIMethodABC):
     .. math::
         l^{c}_{j}(t) = \\sum_{k} L^{c}_{jk} \\cdot y^{c}_{jk}(t)
 
-    - \( o^{c}_{j}(t) \) is the extra-area input, including external stimuli, cross-modal input, and noise.
+    - \( o^{c}_{j}(t) \) is the extra-area input, including external stimuli,
+    cross-modal input, and noise.
 
     """
 
@@ -237,8 +265,9 @@ class Cuppini2017(SKNMSIMethodABC):
         theta : float, optional
             Central position of the sigmoid activation function. Default is 20.
         seed : int or None, optional
-            Seed for the random number generator. If None, the random number generator
-            will not be seeded. Default is None.
+            Seed for the random number generator.
+            If None, the random number generator will not be seeded.
+            Default is None.
         mode0 : str, optional
             The name for the first sensory modality. Default is "auditory".
         mode1 : str, optional
@@ -248,12 +277,14 @@ class Cuppini2017(SKNMSIMethodABC):
         position_res : float, optional
             Resolution of positions in degrees. Default is 1.
         time_range : tuple of 2 float, optional
-            Time range for the simulation as (start, end) in miliseconds. Default is (0, 100).
+            Time range for the simulation as (start, end) in miliseconds.
+            Default is (0, 100).
         time_res : float, optional
             Time resolution for the simulation in miliseconds. Default is 0.01.
         **integrator_kws
-            Additional keyword arguments passed to the integrator. These can include
-            parameters such as the integration method and time step size.
+            Additional keyword arguments passed to the integrator.
+            These can include parameters such as the integration method and
+            time step size.
 
         Raises
         ------
@@ -343,7 +374,8 @@ class Cuppini2017(SKNMSIMethodABC):
         Returns
         -------
         tuple of 3 float
-            Time constants for the auditory, visual, and multisensory neurons, respectively.
+            Time constants for the auditory, visual, and
+            multisensory neurons, respectively.
         """
         return self._integrator_function.tau
 
@@ -367,7 +399,8 @@ class Cuppini2017(SKNMSIMethodABC):
         Returns
         -------
         float
-            The central position parameter of the sigmoid function used in the model.
+            The central position parameter of the sigmoid function
+            used in the model.
         """
         return self._integrator_function.theta
 
@@ -472,13 +505,15 @@ class Cuppini2017(SKNMSIMethodABC):
         """
         Set the random number generator for the model.
 
-        This method allows for setting a custom random number generator, which can be useful for
-        ensuring reproducibility or for using different random number generation strategies.
+        This method allows for setting a custom random number generator,
+        which can be useful for ensuring reproducibility or
+        for using different random number generation strategies.
 
         Parameters
         ----------
         rng : numpy.random.Generator
-        The random number generator to be used. It should be an instance of `numpy.random.Generator`.
+        The random number generator to be used.
+        It should be an instance of `numpy.random.Generator`.
         """
         self._random = rng
 
@@ -504,33 +539,40 @@ class Cuppini2017(SKNMSIMethodABC):
         causes_dim="space",
     ):
         """
-        Run the simulation of the Cuppini2017 model with specified parameters. It computes the
-        activity of auditory, visual, and multisensory neurons based on the provided
-        inputs and parameters. The simulation includes the generation of stimuli, calculation
-        of lateral and cross-modal synaptic inputs, and the integration of the model's dynamics.
+        Run the simulation of the Cuppini2017 model with specified parameters.
+        It computes the activity of auditory, visual, and multisensory neurons
+        based on the provided inputs and parameters. The simulation includes
+        the generation of stimuli, calculation of lateral and cross-modal
+        synaptic inputs, and the integration of the model's dynamics.
 
         Parameters
         ----------
         auditory_position : int, optional
-            The spatial position of the auditory stimulus. Defaults to the center of the position range if not provided.
+            The spatial position of the auditory stimulus.
+            Defaults to the center of the position range if not provided.
         visual_position : int, optional
-            The spatial position of the visual stimulus. Defaults to the center of the position range if not provided.
+            The spatial position of the visual stimulus.
+            Defaults to the center of the position range if not provided.
         auditory_sigma : float, optional
-            The standard deviation of the Gaussian function used to represent the auditory stimulus. Default is 32.
+            The standard deviation of the Gaussian function
+            used to represent the auditory stimulus. Default is 32.
         visual_sigma : float, optional
-            The standard deviation of the Gaussian function used to represent the visual stimulus. Default is 4.
+            The standard deviation of the Gaussian function
+            used to represent the visual stimulus. Default is 4.
         auditory_intensity : float, optional
             The intensity of the auditory stimulus. Default is 28.
         visual_intensity : float, optional
             The intensity of the visual stimulus. Default is 27.
         auditory_duration : float, optional
-            The duration of the auditory stimulus. Defaults to the full time range if not provided.
+            The duration of the auditory stimulus.
+            Defaults to the full time range if not provided.
         auditory_onset : float, optional
             The onset time of the auditory stimulus. Default is 0.
         auditory_stim_n : int, optional
             The number of auditory stimuli to generate. Default is 1.
         visual_duration : float, optional
-            The duration of the visual stimulus. Defaults to the full time range if not provided.
+            The duration of the visual stimulus.
+            Defaults to the full time range if not provided.
         visual_onset : float, optional
             The onset time of the visual stimulus. Default is 0.
         visual_stim_n : int, optional
@@ -538,9 +580,11 @@ class Cuppini2017(SKNMSIMethodABC):
         noise : bool, optional
             Whether to include noise in the simulation. Default is False.
         feedforward_weight : float, optional
-            The weight of the feedforward synapses from the unisensory areas to the multisensory area. Default is 18.
+            The weight of the feedforward synapses from the unisensory areas
+            to the multisensory area. Default is 18.
         cross_modal_weight : float, optional
-            The weight of the cross-modal synapses between unisensory areas. Default is 1.4.
+            The weight of the cross-modal synapses between unisensory areas.
+            Default is 1.4.
         causes_kind : str, optional
             The method used to calculate causes. Default is "count".
         causes_dim : str, optional
@@ -550,13 +594,17 @@ class Cuppini2017(SKNMSIMethodABC):
         -------
         tuple
             A tuple containing two elements:
-            - `response` (dict): A dictionary with keys "auditory", "visual", and "multi" containing the results
-            of the simulation for auditory, visual, and multisensory neurons respectively.
-            - `extra` (dict): A dictionary with additional information, including:
-            - `"causes_kind"`: The method used to calculate causes.
-            - `"causes_dim"`: The dimension in which to calculate causes.
-            - `"stim_position"`: A list of the auditory and visual stimulus positions.
-            - `"synapses"`: The synaptic weights for the visual-to-multisensory connections.
+            - `response` (dict): A dictionary with keys "auditory", "visual",
+            and "multi" containing the results of the simulation for auditory,
+            visual, and multisensory neurons respectively.
+            - `extra` (dict): A dictionary with additional information,
+                including:
+                - `"causes_kind"`: The method used to calculate causes.
+                - `"causes_dim"`: The dimension in which to calculate causes.
+                - `"stim_position"`: A list of the auditory and
+                    visual stimulus positions.
+                - `"synapses"`: The synaptic weights for the
+                    visual-to-multisensory connections.
         """
 
         auditory_position = (
@@ -768,42 +816,50 @@ class Cuppini2017(SKNMSIMethodABC):
         self, multi, causes_kind, causes_dim, stim_position, **kwargs
     ):
         """
-        Calculate the causes of multisensory activity based on spatiotemporal peaks.
+        Calculate the causes of multisensory activity based on
+        spatiotemporal peaks.
 
-        This method computes the causes (i.e., the underlying factors or sources) of multisensory activity
-        based on the peaks in the multisensory data. The calculation considers the specified method and
+        This method computes the causes (i.e., the underlying factors
+        or sources) of multisensory activity based on the peaks in the
+        multisensory data. The calculation considers the specified method and
         dimension for cause determination.
 
         Parameters
         ----------
         multi : array_like
-            A 2D array of shape (time_points, neurons) representing the multisensory activity data
-            from the simulation. The data is used to determine the spatiotemporal causes.
+            A 2D array of shape (time_points, neurons) representing
+            the multisensory activity data from the simulation.
+            The data is used to determine the spatiotemporal causes.
         causes_kind : str
-            The method used to determine the causes. This could refer to the type of analysis or metric
-            for identifying causes. For example, it might specify whether to count occurrences or use
+            The method used to determine the causes. This could refer to
+            the type of analysis or metric for identifying causes.
+            For example, it might specify whether to count occurrences or use
             some other measure.
         causes_dim : str
-            The dimension in which to calculate causes. This specifies whether the causes should be
-            determined based on spatial or temporal peaks.
+            The dimension in which to calculate causes. This specifies whether
+            the causes should be determined based on spatial or temporal peaks.
         stim_position : list of int
-            A list containing the positions of the auditory and visual stimuli used in the simulation.
-            These positions help in calculating the causes by providing context on where the stimuli
+            A list containing the positions of the auditory and
+            visual stimuli used in the simulation. These positions help in
+            calculating the causes by providing context on where the stimuli
             were located.
         **kwargs
-            Additional keyword arguments to be passed to the cause calculation function.
+            Additional keyword arguments to be passed to
+            the cause calculation function.
 
         Returns
         -------
         causes : dict
-            A dictionary containing the calculated causes. The structure of the dictionary will depend
-            on the `causes_kind` and `causes_dim` parameters. It generally includes information about
+            A dictionary containing the calculated causes. The structure of
+            the dictionary will depend on the `causes_kind` and
+            `causes_dim` parameters. It generally includes information about
             the detected causes based on the spatiotemporal activity data.
         """
         # Calculate the average stimuli position
         position = int(np.mean([stim_position[0], stim_position[1]]))
 
-        # Calculates the causes in the desired dimension using the specified method
+        # Calculates the causes in the desired dimension
+        # using the specified method
         causes = calculate_spatiotemporal_causes_from_peaks(
             mode_spatiotemporal_activity_data=multi,
             causes_kind=causes_kind,

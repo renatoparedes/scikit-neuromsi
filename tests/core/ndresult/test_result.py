@@ -97,7 +97,6 @@ def test_modes_to_data_array():
 
 
 def test_modes_to_data_array_invalid():
-
     # diff number of positions
     modes_dict = {
         "mode0": [1, 2, 3],

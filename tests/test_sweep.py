@@ -35,7 +35,6 @@ from skneuromsi import core, sweep
 
 
 def test_ParameterSweep(silenced_tqdm_cls):
-
     param_sweep = sweep.ParameterSweep(
         AlaisBurr2004(),
         target="auditory_position",
@@ -115,7 +114,6 @@ def test_ParameterSweep_mem_warning_and_error_in_run():
 
 
 def test_ParameterSweep_run_parameter_under_sweep_control():
-
     param_sweep = sweep.ParameterSweep(
         AlaisBurr2004(),
         target="auditory_position",
@@ -126,7 +124,6 @@ def test_ParameterSweep_run_parameter_under_sweep_control():
 
 
 def test_ParameterSweep_exeed_memory():
-
     param_sweep = sweep.ParameterSweep(
         AlaisBurr2004(),
         target="auditory_position",

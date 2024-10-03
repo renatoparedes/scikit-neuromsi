@@ -72,7 +72,6 @@ def test_store_ndresults_not_instace_of_ndresult():
 
 
 def test_open_ndresults_invalid_object_type():
-
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w") as zip_fp:
         fake_metadata = json.dumps({"object_type": "fake"})
@@ -84,7 +83,6 @@ def test_open_ndresults_invalid_object_type():
 
 
 def test_open_ndresults_invalid_object_size():
-
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w") as zip_fp:
         fake_metadata = json.dumps(

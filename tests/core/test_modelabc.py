@@ -379,7 +379,6 @@ def test_SKNMSIRunConfig_invalid_model_type():
 
 
 def test_SKNMSIRunConfig_wrap_run():
-
     config = modelabc.SKNMSIRunConfig(
         _input=[modelabc.ParameterAliasTemplate("foo", "${p0}_foo")],
         _output=[],
@@ -615,7 +614,6 @@ def test_SKNMSIMethodABC_serialize():
     unserialized = pickle.loads(pickle.dumps(original_model))
 
     try:
-
         assert isinstance(unserialized, Method)
 
         assert unserialized.some_value == original_model.some_value
