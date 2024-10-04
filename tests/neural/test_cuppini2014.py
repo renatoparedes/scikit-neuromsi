@@ -29,7 +29,8 @@ from findpeaks import findpeaks
 @pytest.mark.model
 def test_cuppini2014_temporal_filter_auditory_stimuli():
     # In Raij 2010, for a single auditory stimuli
-    #  Hechsl Gyrus auditory response latency is 23 ms and calcarine cortex visual response latency is 53 ms.
+    # Hechsl Gyrus auditory response latency is 23 ms and calcarine
+    # cortex visual response latency is 53 ms.
 
     model = Cuppini2014()
     res = model.run(
@@ -54,7 +55,8 @@ def test_cuppini2014_temporal_filter_auditory_stimuli():
 @pytest.mark.model
 def test_cuppini2014_temporal_filter_visual_stimuli():
     # In Raij 2010, for a single visual stimuli
-    # Calcarine cortex visual response latency is 43 ms and Hechsl Gyrus auditory response latency is 82 ms.
+    # Calcarine cortex visual response latency is 43 ms and
+    # Hechsl Gyrus auditory response latency is 82 ms.
 
     model = Cuppini2014(time_range=(0, 125))
     res = model.run(
@@ -80,7 +82,8 @@ def test_cuppini2014_temporal_filter_visual_stimuli():
 @pytest.mark.model
 def test_cuppini2014_temporal_filter_audiovisual_stimuli():
     # In Raij 2010, for an audiovisual stimuli
-    # Calcarine cortex visual response latency is 47 ms and Hechsl Gyrus auditory response latency is 23 ms.
+    # Calcarine cortex visual response latency is 47 ms and
+    # Hechsl Gyrus auditory response latency is 23 ms.
 
     model = Cuppini2014(time_range=(0, 125))
     res = model.run(

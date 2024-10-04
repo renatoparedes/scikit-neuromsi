@@ -9,19 +9,17 @@
 #     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
 
 
+import copy
 from dataclasses import dataclass
 
 import brainpy as bp
-
-import copy
-
 import numpy as np
 
 from ..core import SKNMSIMethodABC
 
 from ..utils.neural_tools import (
-    calculate_lateral_synapses,
     calculate_inter_areal_synapses,
+    calculate_lateral_synapses,
     calculate_stimuli_input,
     create_unimodal_stimuli_matrix,
     prune_synapses,
@@ -38,7 +36,8 @@ class Paredes2022Integrator:
     Attributes
     ----------
     tau : tuple
-        A tuple containing the time constants for the auditory, visual, and multisensory layers.
+        A tuple containing the time constants for the auditory, visual,
+        and multisensory layers.
     s : float
         The slope parameter for the sigmoid activation function.
     theta : float
@@ -74,7 +73,8 @@ class Paredes2022Integrator:
 
     def __call__(self, y_a, y_v, y_m, t, u_a, u_v, u_m):
         """
-        Computes the time derivatives for the auditory, visual, and multisensory layers.
+        Computes the time derivatives for the auditory, visual,
+        and multisensory layers.
 
         Parameters
         ----------
@@ -96,7 +96,8 @@ class Paredes2022Integrator:
         Returns
         -------
         tuple
-            A tuple containing the time derivatives for the auditory, visual, and multisensory layers.
+            A tuple containing the time derivatives for the auditory, visual,
+            and multisensory layers.
         """
         # Auditory
         dy_a = (-y_a + self.sigmoid(u_a)) * (1 / self.tau)
@@ -118,9 +119,11 @@ class Paredes2022TemporalFilter:
     Attributes
     ----------
     tau : tuple
-        A tuple containing the time constants for the auditory, visual, and multisensory layers.
+        A tuple containing the time constants for the auditory, visual,
+        and multisensory layers.
     name : str, optional
-        The name of the temporal filter (default is "Paredes2022TemporalFilter").
+        The name of the temporal filter
+        (default is "Paredes2022TemporalFilter").
     """
 
     tau: tuple
@@ -158,7 +161,8 @@ class Paredes2022TemporalFilter:
         m_temporal_noise,
     ):
         """
-        Computes the temporal filtering for the auditory, visual, and multisensory inputs.
+        Computes the temporal filtering for the auditory, visual,
+        and multisensory inputs.
 
         Parameters
         ----------
@@ -214,8 +218,8 @@ class Paredes2022TemporalFilter:
         Returns
         -------
         tuple
-            A tuple containing the updated outside inputs and filtered inputs for
-            the auditory, visual, and multisensory layers.
+            A tuple containing the updated outside inputs and filtered inputs
+            for the auditory, visual, and multisensory layers.
         """
         if not include_noise:
             a_noise, v_noise = 0, 0
@@ -279,18 +283,21 @@ class Paredes2022TemporalFilter:
 
 
 class Paredes2022(SKNMSIMethodABC):
-    """
-    Multisensory Spatiotemporal Causal Inference Network Model for spatial and temporal 
-    multisensory integration with two levels of causal inference processing.
+    r"""
+    Multisensory Spatiotemporal Causal Inference Network Model
+    for spatial and temporal multisensory integration with two levels of
+    causal inference processing.
 
-    This model builds upon previous network models for multisensory integration 
-    (Cuppini et al., 2014; Cuppini et al., 2017) and consists of three layers: 
-    two unisensory layers (auditory and visual) and a multisensory layer. 
-    The unisensory layers encode auditory and visual stimuli separately and connect to the 
-    multisensory layer via feedforward and feedback synapses. 
-    
-    The model computes implicit causal inference at the unisensory layers and explicit causal inference at 
-    the multisensory layer, mimicking the responses of neurons in the parietal-temporal association cortices.
+    This model builds upon previous network models for multisensory integration
+    (Cuppini et al., 2014; Cuppini et al., 2017) and consists of three layers:
+    two unisensory layers (auditory and visual) and a multisensory layer.
+    The unisensory layers encode auditory and visual stimuli separately
+    and connect to the multisensory layer via feedforward
+    and feedback synapses.
+
+    The model computes implicit causal inference at the unisensory layers
+    and explicit causal inference at the multisensory layer, mimicking the
+    responses of neurons in the parietal-temporal association cortices.
 
 
     References
@@ -298,33 +305,42 @@ class Paredes2022(SKNMSIMethodABC):
     :cite:p:`cuppini2017biologically`
     :cite:p:`cuppini2014neurocomputational`
 
-    
+
     Notes
     ----------
-    The Paredes2022 model maintains the neural connectivity (lateral, crossmodal, feedforward) and inputs as 
-    described in the network presented in Cuppini et al. (2017). 
-    
-    This new model includes feedback connectivity and temporal filters as detailed below.
-   
+    The Paredes2022 model maintains the neural connectivity
+    (lateral, crossmodal, feedforward) and inputs as described in the
+    network presented in Cuppini et al. (2017).
+
+    This new model includes feedback connectivity and temporal filters
+    as detailed below.
+
     The feedback synaptic weights are calculated using:
 
     .. math::
 
-    B^{cm}_{jk} = B^{cm}_{0} \cdot \exp \left( - \frac{\left(D_{jk}\right)^{2}}{2 \left(\sigma^{cm}\right)^{2}} \right)
+    B^{cm}_{jk} = B^{cm}_{0} \cdot \exp \left( -
+    \frac{\left(D_{jk}\right)^{2}}{2 \left(\sigma^{cm}\right)^{2}} \right)
 
     where:
     - :math:`B^{cm}_{0}`: Highest level of synaptic efficacy.
-    - :math:`D_{jk}`: Distance between neuron at position :math:`j` in the post-synaptic unisensory region and neuron at position :math:`k` in the pre-synaptic multisensory region.
-    - :math:`\sigma^{cm}`: Width of the feedback synapses, which is the same for both auditory-to-multisensory (:math:`am`) and visual-to-multisensory (:math:`vm`) connections.
+    - :math:`D_{jk}`: Distance between neuron at position :math:`j` in
+    the post-synaptic unisensory region and neuron at position :math:`k`
+    in the pre-synaptic multisensory region.
+    - :math:`\sigma^{cm}`: Width of the feedback synapses, which is the same
+    for both auditory-to-multisensory (:math:`am`)
+    and visual-to-multisensory (:math:`vm`) connections.
 
     The overall feedback input to the unisensory neurons is given by:
 
     .. math::
 
-    b^{c}_{j}\left(t\right) = \sum^{N}_{k=1} B^{cm}_{jk} \cdot y^{c}_{k}\left(t - \Delta t_{feed}\right)
+    b^{c}_{j}\left(t\right) = \sum^{N}_{k=1} B^{cm}_{jk} \cdot
+    y^{c}_{k}\left(t - \Delta t_{feed}\right)
 
     where:
-    - :math:`\Delta t_{feed}`: Latency of feedback inputs between the multisensory and unisensory regions.
+    - :math:`\Delta t_{feed}`: Latency of feedback inputs between
+    the multisensory and unisensory regions.
 
     The feedback synaptic weights are symmetrically defined:
 
@@ -332,14 +348,19 @@ class Paredes2022(SKNMSIMethodABC):
 
     B_{0}^{am} = B_{0}^{vm} \quad \text{and} \quad \sigma^{am} = \sigma^{vm}
 
-    The external sources in unisensory regions are filtered using a second-order differential equation:
+    The external sources in unisensory regions are filtered using a
+    second-order differential equation:
 
     .. math::
 
     \left\{
     \begin{matrix}
     \frac{d}{dt} o^{c}_{j}\left(t\right) = \delta^{c}_{j} \left(t\right) \\
-    \frac{d}{dt} \delta^{c}_{j} \left(t\right) = \frac{G^{c}}{\tau^{c}} \cdot \left[ e^{c}_{j}\left(t\right) + c^{c}_{j}\left(t\right) + b^{c}_{j}\left(t\right) + n^{c}_{j} \right] - \frac{2 \cdot \delta^{c}_{j} \left(t\right)}{\tau^{c}} - \frac{o^{c}_{j}\left(t\right)}{\left( \tau^{c} \right)^{2}}
+    \frac{d}{dt} \delta^{c}_{j} \left(t\right) = \frac{G^{c}}{\tau^{c}} \cdot
+    \left[ e^{c}_{j}\left(t\right) + c^{c}_{j}\left(t\right) +
+    b^{c}_{j}\left(t\right) + n^{c}_{j} \right] - \frac{2 \cdot
+    \delta^{c}_{j} \left(t\right)}{\tau^{c}} -
+    \frac{o^{c}_{j}\left(t\right)}{\left( \tau^{c} \right)^{2}}
     \end{matrix}
     \right.
 
@@ -348,14 +369,18 @@ class Paredes2022(SKNMSIMethodABC):
     - :math:`\tau^{c}`: Time constant of the unisensory regions.
     - :math:`c` : Indicates the unisensory region (auditory or visual).
 
-    The external sources in multisensory regions are filtered using a second-order differential equation:
+    The external sources in multisensory regions are filtered using a
+    second-order differential equation:
 
     .. math::
 
     \left\{
     \begin{matrix}
     \frac{d}{dt} o^{m}_{j}\left(t\right) = \delta^{m}_{j} \left(t\right) \\
-    \frac{d}{dt} \delta^{m}_{j} \left(t\right) = \frac{G^{m}}{\tau^{m}} \cdot \left[ i^{m}_{j}\left(t\right) \right] - \frac{2 \cdot \delta^{m}_{j} \left(t\right)}{\tau^{m}} - \frac{o^{m}_{j}\left(t\right)}{\left( \tau^{m} \right)^{2}}
+    \frac{d}{dt} \delta^{m}_{j} \left(t\right) = \frac{G^{m}}{\tau^{m}}
+    \cdot \left[ i^{m}_{j}\left(t\right) \right] -
+    \frac{2 \cdot \delta^{m}_{j} \left(t\right)}{\tau^{m}}
+    - \frac{o^{m}_{j}\left(t\right)}{\left( \tau^{m} \right)^{2}}
     \end{matrix}
     \right.
 
@@ -368,12 +393,15 @@ class Paredes2022(SKNMSIMethodABC):
     .. math::
 
     \begin{matrix}
-    c^{a}_{j}\left(t\right) = \sum^{N}_{k=1} W^{av}_{jk} \cdot y^{v}_{k} \left(t - \Delta t_{cross} \right) \\ 
-    c^{v}_{j}\left(t\right) = \sum^{N}_{k=1} W^{va}_{jk} \cdot y^{a}_{k} \left(t - \Delta t_{cross}\right)
+    c^{a}_{j}\left(t\right) = \sum^{N}_{k=1} W^{av}_{jk} \cdot y^{v}_{k}
+    \left(t - \Delta t_{cross} \right) \\
+    c^{v}_{j}\left(t\right) = \sum^{N}_{k=1} W^{va}_{jk} \cdot y^{a}_{k}
+    \left(t - \Delta t_{cross}\right)
     \end{matrix}
 
     where:
-    - :math:`\Delta t_{cross}`: Latency of cross-modal inputs between the unisensory regions.
+    - :math:`\Delta t_{cross}`: Latency of cross-modal inputs
+    between the unisensory regions.
 
     """
 
@@ -434,7 +462,8 @@ class Paredes2022(SKNMSIMethodABC):
         mode1 : str, optional
             The name for the second sensory modality. Default is "visual".
         position_range : tuple of int, optional
-            Range of positions for stimuli in degrees as (min, max). Default is (0, 90).
+            Range of positions for stimuli in degrees as (min, max).
+            Default is (0, 90).
         position_res : int or float, optional
             Resolution of the position range in degrees. Default is 1.
         time_range : tuple of float, optional
@@ -535,7 +564,8 @@ class Paredes2022(SKNMSIMethodABC):
         Returns
         -------
         float
-            The central position parameter of the sigmoid function used in the model.
+            The central position parameter of the sigmoid function
+            used in the model.
         """
         return self._integrator.f.theta
 
@@ -628,20 +658,22 @@ class Paredes2022(SKNMSIMethodABC):
         """
         Set the random number generator for the model.
 
-        This method allows for setting a custom random number generator, which can be useful for
-        ensuring reproducibility or for using different random number generation strategies.
+        This method allows for setting a custom random number generator,
+        which can be useful for ensuring reproducibility or for using
+        different random number generation strategies.
 
         Parameters
         ----------
         rng : numpy.random.Generator
-        The random number generator to be used. It should be an instance of `numpy.random.Generator`.
+        The random number generator to be used. It should be an instance
+        of `numpy.random.Generator`.
         """
         self._random = rng
 
     def compute_latency(self, time, latency):
         """
-        Computes the latency-adjusted time by subtracting the given latency from the
-        current time, ensuring that the result is not negative.
+        Computes the latency-adjusted time by subtracting the given latency
+        from the current time, ensuring that the result is not negative.
 
         Parameters
         ----------
@@ -653,14 +685,15 @@ class Paredes2022(SKNMSIMethodABC):
         Returns
         -------
         float
-            The latency-adjusted time. If the result of the subtraction is negative,
-            returns 0 instead.
+            The latency-adjusted time. If the result of the subtraction
+            is negative, returns 0 instead.
 
         Notes
         -----
-        This method is used to adjust the time for processing delays in the simulation.
-        It ensures that the computed latency does not result in a negative time value,
-        which could be invalid for certain operations.
+        This method is used to adjust the time for processing delays
+        in the simulation. It ensures that the computed latency does not
+        result in a negative time value, which could be invalid for
+        certain operations.
         """
         if time - latency >= 0:
             return time - latency
@@ -755,11 +788,14 @@ class Paredes2022(SKNMSIMethodABC):
         feedforward_weight : float, optional
             Weight for feedforward connections (default is 1.4).
         auditory_gain : float, optional
-            Gain for auditory processing (default is None, which sets to exp(1)).
+            Gain for auditory processing
+            (default is None, which sets to exp(1)).
         visual_gain : float, optional
-            Gain for visual processing (default is None, which sets to exp(1)).
+            Gain for visual processing
+            (default is None, which sets to exp(1)).
         multisensory_gain : float, optional
-            Gain for multisensory processing (default is None, which sets to exp(1)).
+            Gain for multisensory processing
+            (default is None, which sets to exp(1)).
         auditory_stim_n : int, optional
             Number of auditory stimuli (default is 2).
         visual_stim_n : int, optional
@@ -769,9 +805,11 @@ class Paredes2022(SKNMSIMethodABC):
         cross_modal_pruning_threshold : float, optional
             Threshold for pruning cross-modal synapses (default is 0).
         causes_kind : str, optional
-            Method for calculating causes ("count" or other) (default is "count").
+            Method for calculating causes ("count" or other)
+            (default is "count").
         causes_dim : str, optional
-            Dimension for calculating causes ("space" or other) (default is "space").
+            Dimension for calculating causes ("space" or other)
+            (default is "space").
         causes_peak_threshold : float, optional
             Peak threshold for causes calculation (default is 0.80).
 
@@ -779,10 +817,10 @@ class Paredes2022(SKNMSIMethodABC):
         -------
         tuple
             A tuple containing:
-            - response (dict): A dictionary with keys "auditory", "visual", and "multi",
-              containing the simulation results for each layer.
-            - extra (dict): A dictionary with additional information such as total inputs,
-              causes parameters, and stimulus positions.
+            - response (dict): A dictionary with keys "auditory", "visual",
+            and "multi", containing the simulation results for each layer.
+            - extra (dict): A dictionary with additional information such as
+            total inputs, causes parameters, and stimulus positions.
         """
         auditory_position = (
             int(self._position_range[1] / 2)
@@ -1153,10 +1191,12 @@ class Paredes2022(SKNMSIMethodABC):
         **kwargs,
     ):
         """
-        Calculate the causes of multisensory activity based on spatiotemporal peaks.
+        Calculate the causes of multisensory activity based on
+        spatiotemporal peaks.
 
-        This method computes the causes (i.e., the underlying factors or sources) of multisensory activity
-        based on the peaks in the multisensory data. The calculation considers the specified method and
+        This method computes the causes (i.e., the underlying factors
+        or sources) of multisensory activity based on the peaks in the
+        multisensory data. The calculation considers the specified method and
         dimension for cause determination.
 
         Parameters
@@ -1183,7 +1223,8 @@ class Paredes2022(SKNMSIMethodABC):
         # Calculate the average stimuli position
         position = int(np.mean([stim_position[0], stim_position[1]]))
 
-        # Calculates the causes in the desired dimension using the specified method
+        # Calculates the causes in the desired dimension
+        # using the specified method
         causes = calculate_spatiotemporal_causes_from_peaks(
             mode_spatiotemporal_activity_data=multi,
             causes_kind=causes_kind,

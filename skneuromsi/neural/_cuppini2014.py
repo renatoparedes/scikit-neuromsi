@@ -9,14 +9,10 @@
 #     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
 
 
+import copy
 from dataclasses import dataclass
 
 import brainpy as bp
-
-import copy
-
-from findpeaks import findpeaks
-
 import numpy as np
 
 from ..core import SKNMSIMethodABC
@@ -535,21 +531,3 @@ class Cuppini2014(SKNMSIMethodABC):
             "auditory_filter_input": auditoryfilter_inputs,
             "visual_filter_input": visualfilter_inputs,
         }
-
-
-## TODO
-# Include noise. Follow Paredes implementation:
-# Compute external input
-
-# auditory_input = auditory_stimuli[i] + auditory_cm_input
-# visual_input = visual_stimuli[i] + visual_cm_input
-
-# if noise:
-#    auditory_noise = -(auditory_intensity * 0.4) + (
-#        2 * auditory_intensity * 0.4
-#    ) * self.random.rand(self.neurons)
-#    visual_noise = -(visual_intensity * 0.4) + (
-#        2 * visual_intensity * 0.4
-#    ) * self.random.rand(self.neurons)
-#    auditory_input += auditory_noise
-#    visual_input += visual_noise

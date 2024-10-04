@@ -9,19 +9,17 @@
 #     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
 
 
+import copy
 from dataclasses import dataclass
 
 import brainpy as bp
-
-import copy
-
 import numpy as np
 
 from ..core import SKNMSIMethodABC
 
 from ..utils.neural_tools import (
-    calculate_lateral_synapses,
     calculate_inter_areal_synapses,
+    calculate_lateral_synapses,
     calculate_stimuli_input,
     create_unimodal_stimuli_matrix,
 )
@@ -91,7 +89,7 @@ class Cuppini2017IntegratorFunction:
 
 
 class Cuppini2017(SKNMSIMethodABC):
-    """Network model for audio-visual integration and causal inference
+    r"""Network model for audio-visual integration and causal inference
     based on Cuppini et al. (2007).
 
     This model simulates neural responses in a multisensory system,
@@ -183,7 +181,7 @@ class Cuppini2017(SKNMSIMethodABC):
     to the multisensory layer:
 
     .. math::
-        W^{mc}_{jk} = W^{mc}_{0} \\cdot 
+        W^{mc}_{jk} = W^{mc}_{0} \\cdot
         \\exp\\left(- \\frac{(D_{jk})^{2}}{2 (\\sigma^{mc})^{2}}\\right),
         && c = a,v
 
@@ -196,7 +194,7 @@ class Cuppini2017(SKNMSIMethodABC):
     The visual and auditory stimuli are modeled as Gaussian functions:
 
     .. math::
-        e^{c}_{j}(t) = E^{c}_{0} \\cdot 
+        e^{c}_{j}(t) = E^{c}_{0} \\cdot
         \\exp\\left(- \\frac{(d^{c}_{j})^{2}}{2 (\\sigma^{c})^{2}}\\right)
 
     where:

@@ -33,9 +33,11 @@ def test_cuppini2017_run_zero(visual, auditory, multi):
         visual_position=visual,
     )
 
-    time = result.to_xarray()["times"].max().values
+    max_time = result.to_xarray()["times"].max().values
     m_loc = (
-        result.get_modes(include="multi").query("times==@time").values.argmax()
+        result.get_modes(include="multi")
+        .query(f"times=={max_time}")
+        .values.argmax()
     )
     np.testing.assert_almost_equal(m_loc, multi)
 

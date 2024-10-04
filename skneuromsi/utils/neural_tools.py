@@ -267,9 +267,10 @@ def create_unimodal_stimuli_matrix(
     Raises
     ------
     ValueError
-        If the total duration of all stimuli plus the total duration of the inter-stimulus intervals
-        (i.e., `stimuli_duration * stimuli_n + soa * (stimuli_n - 1)`) exceeds the
-        `simulation_length`.
+        If the total duration of all stimuli plus the total duration of
+        the inter-stimulus intervals
+        (i.e., `stimuli_duration * stimuli_n + soa * (stimuli_n - 1)`)
+        exceeds the `simulation_length`.
 
     """
     if onset is not None:
@@ -291,9 +292,7 @@ def create_unimodal_stimuli_matrix(
                 "Stimuli total duration exceeds simulation length."
             )
         if soa < stimuli_duration:
-            raise ValueError(
-                "Stimulus onset asynchrony must be longer than stimulus duration."
-            )
+            raise ValueError("SOA must be longer than stimulus duration.")
 
     no_stim = np.zeros(neurons, dtype=dtype)
 

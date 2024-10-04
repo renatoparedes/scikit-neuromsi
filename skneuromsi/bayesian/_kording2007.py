@@ -25,7 +25,7 @@ from ..core import SKNMSIMethodABC
 
 
 class Kording2007(SKNMSIMethodABC):
-    """
+    r"""
     Bayesian Causal Inference model for multisensory integration
     based on Kording (2007).
 

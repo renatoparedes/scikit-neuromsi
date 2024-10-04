@@ -149,7 +149,8 @@ def test_create_unimodal_stimuli_matrix(duration, loc, onset):
     stim_matrix_onset = time_res.argmax()
     stim_matrix_duration = np.where(time_res == time_res.max())[0].size
 
-    # Compare the expected values with the ones observed in the generated stimuli matrix
+    # Compare the expected values with the ones observed
+    # in the generated stimuli matrix
     np.testing.assert_almost_equal(stim_matrix_loc, loc)
     np.testing.assert_almost_equal(stim_matrix_onset, onset_sim_time)
     np.testing.assert_almost_equal(stim_matrix_duration, duration_sim_time)
@@ -197,7 +198,8 @@ def test_create_unimodal_multiple_stimuli_matrix(soa, duration, nstim):
     stim_matrix_soa = stims_start_idx[1] - stims_start_idx[0]
     soa_sim_time = int(soa * (1 / 0.01))
 
-    # Compare the expected values with the ones observed in the generated stimuli matrix
+    # Compare the expected values with the ones observed in the
+    # generated stimuli matrix
     np.testing.assert_almost_equal(
         stim_matrix_duration, duration_sim_time * nstim
     )

@@ -29,7 +29,8 @@ from findpeaks import findpeaks
 @pytest.mark.model
 def test_paredes2022_temporal_filter_auditory_stimuli():
     # In Raij 2010, for a single auditory stimuli
-    #  Hechsl Gyrus auditory response latency is 23 ms and calcarine cortex visual response latency is 53 ms.
+    # Hechsl Gyrus auditory response latency is 23 ms and
+    # calcarine cortex visual response latency is 53 ms.
 
     model = Paredes2022(time_range=(0, 125), theta=16, s=2)
     res = model.run(
@@ -55,7 +56,8 @@ def test_paredes2022_temporal_filter_auditory_stimuli():
 @pytest.mark.model
 def test_paredes2022_temporal_filter_visual_stimuli():
     # In Raij 2010, for a single visual stimuli
-    # Calcarine cortex visual response latency is 43 ms and Hechsl Gyrus auditory response latency is 82 ms.
+    # Calcarine cortex visual response latency is 43 ms and
+    # Hechsl Gyrus auditory response latency is 82 ms.
 
     model = Paredes2022(time_range=(0, 125), theta=16, s=2)
     res = model.run(
@@ -82,7 +84,8 @@ def test_paredes2022_temporal_filter_visual_stimuli():
 @pytest.mark.model
 def test_paredes2022_temporal_filter_audiovisual_stimuli():
     # In Raij 2010, for an audiovisual stimuli
-    # Calcarine cortex visual response latency is 47 ms and Hechsl Gyrus auditory response latency is 23 ms.
+    # Calcarine cortex visual response latency is 47 ms and
+    # Hechsl Gyrus auditory response latency is 23 ms.
 
     model = Paredes2022(time_range=(0, 125), theta=16, s=2)
     res = model.run(
@@ -159,5 +162,5 @@ def test_paredes2022_supraddivity_effect():
     np.testing.assert_equal(multisensory_peaks_n, 1)
 
 
-## TODO Test noise implementation
-## TODO Test causes readout / unity report
+# TODO Test noise implementation
+# TODO Test causes readout / unity report
