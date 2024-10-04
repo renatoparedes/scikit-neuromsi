@@ -145,7 +145,7 @@ class NDResult:
         The resolution of time values.
     position_res : float
         The resolution of position values.
-    causes : int
+    causes : int, float or None
         The number of causes in the result.
     run_parameters : dict
         The parameters used for running the model.
@@ -213,8 +213,6 @@ class NDResult:
         extra,
         ensure_dtype=None,
     ):
-        # deberia validad las cosas aca
-        # hay que validar las resoluciones y los rangos
 
         self._mname = str(mname)
         self._mtype = str(mtype)
@@ -226,7 +224,7 @@ class NDResult:
         self._position_res = float(position_res)
         self._run_parameters = dict(run_parameters)
         self._extra = dict(extra)
-        self._causes = None if causes is None else int(causes)
+        self._causes = causes
         self._nddata = nddata
 
         # Ensure that the instance variables are not dynamically added.
@@ -281,6 +279,13 @@ class NDResult:
             raise ValueError(
                 "The position_range and position_res do not match the data. "
                 f"Expected {expected_positions} positions, got {positions}"
+            )
+
+        # check causes
+        causes = self._causes
+        if not (causes is None or isinstance(causes, (int, float, np.number))):
+            raise ValueError(
+                f"causes must be, int, float or None, got {type(causes)}"
             )
 
     @classmethod
