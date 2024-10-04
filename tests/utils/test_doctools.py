@@ -23,8 +23,6 @@
 
 import warnings
 
-import pytest
-
 from skneuromsi.utils.doctools import doc_inherit
 
 
