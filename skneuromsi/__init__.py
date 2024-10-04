@@ -19,25 +19,25 @@
 # =============================================================================
 
 from .core import (
+    CompressedNDResult,
+    NDResult,
     VERSION,
     compress_ndresult,
     decompress_ndresult,
-    CompressedNDResult,
-    NDResult,
 )
 from .io import (
-    read_ndr,
     open_ndresult,
-    read_ndc,
     open_ndresults_collection,
+    read_ndc,
+    read_ndr,
     store_ndresult,
-    to_ndr,
-    store_ndresult,
-    to_ndc,
     store_ndresults_collection,
+    to_ndc,
+    to_ndr,
 )
-from .ndcollection import NDResultCollection
 from . import testing
+from .ndcollection import NDResultCollection
+
 
 # =============================================================================
 # META

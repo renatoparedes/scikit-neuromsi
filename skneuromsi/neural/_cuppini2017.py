@@ -13,17 +13,16 @@ import copy
 from dataclasses import dataclass
 
 import brainpy as bp
+
 import numpy as np
 
 from ..core import SKNMSIMethodABC
-
 from ..utils.neural_tools import (
     calculate_inter_areal_synapses,
     calculate_lateral_synapses,
     calculate_stimuli_input,
     create_unimodal_stimuli_matrix,
 )
-
 from ..utils.readout_tools import calculate_spatiotemporal_causes_from_peaks
 
 
