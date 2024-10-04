@@ -20,23 +20,13 @@
 # IMPORTS
 # =============================================================================
 
-import io
-from unittest import mock
-
-from matplotlib import pyplot as plt
 from matplotlib.testing.decorators import check_figures_equal
-
-import numpy as np
-
-import pandas as pd
 
 import pytest
 
 import seaborn as sns
 
-
-import skneuromsi as sknmsi
-from skneuromsi.ndcollection import bias_acc, causes_acc, collection, cplot_acc
+from skneuromsi.ndcollection import cplot_acc
 
 # =============================================================================
 # TESTS
@@ -140,52 +130,6 @@ def test_NDResultCollectionPlotter_mean_report(
 def test_NDResultCollectionPlotter_bias(
     random_ndcollection, fig_test, fig_ref
 ):
-    coll = coll = random_ndcollection(
-        size=10,
-        seed=42,
-        run_parameters={"p0": 1},
-        sweep_parameter="p1",
-        causes=[0, 1],
-    )
-    plotter = cplot_acc.NDResultCollectionPlotter(coll)
-
-    test_ax = fig_test.subplots()
-    plotter.bias(
-        influence_parameter="p0",
-        changing_parameter="p1",
-        ax=test_ax,
-        quiet=True,
-    )
-
-    # EXPECTED
-    ref_ax = fig_ref.subplots()
-
-    the_bias = coll.bias.bias(
-        "p0",
-        changing_parameter="p1",
-        quiet=True,
-    )
-
-    x = the_bias.index
-    y = the_bias[("p1", "p0", 0)]
-    sns.lineplot(
-        x=x,
-        y=y,
-        ax=ref_ax,
-        estimator="mean",
-        legend=False,
-        label="Mean p1(p0)",
-    )
-    ref_ax.legend()
-    ref_ax.set_ylabel("Bias")
-
-
-@pytest.mark.plot
-@pytest.mark.slow
-@check_figures_equal()
-def test_NDResultCollectionPlotter_bias(
-    random_ndcollection, fig_test, fig_ref
-):
     coll = random_ndcollection(
         size=10,
         seed=42,
@@ -244,7 +188,8 @@ def test_NDResultCollectionPlotter_bias(
     ref_ax.set_ylabel("Bias")
     ref_ax.set_title(
         f"Fixed=p0, Target=p1\n"
-        f"Mode={coll.coerce_mode(None)}, Dimension={coll.coerce_dimension(None)}"
+        f"Mode={coll.coerce_mode(None)}, "
+        f"Dimension={coll.coerce_dimension(None)}"
     )
 
     ref_ax.legend()

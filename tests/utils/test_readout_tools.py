@@ -20,6 +20,7 @@
 # =============================================================================
 
 import numpy as np
+
 import pytest
 
 from skneuromsi.utils import neural_tools, readout_tools

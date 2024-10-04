@@ -12,13 +12,13 @@
 # IMPORTS
 # =============================================================================
 
+from findpeaks import findpeaks
+
 import numpy as np
 
 import pytest
 
 from skneuromsi.neural import Paredes2022
-
-from findpeaks import findpeaks
 
 # =============================================================================
 # PAREDES 2022

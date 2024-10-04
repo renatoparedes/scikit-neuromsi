@@ -13,6 +13,7 @@ import copy
 from dataclasses import dataclass
 
 import brainpy as bp
+
 import numpy as np
 
 from ..core import SKNMSIMethodABC

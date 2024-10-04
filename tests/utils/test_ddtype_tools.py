@@ -23,10 +23,9 @@ import numpy as np
 
 import pandas as pd
 
-import xarray as xa
-
 from skneuromsi.utils import ddtype_tools
 
+import xarray as xa
 
 # =============================================================================
 # TESTS CHECKS

@@ -21,8 +21,8 @@
 # IMPORTS
 # =============================================================================
 
-import json
 import io
+import json
 import zipfile
 
 import pytest

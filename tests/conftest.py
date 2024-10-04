@@ -20,20 +20,19 @@
 
 import copy
 
-import numpy as np
-
 import matplotlib
+
+import numpy as np
 
 import pytest
 
-import tqdm
-
 from skneuromsi.core.ndresult import (
-    compress_ndresult,
-    modes_to_data_array,
     NDResult,
+    modes_to_data_array,
 )
 from skneuromsi.ndcollection import NDResultCollection
+
+import tqdm
 
 # =============================================================================
 # CONFIGURATION

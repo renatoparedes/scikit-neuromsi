@@ -12,13 +12,13 @@
 # IMPORTS
 # =============================================================================
 
+from findpeaks import findpeaks
+
 import numpy as np
 
 import pytest
 
 from skneuromsi.neural import Cuppini2014
-
-from findpeaks import findpeaks
 
 # =============================================================================
 # CUPPINI 2014

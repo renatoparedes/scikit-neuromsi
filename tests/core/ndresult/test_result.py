@@ -28,13 +28,11 @@ import numpy as np
 
 import pandas as pd
 
-from pympler import asizeof
-
 import pytest
 
 import skneuromsi as sknmsi
 from skneuromsi.core import constants
-from skneuromsi.core.ndresult import result, stats_acc, plot_acc
+from skneuromsi.core.ndresult import plot_acc, result, stats_acc
 from skneuromsi.utils import dict_cmp
 
 import xarray as xa

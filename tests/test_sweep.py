@@ -26,8 +26,8 @@ import psutil
 
 import pytest
 
-from skneuromsi.mle import AlaisBurr2004
 from skneuromsi import core, sweep
+from skneuromsi.mle import AlaisBurr2004
 
 # =============================================================================
 # TESTS

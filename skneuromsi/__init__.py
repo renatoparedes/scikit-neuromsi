@@ -18,6 +18,7 @@
 # IMPORTS
 # =============================================================================
 
+from . import testing
 from .core import (
     CompressedNDResult,
     NDResult,
@@ -35,7 +36,6 @@ from .io import (
     to_ndc,
     to_ndr,
 )
-from . import testing
 from .ndcollection import NDResultCollection
 
 
