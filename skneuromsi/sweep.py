@@ -18,6 +18,7 @@
 # IMPORTS
 # =============================================================================
 
+import abc
 import inspect
 import itertools as it
 import warnings
@@ -55,11 +56,49 @@ class ToBigForAvailableMemoryError(MemoryError):
 
 
 # =============================================================================
+# PROCESSING STRATEGY
+# =============================================================================
+
+
+class ProcessingStrategy(abc.ABC):
+
+    @abc.abstractmethod
+    def map(self, result):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def reduce(self, result_sequence, tag, tqdm_cls):
+        raise NotImplementedError()
+
+    def __repr__(self):
+        """Return a string representation of the ProcessingStrategy object."""
+        cls_name = type(self).__name__
+        return cls_name
+
+
+class NDCollectionProcessingStrategy(ProcessingStrategy):
+
+    def __init__(self, compression_params):
+        core.validate_compression_params(compression_params)
+        self._compression_params = compression_params
+
+    def map(self, result):
+        return ndcollection.compress_ndresult(
+            result, **self._compression_params
+        )
+
+    def reduce(self, result_sequence, tag, tqdm_cls):
+        return ndcollection.NDResultCollection(
+            tag, result_sequence, tqdm_cls=tqdm_cls
+        )
+
+
+# =============================================================================
 # PARALLEL FUNCTIONS
 # =============================================================================
 
 
-def _run_report(*, idx, model, run_kws, seed, compression_params):
+def _run_report(*, idx, model, run_kws, seed, processing_strategy):
     """Run the model with given parameters and process the result.
 
     Parameters
@@ -72,19 +111,18 @@ def _run_report(*, idx, model, run_kws, seed, compression_params):
         Keyword arguments to pass to the model's `run` method.
     seed : int
         Seed for the random number generator.
-    compression_params : tuple
-        Compression parameters for joblib.dump.
+    processing_strategy : ProcessingStrategy
+        Processing strategy to use.
 
     Returns
     -------
     object
-        Compressed results from the run.
+        The processing_strategy.map result.
+
     """
     model.set_random(np.random.default_rng(seed))
     result = model.run(**run_kws)
-    compressed = core.compress_ndresult(result)
-    del result
-    return compressed
+    return processing_strategy.map(result)
 
 
 # =============================================================================
@@ -109,9 +147,9 @@ class ParameterSweep:
         Number of jobs to run in parallel. Default is 1.
     seed : int, optional
         Seed for the random number generator. Default is None.
-    compression_params : tuple, optional
-        Compression parameters for joblib.dump. Default is
-        `skneuromsi.core.DEFAULT_COMPRESSION_PARAMS`.
+    processing_strategy : ProcessingStrategy, optional
+        Processing strategy to use. Default is
+        `NDCollectionProcessingStrategy`.
     tqdm_cls : class, optional
         Class to use for progress bars. Default is `tqdm`.
 
@@ -131,8 +169,9 @@ class ParameterSweep:
         The seed for the random number generator.
     random_ : numpy.random.Generator
         The random number generator.
-    compression_params : tuple
-        The compression parameters for joblib.dump.
+    processing_strategy : ProcessingStrategy
+        The processing strategy to use. Default is
+        `NDCollectionProcessingStrategy`.
     mem_warning_ratio : float
         The ratio of available memory to warn about.
     mem_error_ratio : float
@@ -164,7 +203,7 @@ class ParameterSweep:
         repeat=2,
         n_jobs=None,
         seed=None,
-        compression_params=core.DEFAULT_COMPRESSION_PARAMS,
+        processing_strategy=None,
         mem_warning_ratio=0.8,
         mem_error_ratio=1.0,
         tqdm_cls=tqdm,
@@ -180,9 +219,6 @@ class ParameterSweep:
             raise ValueError(
                 f"Model '{mdl_name}.run()' has no '{target}' parameter"
             )
-
-        # validate compression params
-        core.validate_compression_params(compression_params)
 
         # mem warning and error ratio
         if not (0 <= mem_warning_ratio <= 1):
@@ -204,10 +240,10 @@ class ParameterSweep:
         self._random = np.random.default_rng(seed)
         self._mem_warning_ratio = float(mem_warning_ratio)
         self._mem_error_ratio = float(mem_error_ratio)
-        self._compression_params = (
-            compression_params
-            if isinstance(compression_params, int)
-            else tuple(compression_params)
+        self._processing_strategy = (
+            NDCollectionProcessingStrategy(core.DEFAULT_COMPRESSION_PARAMS)
+            if processing_strategy is None
+            else processing_strategy
         )
         self._tqdm_cls = tqdm_cls
 
@@ -247,9 +283,9 @@ class ParameterSweep:
         return len(self.range) * self.repeat
 
     @property
-    def compression_params(self):
-        """The compression parameters for joblib.dump."""
-        return self._compression_params
+    def processing_strategy(self):
+        """The processing strategy."""
+        return self._processing_strategy
 
     @property
     def tqdm_cls(self):
@@ -272,10 +308,10 @@ class ParameterSweep:
         model_name = type(self.model).__name__
         target = self._target
         repeat = self._repeat
-        cp = self._compression_params
+        ps = self._processing_strategy
         return (
             f"<{cls_name} model={model_name!r} "
-            f"target={target!r} repeat={repeat} compression_params={cp!r}>"
+            f"target={target!r} repeat={repeat} processing_strategy={ps!r}>"
         )
 
     # GENERATE ALL THE EXPERIMENT COMBINATIONS ================================
@@ -372,8 +408,8 @@ class ParameterSweep:
                 f"{type(self)!r} instance"
             )
 
-        # copy model and precision to easy write the code
-        model, compression_params = self._model, self._compression_params
+        # copy model and processing_strategy to easy write the code
+        model, processing_strategy = self._model, self._processing_strategy
 
         # get all the configurations
         rkw_combs = self._run_kwargs_combinations(run_kws)
@@ -397,7 +433,7 @@ class ParameterSweep:
             model=model,
             run_kws=rkw,
             seed=rkw_seed,
-            compression_params=compression_params,
+            processing_strategy=processing_strategy,
         )
 
         # check if the memory is sufficient
@@ -412,7 +448,7 @@ class ParameterSweep:
                     model=model,
                     run_kws=rkw,
                     seed=rkw_seed,
-                    compression_params=compression_params,
+                    processing_strategy=processing_strategy,
                 )
                 for cit, rkw, rkw_seed in rkw_combs
             )
@@ -422,8 +458,8 @@ class ParameterSweep:
 
         # aggregate all the processed results into a single object
         tag = type(self).__name__
-        final_result = ndcollection.NDResultCollection(
-            tag, results, tqdm_cls=self._tqdm_cls
+        final_result = processing_strategy.reduce(
+            result_sequence=results, tag=tag, tqdm_cls=self._tqdm_cls
         )
 
         return final_result
