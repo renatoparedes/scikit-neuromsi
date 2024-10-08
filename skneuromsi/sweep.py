@@ -1,3 +1,6 @@
+Certainly. I'll complement the missing documentation and improve the existing one without removing any code. Here's the complete result with improved documentation:
+
+```python
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -12,7 +15,13 @@
 # DOCS
 # =============================================================================
 
-"""Module for performing parameter sweeps."""
+"""Module for performing parameter sweeps.
+
+This module provides functionality to perform parameter sweeps over a range of
+values for a target parameter in a given model. It includes classes for
+different processing strategies and a main ParameterSweep class to orchestrate
+the sweeps.
+"""
 
 # =============================================================================
 # IMPORTS
@@ -47,7 +56,6 @@ DEFAULT_RANGE = 90 + np.arange(0, 20, 2)
 class MaybeTooBigForAvailableMemoryWarning(UserWarning):
     """Warning raised when the result is potentially too big for \
     the available memory.
-
     """
 
 
@@ -61,13 +69,47 @@ class ToBigForAvailableMemoryError(MemoryError):
 
 
 class ProcessingStrategy(abc.ABC):
+    """Abstract base class for processing strategies.
+
+    This class defines the interface for processing strategies used in
+    parameter sweeps. Subclasses should implement the `map` and `reduce`
+    methods.
+    """
 
     @abc.abstractmethod
     def map(self, result):
+        """Process an individual result.
+
+        Parameters
+        ----------
+        result : object
+            The result to process.
+
+        Returns
+        -------
+        object
+            The processed result.
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def reduce(self, result_sequence, tag, tqdm_cls):
+        """Combine a sequence of results into a single object.
+
+        Parameters
+        ----------
+        result_sequence : iterable
+            Sequence of results to combine.
+        tag : str
+            A tag to identify the results.
+        tqdm_cls : class
+            Progress bar class to use.
+
+        Returns
+        -------
+        object
+            The combined result.
+        """
         raise NotImplementedError()
 
     def __repr__(self):
@@ -77,17 +119,30 @@ class ProcessingStrategy(abc.ABC):
 
 
 class NDCollectionProcessingStrategy(ProcessingStrategy):
+    """Processing strategy for ND collections.
+
+    This strategy compresses individual results and combines them into an
+    NDResultCollection.
+
+    Parameters
+    ----------
+    compression_params : dict
+        Parameters for compressing the results.
+
+    """
 
     def __init__(self, compression_params):
         core.validate_compression_params(compression_params)
         self._compression_params = compression_params
 
     def map(self, result):
+        """Compress an individual result."""
         return ndcollection.compress_ndresult(
             result, **self._compression_params
         )
 
     def reduce(self, result_sequence, tag, tqdm_cls):
+        """Combine compressed results into an NDResultCollection."""
         return ndcollection.NDResultCollection(
             tag, result_sequence, tqdm_cls=tqdm_cls
         )
@@ -118,7 +173,6 @@ def _run_report(*, idx, model, run_kws, seed, processing_strategy):
     -------
     object
         The processing_strategy.map result.
-
     """
     model.set_random(np.random.default_rng(seed))
     result = model.run(**run_kws)
@@ -132,6 +186,9 @@ def _run_report(*, idx, model, run_kws, seed, processing_strategy):
 
 class ParameterSweep:
     """Perform a parameter sweep over a range of values for a target parameter.
+
+    This class orchestrates the parameter sweep process, including parallel
+    execution of model runs and result aggregation.
 
     Parameters
     ----------
@@ -150,6 +207,10 @@ class ParameterSweep:
     processing_strategy : ProcessingStrategy, optional
         Processing strategy to use. Default is
         `NDCollectionProcessingStrategy`.
+    mem_warning_ratio : float, optional
+        Ratio of available memory to trigger a warning. Default is 0.8.
+    mem_error_ratio : float, optional
+        Ratio of available memory to raise an error. Default is 1.0.
     tqdm_cls : class, optional
         Class to use for progress bars. Default is `tqdm`.
 
@@ -165,13 +226,10 @@ class ParameterSweep:
         The number of jobs to run in parallel.
     target : str
         The name of the parameter to sweep over.
-    seed : int or None
-        The seed for the random number generator.
     random_ : numpy.random.Generator
         The random number generator.
     processing_strategy : ProcessingStrategy
-        The processing strategy to use. Default is
-        `NDCollectionProcessingStrategy`.
+        The processing strategy to use.
     mem_warning_ratio : float
         The ratio of available memory to warn about.
     mem_error_ratio : float
@@ -185,13 +243,12 @@ class ParameterSweep:
         If the target parameter is not in the model's `run` method.
     ValueError
         If `repeat` is less than 1, mem_warning_ratio is not in [0, 1],
-        mem_error_ratio is not in [0, 1] and the compression parameters are
+        mem_error_ratio is not in [0, 1], or the compression parameters are
         not valid.
 
     Notes
     -----
     The parameter sweep is performed in parallel using joblib.
-
     """
 
     def __init__(
@@ -304,6 +361,7 @@ class ParameterSweep:
 
     # REPRESENTATION ==========================================================
     def __repr__(self):
+        """Return a string representation of the ParameterSweep object."""
         cls_name = type(self).__name__
         model_name = type(self.model).__name__
         target = self._target
@@ -328,9 +386,6 @@ class ParameterSweep:
         generator
             A generator that yields tuples of (iteration, kwargs, seed) for
             each run.
-        int
-            The total number of runs.
-
         """
         iinfo = np.iinfo(int)
 
@@ -352,7 +407,26 @@ class ParameterSweep:
         return combs_gen()
 
     def _check_if_it_fit_in_memory(self, result, results_total):
-        """Check if 'results_total' of the result fits in memory."""
+        """Check if 'results_total' of the result fits in memory.
+
+        Parameters
+        ----------
+        result : object
+            A single result to check.
+        results_total : int
+            Total number of expected results.
+
+        Raises
+        ------
+        ToBigForAvailableMemoryError
+            If the result exceeds the available memory by the specified ratio.
+
+        Warnings
+        --------
+        MaybeTooBigForAvailableMemoryWarning
+            If the result is approaching the available memory limit.
+
+        """
         memimpact = memtools.memory_impact(result, num_objects=results_total)
         if memimpact.total_ratio >= self.mem_error_ratio:
             total_perc = memimpact.total_ratio * 100
@@ -377,6 +451,10 @@ class ParameterSweep:
     def run(self, **run_kws):
         """Run the sweep over the range of values for the target parameter.
 
+        This method performs the parameter sweep by running the model multiple
+        times with different parameter values. It handles parallel execution,
+        memory checks, and result aggregation.
+
         Parameters
         ----------
         **run_kws
@@ -389,17 +467,23 @@ class ParameterSweep:
             The aggregated results from all runs, as processed by the sweep
             strategy.
 
-        Warnings
-        --------
-        ToBigForAvailableMemoryError
-            If the result exeeds the available memory by the specified ratio.
-
         Raises
         ------
-        TypeError
+        ValueError
             If the target parameter is included in run_kws.
         ToBigForAvailableMemoryError
-            If the result exeeds the available memory by the specified ratio.
+            If the result exceeds the available memory by the specified ratio.
+
+        Warnings
+        --------
+        MaybeTooBigForAvailableMemoryWarning
+            If the result is approaching the available memory limit.
+
+        Notes
+        -----
+        This method uses joblib for parallel execution of the model runs.
+        It first runs a single iteration to check memory usage before
+        proceeding with the full parameter sweep.
 
         """
         if self._target in run_kws:
