@@ -1,7 +1,3 @@
-Certainly. I'll complement the missing documentation and improve the existing one without removing any code. Here's the complete result with improved documentation:
-
-```python
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # This file is part of the
@@ -21,6 +17,7 @@ This module provides functionality to perform parameter sweeps over a range of
 values for a target parameter in a given model. It includes classes for
 different processing strategies and a main ParameterSweep class to orchestrate
 the sweeps.
+
 """
 
 # =============================================================================
@@ -137,8 +134,8 @@ class NDCollectionProcessingStrategy(ProcessingStrategy):
 
     def map(self, result):
         """Compress an individual result."""
-        return ndcollection.compress_ndresult(
-            result, **self._compression_params
+        return core.compress_ndresult(
+            result, compression_params=self._compression_params
         )
 
     def reduce(self, result_sequence, tag, tqdm_cls):

@@ -26,7 +26,7 @@ import psutil
 
 import pytest
 
-from skneuromsi import core, sweep
+from skneuromsi import sweep
 from skneuromsi.mle import AlaisBurr2004
 
 # =============================================================================
@@ -49,7 +49,10 @@ def test_ParameterSweep(silenced_tqdm_cls):
         param_sweep.random_.bit_generator.state
         == np.random.default_rng(42).bit_generator.state
     )
-    assert param_sweep.compression_params == core.DEFAULT_COMPRESSION_PARAMS
+    assert isinstance(
+        param_sweep.processing_strategy,
+        sweep.NDCollectionProcessingStrategy,
+    )
     assert param_sweep.tqdm_cls is silenced_tqdm_cls
 
     result = param_sweep.run()
@@ -65,7 +68,8 @@ def test_ParameterSweep_repr():
     )
     expected = (
         "<ParameterSweep model='AlaisBurr2004' "
-        "target='auditory_position' repeat=2 compression_params=('lz4', 9)>"
+        "target='auditory_position' repeat=2 "
+        "processing_strategy=NDCollectionProcessingStrategy>"
     )
     assert repr(sweep_model) == expected
 

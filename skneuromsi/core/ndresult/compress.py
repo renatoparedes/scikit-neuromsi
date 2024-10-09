@@ -149,7 +149,9 @@ def validate_compression_params(compression_params):
         raise ValueError(str(err)) from err
 
 
-def compress_ndresult(ndresult, compression_params=DEFAULT_COMPRESSION_PARAMS):
+def compress_ndresult(
+    ndresult, *, compression_params=DEFAULT_COMPRESSION_PARAMS
+):
     """Compress an NDResult object.
 
     Parameters
