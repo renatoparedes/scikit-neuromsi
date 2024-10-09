@@ -36,7 +36,7 @@ import numpy as np
 from tqdm.auto import tqdm
 
 from . import core, ndcollection
-from .utils import memtools
+from .utils import doctools, memtools
 
 # =============================================================================
 # CONSTANTS
@@ -64,12 +64,13 @@ class ToBigForAvailableMemoryError(MemoryError):
 # =============================================================================
 
 
-class ProcessingStrategy(abc.ABC):
+class ProcessingStrategyABC(abc.ABC):
     """Abstract base class for processing strategies.
 
     This class defines the interface for processing strategies used in
     parameter sweeps. Subclasses should implement the `map` and `reduce`
     methods.
+
     """
 
     @abc.abstractmethod
@@ -114,7 +115,7 @@ class ProcessingStrategy(abc.ABC):
         return cls_name
 
 
-class NDCollectionProcessingStrategy(ProcessingStrategy):
+class NDCollectionProcessingStrategy(ProcessingStrategyABC):
     """Processing strategy for ND collections.
 
     This strategy compresses individual results and combines them into an
@@ -122,23 +123,29 @@ class NDCollectionProcessingStrategy(ProcessingStrategy):
 
     Parameters
     ----------
-    compression_params : dict
-        Parameters for compressing the results.
+    compression_params : tuple
+        Compression parameters for joblib.dump. Defaults to
+        core.DEFAULT_COMPRESSION_PARAMS.
 
     """
 
-    def __init__(self, compression_params):
+    def __init__(self, *, compression_params=None):
+        compression_params = (
+            core.DEFAULT_COMPRESSION_PARAMS
+            if compression_params is None
+            else compression_params
+        )
         core.validate_compression_params(compression_params)
         self._compression_params = compression_params
 
+    @doctools.doc_inherit(ProcessingStrategyABC.map)
     def map(self, result):  # noqa: A003 "map" is shadowing a Python builtin
-        """Compress an individual result."""
         return core.compress_ndresult(
             result, compression_params=self._compression_params
         )
 
+    @doctools.doc_inherit(ProcessingStrategyABC.reduce)
     def reduce(self, result_sequence, tag, tqdm_cls):
-        """Combine compressed results into an NDResultCollection."""
         return ndcollection.NDResultCollection(
             tag, result_sequence, tqdm_cls=tqdm_cls
         )
@@ -294,7 +301,7 @@ class ParameterSweep:
         self._mem_warning_ratio = float(mem_warning_ratio)
         self._mem_error_ratio = float(mem_error_ratio)
         self._processing_strategy = (
-            NDCollectionProcessingStrategy(core.DEFAULT_COMPRESSION_PARAMS)
+            NDCollectionProcessingStrategy()
             if processing_strategy is None
             else processing_strategy
         )
@@ -539,7 +546,7 @@ class ParameterSweep:
         # aggregate all the processed results into a single object
         tag = type(self).__name__
         final_result = processing_strategy.reduce(
-            result_sequence=results, tag=tag, tqdm_cls=self._tqdm_cls
+            results, tag=tag, tqdm_cls=self._tqdm_cls
         )
 
         return final_result
