@@ -52,8 +52,7 @@ DEFAULT_RANGE = 90 + np.arange(0, 20, 2)
 
 class MaybeTooBigForAvailableMemoryWarning(UserWarning):
     """Warning raised when the result is potentially too big for \
-    the available memory.
-    """
+    the available memory."""
 
 
 class ToBigForAvailableMemoryError(MemoryError):

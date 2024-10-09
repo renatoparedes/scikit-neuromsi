@@ -291,7 +291,6 @@ class NDResultCollection(Sequence):
 
     def __getitem__(self, slicer):
         """Return the NDResult object at the given index."""
-
         cndresults = self._cndresults.__getitem__(slicer)
         if isinstance(cndresults, core.CompressedNDResult):
             return core.decompress_ndresult(cndresults)
