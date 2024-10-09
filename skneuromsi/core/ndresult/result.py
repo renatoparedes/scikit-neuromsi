@@ -63,7 +63,6 @@ def modes_to_data_array(modes_dict, dtype):
         The modes as an xarray.DataArray.
 
     """
-
     # we start with an empty array
     modes, coords = [], None
 
