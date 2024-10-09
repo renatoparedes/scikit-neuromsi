@@ -73,7 +73,7 @@ class ProcessingStrategy(abc.ABC):
     """
 
     @abc.abstractmethod
-    def map(self, result):
+    def map(self, result):  # noqa: A003 "map" is shadowing a Python builtin
         """Process an individual result.
 
         Parameters
@@ -131,7 +131,7 @@ class NDCollectionProcessingStrategy(ProcessingStrategy):
         core.validate_compression_params(compression_params)
         self._compression_params = compression_params
 
-    def map(self, result):
+    def map(self, result):  # noqa: A003 "map" is shadowing a Python builtin
         """Compress an individual result."""
         return core.compress_ndresult(
             result, compression_params=self._compression_params
