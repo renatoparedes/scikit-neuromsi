@@ -113,7 +113,7 @@ class Paredes2022Integrator:
 @dataclass
 class Paredes2022TemporalFilter:
     """
-    A class representing the temporal filter for the Paredes2022 model.
+    Temporal filter for the Paredes2022 model.
 
     Attributes
     ----------
@@ -283,9 +283,7 @@ class Paredes2022TemporalFilter:
 
 class Paredes2022(SKNMSIMethodABC):
     r"""
-    Multisensory Spatiotemporal Causal Inference Network Model
-    for spatial and temporal multisensory integration with two levels of
-    causal inference processing.
+    Multisensory Spatiotemporal Causal Inference Network Model.
 
     This model builds upon previous network models for multisensory integration
     (Cuppini et al., 2014; Cuppini et al., 2017) and consists of three layers:

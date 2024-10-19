@@ -88,8 +88,7 @@ class Cuppini2017IntegratorFunction:
 
 
 class Cuppini2017(SKNMSIMethodABC):
-    r"""Network model for audio-visual integration and causal inference
-    based on Cuppini et al. (2007).
+    r"""Network model for causal inference of Cuppini et al. (2017).
 
     This model simulates neural responses in a multisensory system,
     consisting of auditory, visual, and multisensory layers.
@@ -806,6 +805,8 @@ class Cuppini2017(SKNMSIMethodABC):
             "stim_position": [auditory_position, visual_position],
             "synapses": visual_to_multi_synapses,
         }
+
+        bp.math.clear_buffer_memory()
 
         return response, extra
 

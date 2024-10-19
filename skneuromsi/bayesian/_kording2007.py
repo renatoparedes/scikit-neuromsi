@@ -8,9 +8,7 @@
 # Full Text:
 #     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
 
-"""
-Implementation of multisensory integration neurocomputational models in Python.
-"""
+"""Implementation of multisensory integration models in Python."""
 
 # =============================================================================
 # IMPORTS
@@ -26,13 +24,12 @@ from ..core import SKNMSIMethodABC
 
 class Kording2007(SKNMSIMethodABC):
     r"""
-    Bayesian Causal Inference model for multisensory integration
-    based on Kording (2007).
+    Bayesian Causal Inference model for multisensory integration.
 
-    This model uses Bayesian principles to infer whether two unimodal signals
-    come from a common cause or different causes. It combines auditory and
-    visual signals and evaluates the probability of a common cause based on
-    the observed signals.
+    This model based on Kording et al. (2007) uses Bayesian principles to
+    infer whether two unimodal signals come from a common cause or
+    different causes. It combines auditory and visual signals and evaluates
+    the probability of a common cause based on the observed signals.
 
     This implementation is inspired on the Matlab version of the BCI Toolbox
     (Zhu, Beierholm & Shams, 2004).
@@ -144,8 +141,7 @@ class Kording2007(SKNMSIMethodABC):
 
     @property
     def mode0(self):
-        """
-        Returns the name of the first sensory modality.
+        """Returns the name of the first sensory modality.
 
         Returns
         -------
@@ -156,8 +152,7 @@ class Kording2007(SKNMSIMethodABC):
 
     @property
     def mode1(self):
-        """
-        Returns the name of the second sensory modality.
+        """Returns the name of the second sensory modality.
 
         Returns
         -------
@@ -168,8 +163,7 @@ class Kording2007(SKNMSIMethodABC):
 
     @property
     def n(self):
-        """
-        Returns the number of simulations.
+        """Returns the number of simulations.
 
         Returns
         -------
@@ -180,8 +174,7 @@ class Kording2007(SKNMSIMethodABC):
 
     @property
     def time_range(self):
-        """
-        Returns the range of time steps considered.
+        """Returns the range of time steps considered.
 
         Returns
         -------
@@ -192,8 +185,7 @@ class Kording2007(SKNMSIMethodABC):
 
     @property
     def time_res(self):
-        """
-        Returns the resolution of time steps considered.
+        """Returns the resolution of time steps considered.
 
         Returns
         -------
@@ -204,8 +196,7 @@ class Kording2007(SKNMSIMethodABC):
 
     @property
     def position_range(self):
-        """
-        Returns the range of positions considered for estimation.
+        """Returns the range of positions considered for estimation.
 
         Returns
         -------
@@ -216,8 +207,7 @@ class Kording2007(SKNMSIMethodABC):
 
     @property
     def position_res(self):
-        """
-        Returns the resolution of positions considered for estimation.
+        """Returns the resolution of positions considered for estimation.
 
         Returns
         -------
@@ -228,8 +218,7 @@ class Kording2007(SKNMSIMethodABC):
 
     @property
     def random(self):
-        """
-        Returns the random number generator.
+        """Returns the random number generator.
 
         Returns
         -------
@@ -241,9 +230,10 @@ class Kording2007(SKNMSIMethodABC):
     # Model methods
 
     def input_computation(self, unisensory_position, unisensory_var, noise):
-        """
-        Computes the unisensory input considering the position estimate
-        and variance. In this implementation noise is optional.
+        """Computes the unisensory input.
+
+        Unisensory input considers the position estimate and variance.
+        In this implementation noise is optional.
 
         Parameters
         ----------
@@ -273,8 +263,7 @@ class Kording2007(SKNMSIMethodABC):
         prior_mu,
         unisensory_input,
     ):
-        """
-        Estimates the unisensory posterior given the input and prior.
+        """Estimates the unisensory posterior given the input and prior.
 
         Parameters
         ----------
@@ -320,8 +309,7 @@ class Kording2007(SKNMSIMethodABC):
         auditory_input,
         visual_input,
     ):
-        """
-        Estimates the multisensory posterior using Bayesian inference.
+        """Estimates the multisensory posterior using Bayesian inference.
 
         Parameters
         ----------
@@ -461,8 +449,7 @@ class Kording2007(SKNMSIMethodABC):
         return res
 
     def set_random(self, rng):
-        """
-        Sets the random number generator.
+        """Sets the random number generator.
 
         Parameters
         ----------
@@ -485,8 +472,7 @@ class Kording2007(SKNMSIMethodABC):
         noise=True,
         causes_kind="count",
     ):
-        """
-        Runs the Bayesian causal inference model.
+        """Runs the Bayesian causal inference model.
 
         Parameters
         ----------
@@ -605,9 +591,7 @@ class Kording2007(SKNMSIMethodABC):
         return response, extra
 
     def calculate_causes(self, p_common_cause, causes_kind, **kwargs):
-        """
-        Calculates the causes of the stimuli based on the
-        provided probabilities.
+        """Calculates the causes of the stimuli.
 
         Parameters
         ----------

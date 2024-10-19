@@ -8,6 +8,22 @@
 # Full Text:
 #     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
 
+# =============================================================================
+# DOCS
+# =============================================================================
+
+"""Model class for Maximum Likelihood models of multisensory integration.
+
+This module contains the implementation of multisensory integration models
+based on Maximum Likelihood Estimation.
+
+
+"""
+
+# =============================================================================
+# IMPORTS
+# =============================================================================
+
 from ._alais_burr2004 import AlaisBurr2004
 
 __all__ = [

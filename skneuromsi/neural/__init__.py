@@ -8,6 +8,22 @@
 # Full Text:
 #     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
 
+# =============================================================================
+# DOCS
+# =============================================================================
+
+"""Model class for Neural Network models of multisensory integration.
+
+This module contains the implementation of multisensory integration models
+based on neural networks.
+
+
+"""
+
+# =============================================================================
+# IMPORTS
+# =============================================================================
+
 from ._cuppini2014 import Cuppini2014
 from ._cuppini2017 import Cuppini2017
 from ._paredes2022 import Paredes2022
