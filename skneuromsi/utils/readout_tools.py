@@ -31,11 +31,11 @@ import numpy as np
 
 def calculate_multiple_peaks_probability(peaks_values):
     """
-    Computes the probability of reading out two or more stimuli
-    from the model ouput. The probability of perceiving two stimuli
-    is defined as the product of the two peak values.
-    When more than two peak values are provided, the average
-    product of all possible combinations of peak values is computed.
+    Computes the probability of reading out multiple stimuli from the ouput.
+
+    The probability of perceiving two stimuli is defined as the product of
+    the two peak values. When more than two peak values are provided, the
+    average product of all possible combinations of peak values is computed.
 
     Parameters
     ----------
@@ -70,11 +70,11 @@ def calculate_multiple_peaks_probability(peaks_values):
 
 def calculate_single_peak_probability(peaks_values):
     """
-    Computes the probability of reading a unique stimulus
-    from the model ouput. The probability of perceiving one stimulus
-    is defined as the single peak value. When two or more peak values
-    are provided, the complementary probability of perceiving
-    multiple stimuli is computed.
+    Computes the probability of reading a unique stimulus from the model ouput.
+
+    The probability of perceiving one stimulus is defined as the single peak
+    value. When two or more peak values are provided, the complementary
+    probability of perceiving multiple stimuli is computed.
 
     Parameters
     ----------
@@ -117,6 +117,7 @@ def calculate_causes_from_peaks(
 ):
     """
     Computes the number of causes from peaks found in modal activity.
+
     The peaks are identified using the peakdetect method. The algorithm
     requires to set the lookahead parameter, which is the distance to look
     ahead from a peak candidate to determine if it is the actual peak.
@@ -184,6 +185,7 @@ def calculate_spatiotemporal_causes_from_peaks(
 ):
     """
     Computes the number of causes from peaks found in modal activity.
+
     The peaks are identified using the peakdetect method. The algorithm
     requires to set the lookahead parameter, which is the distance to look
     ahead from a peak candidate to determine if it is the actual peak.

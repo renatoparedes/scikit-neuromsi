@@ -52,6 +52,7 @@ class Paredes2022Integrator:
 
     @property
     def __name__(self):
+        """Return the name of the Integrator."""
         return self.name
 
     def sigmoid(self, u):
@@ -72,8 +73,7 @@ class Paredes2022Integrator:
 
     def __call__(self, y_a, y_v, y_m, t, u_a, u_v, u_m):
         """
-        Computes the time derivatives for the auditory, visual,
-        and multisensory layers.
+        Computes the activities of neurons.
 
         Parameters
         ----------
@@ -95,8 +95,7 @@ class Paredes2022Integrator:
         Returns
         -------
         tuple
-            A tuple containing the time derivatives for the auditory, visual,
-            and multisensory layers.
+            A tuple containing the activities of neurons.
         """
         # Auditory
         dy_a = (-y_a + self.sigmoid(u_a)) * (1 / self.tau)
@@ -130,6 +129,7 @@ class Paredes2022TemporalFilter:
 
     @property
     def __name__(self):
+        """Return the name of the Temporal Filter."""
         return self.name
 
     def __call__(
@@ -160,8 +160,7 @@ class Paredes2022TemporalFilter:
         m_temporal_noise,
     ):
         """
-        Computes the temporal filtering for the auditory, visual,
-        and multisensory inputs.
+        Computes the temporal filtering for the neural inputs.
 
         Parameters
         ----------
@@ -304,7 +303,7 @@ class Paredes2022(SKNMSIMethodABC):
 
 
     Notes
-    ----------
+    -----
     The Paredes2022 model maintains the neural connectivity
     (lateral, crossmodal, feedforward) and inputs as described in the
     network presented in Cuppini et al. (2017).
@@ -438,7 +437,7 @@ class Paredes2022(SKNMSIMethodABC):
         **integrator_kws,
     ):
         """
-        Initialize the Paredes2022 model with specified parameters.
+        Initialize the Paredes2022 model.
 
         Parameters
         ----------
@@ -475,7 +474,6 @@ class Paredes2022(SKNMSIMethodABC):
         ValueError
             If `tau` does not contain exactly 3 elements.
         """
-
         if len(tau) != 3:
             raise ValueError()
 
@@ -669,8 +667,10 @@ class Paredes2022(SKNMSIMethodABC):
 
     def compute_latency(self, time, latency):
         """
-        Computes the latency-adjusted time by subtracting the given latency
-        from the current time, ensuring that the result is not negative.
+        Computes the latency-adjusted time in the simulation.
+
+        Latency is computed by subtracting the given latency from the
+        current time, ensuring that the result is not negative.
 
         Parameters
         ----------
@@ -1188,8 +1188,7 @@ class Paredes2022(SKNMSIMethodABC):
         **kwargs,
     ):
         """
-        Calculate the causes of multisensory activity based on
-        spatiotemporal peaks.
+        Calculate the causes based on spatiotemporal peaks.
 
         This method computes the causes (i.e., the underlying factors
         or sources) of multisensory activity based on the peaks in the
@@ -1216,7 +1215,6 @@ class Paredes2022(SKNMSIMethodABC):
         causes : np.ndarray
             Calculated causes based on the specified method and parameters.
         """
-
         # Calculate the average stimuli position
         position = int(np.mean([stim_position[0], stim_position[1]]))
 

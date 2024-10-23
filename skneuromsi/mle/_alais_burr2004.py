@@ -8,10 +8,6 @@
 # Full Text:
 #     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
 
-"""
-Implementation of multisensory integration neurocomputational models in Python.
-"""
-
 # =============================================================================
 # IMPORTS
 # =============================================================================
@@ -26,9 +22,7 @@ from ..core import SKNMSIMethodABC
 
 
 class AlaisBurr2004(SKNMSIMethodABC):
-    """
-    Multisensory integration model based on the approach developed by
-    Alais and Burr (2004).
+    r"""Optimal bimodal estimator model of Alais and Burr (2004).
 
     This model estimates multisensory integration by combining
     unisensory estimates with weights derived from the standard
@@ -115,7 +109,6 @@ class AlaisBurr2004(SKNMSIMethodABC):
             Seed for the random number generator.
             If None, the random number generator will not be seeded.
         """
-
         self._mode0 = mode0
         self._mode1 = mode1
         self._position_range = position_range
@@ -155,6 +148,7 @@ class AlaisBurr2004(SKNMSIMethodABC):
     def time_range(self):
         """
         Returns the range of time considered for estimation.
+
         Not used in this implementation.
 
         Returns
@@ -168,6 +162,7 @@ class AlaisBurr2004(SKNMSIMethodABC):
     def time_res(self):
         """
         Returns the resolution of time considered for estimation.
+
         Not used in this implementation.
 
         Returns
@@ -326,8 +321,7 @@ class AlaisBurr2004(SKNMSIMethodABC):
         noise=None,
     ):
         """
-        Runs the multisensory model with the given parameters
-        and returns the estimates.
+        Run the simulation of the Alais-Burr 2004 model.
 
         Parameters
         ----------

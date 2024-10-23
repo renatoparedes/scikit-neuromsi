@@ -67,12 +67,15 @@ class Cuppini2014Integrator:
 
     @property
     def __name__(self):
+        """Return the name of the Integrator."""
         return self.name
 
     def sigmoid(self, u):
+        """Computes the sigmoid activation function."""
         return 1 / (1 + np.exp(-self.s * (u - self.theta)))
 
     def __call__(self, y_a, y_v, t, u_a, u_v):
+        """Computes the activites of neurons."""
         # Auditory
         dy_a = (-y_a + self.sigmoid(u_a)) * (1 / self.tau[0])
 
@@ -102,6 +105,7 @@ class Cuppini2014TemporalFilter:
 
     @property
     def __name__(self):
+        """Return the name of the Temporal Filter."""
         return self.name
 
     def __call__(
@@ -119,8 +123,7 @@ class Cuppini2014TemporalFilter:
         v_gain,
     ):
         """
-        Computes the temporal filtering for the auditory, visual,
-        and multisensory inputs.
+        Computes the temporal filtering for the neural inputs.
 
         Parameters
         ----------
@@ -490,8 +493,10 @@ class Cuppini2014(SKNMSIMethodABC):
 
     def compute_latency(self, time, latency):
         """
-        Computes the latency-adjusted time by subtracting the given latency
-        from the current time, ensuring that the result is not negative.
+        Computes the latency-adjusted time in the simulation.
+
+        Latency is computed by subtracting the given latency from the
+        current time, ensuring that the result is not negative.
 
         Parameters
         ----------
@@ -538,7 +543,7 @@ class Cuppini2014(SKNMSIMethodABC):
         visual_stim_n=1,
     ):
         """
-        Runs the model simulation with specified parameters.
+        Run the simulation of the Cuppini2014 model.
 
         Parameters
         ----------

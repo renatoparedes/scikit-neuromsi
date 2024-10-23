@@ -69,12 +69,15 @@ class Cuppini2017IntegratorFunction:
 
     @property
     def __name__(self):
+        """Return the name of the Integrator."""
         return self.name
 
     def sigmoid(self, u):
+        """Computes the sigmoid activation function."""
         return 1 / (1 + np.exp(-self.s * (u - self.theta)))
 
     def __call__(self, y_a, y_v, y_m, t, u_a, u_v, u_m):
+        """Computes the activites of neurons."""
         # Auditory
         dy_a = (-y_a + self.sigmoid(u_a)) * (1 / self.tau[0])
 
@@ -105,7 +108,7 @@ class Cuppini2017(SKNMSIMethodABC):
     :cite:p:`cuppini2017biologically`
 
     Notes
-    ----------
+    -----
     Each neuron is indicated with a superscript \( c \) for a specific cortical
     area (a for auditory, v for visual, m for multisensory). Each neuron
     also has a subscript \( j \) referring to its spatial position
@@ -535,7 +538,8 @@ class Cuppini2017(SKNMSIMethodABC):
         causes_dim="space",
     ):
         """
-        Run the simulation of the Cuppini2017 model with specified parameters.
+        Run the simulation of the Cuppini2017 model.
+
         It computes the activity of auditory, visual, and multisensory neurons
         based on the provided inputs and parameters. The simulation includes
         the generation of stimuli, calculation of lateral and cross-modal
@@ -602,7 +606,6 @@ class Cuppini2017(SKNMSIMethodABC):
                 - `"synapses"`: The synaptic weights for the
                     visual-to-multisensory connections.
         """
-
         auditory_position = (
             int(self._position_range[1] / 2)
             if auditory_position is None
@@ -814,8 +817,7 @@ class Cuppini2017(SKNMSIMethodABC):
         self, multi, causes_kind, causes_dim, stim_position, **kwargs
     ):
         """
-        Calculate the causes of multisensory activity based on
-        spatiotemporal peaks.
+        Calculate the causes based on spatiotemporal activity peaks.
 
         This method computes the causes (i.e., the underlying factors
         or sources) of multisensory activity based on the peaks in the

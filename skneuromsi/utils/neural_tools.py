@@ -27,10 +27,11 @@ import numpy as np
 
 def calculate_neural_distance(neurons, position_j, position_k):
     """
-    Computes the distance between the pre-synaptic and post-synaptic
-    neurons encoding an external 1D space. It assumes that neurons are
-    connected in a circular structure so that every neuron receives the
-    same number of side connections.
+    Computes the distance between the pre-synaptic and post-synaptic neurons.
+
+    Designed for neurons encoding an external 1D space. It assumes that
+    neurons are connected in a circular structure so that every neuron
+    receives the same number of lateral connections.
 
     Parameters
     ----------
@@ -62,10 +63,11 @@ def calculate_lateral_synapses(
     dtype=np.float32,
 ):
     """
-    Computes the values of lateral synapses of a group of recurrently
-    connected neurons following a “Mexican hat" distribution
-    (a central excitatory zone surrounded by an inhibitory annulus)
-    calculated as a substraction of two Gaussians.
+    Computes the values of lateral synapses.
+
+    Designed for a group of recurrently connected neurons following a
+    “Mexican hat" distribution (a central excitatory zone surrounded by
+    an inhibitory annulus) calculated as a substraction of two Gaussians.
 
     Parameters
     ----------
@@ -113,9 +115,11 @@ def calculate_lateral_synapses(
 
 def calculate_inter_areal_synapses(neurons, weight, sigma, dtype=np.float32):
     """
-    Computes the values of inter-areal synapses of two connected
-    group of neurons following a Gaussian function. It assumes symmetrical
-    connectivity and the same number of neurons in both groups.
+    Computes the values of inter-areal synapses.
+
+    Designed for two connected group of neurons following a Gaussian function.
+    It assumes symmetrical connectivity and the same number of neurons
+    in both groups.
 
     Parameters
     ----------
@@ -150,7 +154,9 @@ def calculate_inter_areal_synapses(neurons, weight, sigma, dtype=np.float32):
 
 def prune_synapses(synapses_weight_matrix, pruning_threshold):
     """
-    Prunes neural connections by assigning zero to those synapses values
+    Prunes neural connections.
+
+    Pruning is implemented by assigning zero to those synapses values
     below a given threshold.
 
     Parameters
@@ -184,8 +190,9 @@ def calculate_stimuli_input(
     neurons, intensity, *, scale, loc, dtype=np.float32
 ):
     """
-    Computes the values of stimuli as a spatial Gaussian function to
-    account for the uncertainty in the detection of external stimuli.
+    Computes the values of stimuli as a spatial Gaussian function.
+
+    The Gaussian accounts for the uncertainty in the detection of stimuli.
 
     Parameters
     ----------
@@ -232,8 +239,9 @@ def create_unimodal_stimuli_matrix(
     dtype=np.float32,
 ):
     """
-    Creates the matrix of a unimodal stimuli for each neuron
-    at each timepoint. Supports multiple stimuli.
+    Creates the matrix of a unimodal stimuli for each neuron at each timepoint.
+
+    Supports multiple stimuli.
 
     Parameters
     ----------
