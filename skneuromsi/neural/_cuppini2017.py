@@ -721,22 +721,23 @@ class Cuppini2017(SKNMSIMethodABC):
         )
 
         # Data holders
-        y_z = np.zeros(self.neurons, dtype=self.dtype)
+        z_1d = np.zeros(self.neurons)
         auditory_y, visual_y, multi_y = (
-            copy.deepcopy(y_z),
-            copy.deepcopy(y_z),
-            copy.deepcopy(y_z),
+            copy.deepcopy(z_1d),
+            copy.deepcopy(z_1d),
+            copy.deepcopy(z_1d),
         )
 
-        res_z = np.zeros(
-            (int(self._time_range[1] / self._integrator.dt), self.neurons),
-            dtype=self.dtype,
+        z_2d = np.zeros(
+            (int(self._time_range[1] / self._integrator.dt), self.neurons)
         )
         auditory_res, visual_res, multi_res = (
-            copy.deepcopy(res_z),
-            copy.deepcopy(res_z),
-            copy.deepcopy(res_z),
+            copy.deepcopy(z_2d),
+            copy.deepcopy(z_2d),
+            copy.deepcopy(z_2d),
         )
+
+        del z_1d, z_2d
 
         auditory_noise = -(auditory_intensity * 0.4) + (
             2 * auditory_intensity * 0.4
@@ -808,8 +809,6 @@ class Cuppini2017(SKNMSIMethodABC):
             "stim_position": [auditory_position, visual_position],
             "synapses": visual_to_multi_synapses,
         }
-
-        bp.math.clear_buffer_memory()
 
         return response, extra
 
