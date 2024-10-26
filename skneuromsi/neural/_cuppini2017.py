@@ -27,9 +27,9 @@ from ..utils.readout_tools import calculate_spatiotemporal_causes_from_peaks
 
 
 @dataclass
-class Cuppini2017IntegratorFunction:
+class Cuppini2017Integrator:
     """
-    Integrator function for the Cuppini2017 model.
+    Integrator for the Cuppini2017 model.
 
     This class represents the integrator function used to compute
     the dynamics of the neural network according to the Cuppini (2017) model.
@@ -226,6 +226,11 @@ class Cuppini2017(SKNMSIMethodABC):
         {"target": "visual_position", "template": "${mode1}_position"},
         {"target": "auditory_intensity", "template": "${mode0}_intensity"},
         {"target": "visual_intensity", "template": "${mode1}_intensity"},
+        {"target": "visual_intensity", "template": "${mode1}_intensity"},
+        {"target": "auditory_duration", "template": "${mode0}_duration"},
+        {"target": "visual_duration", "template": "${mode1}_duration"},
+        {"target": "auditory_onset", "template": "${mode0}_onset"},
+        {"target": "visual_onset", "template": "${mode1}_onset"},
     ]
     _run_output = [
         {"target": "auditory", "template": "${mode0}"},
@@ -314,8 +319,6 @@ class Cuppini2017(SKNMSIMethodABC):
             Name of the auditory modality.
         mode1 : str
             Name of the visual modality.
-        dtype : np.dtype
-            Data type used for computations.
         _integrator_function : Cuppini2017IntegratorFunction
             The integrator function used for simulation.
         _integrator_kws : dict
@@ -335,21 +338,13 @@ class Cuppini2017(SKNMSIMethodABC):
         integrator_kws.setdefault("method", "euler")
         integrator_kws.setdefault("dt", self._time_res)
 
-        self._integrator_function = Cuppini2017IntegratorFunction(
-            tau=tau, s=s, theta=theta
-        )
-        self._integrator_kws = integrator_kws
-
-        self._integrator = bp.odeint(
-            f=self._integrator_function, **self._integrator_kws
-        )
-
-        self._mode0 = mode0
-        self._mode1 = mode1
+        integrator_model = Cuppini2017Integrator(tau=tau, s=s, theta=theta)
+        self._integrator = bp.odeint(f=integrator_model, **integrator_kws)
 
         self.set_random(np.random.default_rng(seed=seed))
 
-        self._dtype = np.float32
+        self._mode0 = mode0
+        self._mode1 = mode1
 
     # PROPERTY ================================================================
 
@@ -487,18 +482,6 @@ class Cuppini2017(SKNMSIMethodABC):
         """
         return self._mode1
 
-    @property
-    def dtype(self):
-        """
-        Data type used for the simulations.
-
-        Returns
-        -------
-        numpy.dtype
-            The data type for storing neuron activities and other data.
-        """
-        return self._dtype
-
     # Model run
     def set_random(self, rng):
         """
@@ -531,11 +514,15 @@ class Cuppini2017(SKNMSIMethodABC):
         visual_duration=None,
         visual_onset=0,
         visual_stim_n=1,
+        auditory_soa=None,
+        visual_soa=None,
         noise=False,
+        noise_level=0.40,
         feedforward_weight=18,
         cross_modal_weight=1.4,
         causes_kind="count",
         causes_dim="space",
+        causes_peak_threshold=0.15,
     ):
         """
         Run the simulation of the Cuppini2017 model.
@@ -577,8 +564,14 @@ class Cuppini2017(SKNMSIMethodABC):
             The onset time of the visual stimulus. Default is 0.
         visual_stim_n : int, optional
             The number of visual stimuli to generate. Default is 1.
+        auditory_soa : float, optional
+            Stimulus-onset asynchrony for auditory stimuli (default is None).
+        visual_soa : float, optional
+            Stimulus-onset asynchrony for visual stimuli (default is None).
         noise : bool, optional
             Whether to include noise in the simulation. Default is False.
+        noise_level : float, optional
+            Level of noise to add (default is 0.40).
         feedforward_weight : float, optional
             The weight of the feedforward synapses from the unisensory areas
             to the multisensory area. Default is 18.
@@ -589,6 +582,8 @@ class Cuppini2017(SKNMSIMethodABC):
             The method used to calculate causes. Default is "count".
         causes_dim : str, optional
             The dimension in which to calculate causes. Default is "space".
+        causes_peak_threshold : float, optional
+            Peak threshold for causes calculation (default is 0.15).
 
         Returns
         -------
@@ -598,13 +593,7 @@ class Cuppini2017(SKNMSIMethodABC):
             and "multi" containing the results of the simulation for auditory,
             visual, and multisensory neurons respectively.
             - `extra` (dict): A dictionary with additional information,
-                including:
-                - `"causes_kind"`: The method used to calculate causes.
-                - `"causes_dim"`: The dimension in which to calculate causes.
-                - `"stim_position"`: A list of the auditory and
-                    visual stimulus positions.
-                - `"synapses"`: The synaptic weights for the
-                    visual-to-multisensory connections.
+            including causes parameters, and stimulus positions.
         """
         auditory_position = (
             int(self._position_range[1] / 2)
@@ -629,7 +618,7 @@ class Cuppini2017(SKNMSIMethodABC):
         )
 
         hist_times = np.arange(
-            self._time_range[0], self._time_range[1], self._time_res
+            self._time_range[0], self._time_range[1], self._integrator.dt
         )
 
         # Build synapses
@@ -639,7 +628,6 @@ class Cuppini2017(SKNMSIMethodABC):
             inhibition_loc=4,
             excitation_scale=3,
             inhibition_scale=120,
-            dtype=self.dtype,
         )
         visual_latsynapses = calculate_lateral_synapses(
             neurons=self.neurons,
@@ -647,7 +635,6 @@ class Cuppini2017(SKNMSIMethodABC):
             inhibition_loc=4,
             excitation_scale=3,
             inhibition_scale=120,
-            dtype=self.dtype,
         )
         multi_latsynapses = calculate_lateral_synapses(
             neurons=self.neurons,
@@ -655,31 +642,26 @@ class Cuppini2017(SKNMSIMethodABC):
             inhibition_loc=2.6,
             excitation_scale=2,
             inhibition_scale=10,
-            dtype=self.dtype,
         )
         auditory_to_visual_synapses = calculate_inter_areal_synapses(
             neurons=self.neurons,
             weight=cross_modal_weight,
             sigma=5,
-            dtype=self.dtype,
         )
         visual_to_auditory_synapses = calculate_inter_areal_synapses(
             neurons=self.neurons,
             weight=cross_modal_weight,
             sigma=5,
-            dtype=self.dtype,
         )
         auditory_to_multi_synapses = calculate_inter_areal_synapses(
             neurons=self.neurons,
             weight=feedforward_weight,
             sigma=0.5,
-            dtype=self.dtype,
         )
         visual_to_multi_synapses = calculate_inter_areal_synapses(
             neurons=self.neurons,
             weight=feedforward_weight,
             sigma=0.5,
-            dtype=self.dtype,
         )
 
         # Generate Stimuli
@@ -688,14 +670,12 @@ class Cuppini2017(SKNMSIMethodABC):
             intensity=auditory_intensity,
             scale=auditory_sigma,
             loc=auditory_position,
-            dtype=self.dtype,
         )
         point_visual_stimuli = calculate_stimuli_input(
             neurons=self.neurons,
             intensity=visual_intensity,
             scale=visual_sigma,
             loc=visual_position,
-            dtype=self.dtype,
         )
 
         auditory_stimuli = create_unimodal_stimuli_matrix(
@@ -707,6 +687,7 @@ class Cuppini2017(SKNMSIMethodABC):
             time_res=self.time_res,
             dt=self._integrator.dt,
             stimuli_n=auditory_stim_n,
+            soa=auditory_soa,
         )
 
         visual_stimuli = create_unimodal_stimuli_matrix(
@@ -718,11 +699,18 @@ class Cuppini2017(SKNMSIMethodABC):
             time_res=self.time_res,
             dt=self._integrator.dt,
             stimuli_n=visual_stim_n,
+            soa=visual_soa,
         )
 
         # Data holders
         z_1d = np.zeros(self.neurons)
         auditory_y, visual_y, multi_y = (
+            copy.deepcopy(z_1d),
+            copy.deepcopy(z_1d),
+            copy.deepcopy(z_1d),
+        )
+
+        auditory_input, visual_input, multi_input = (
             copy.deepcopy(z_1d),
             copy.deepcopy(z_1d),
             copy.deepcopy(z_1d),
@@ -739,39 +727,42 @@ class Cuppini2017(SKNMSIMethodABC):
 
         del z_1d, z_2d
 
-        auditory_noise = -(auditory_intensity * 0.4) + (
-            2 * auditory_intensity * 0.4
-        ) * self.random.random(self.neurons)
-        visual_noise = -(visual_intensity * 0.4) + (
-            2 * visual_intensity * 0.4
-        ) * self.random.random(self.neurons)
-
         for i in range(hist_times.size):
-            time = hist_times[i]
+            time = int(hist_times[i] / self._integrator.dt)
+
+            # Input noise
+            auditory_noise = -(auditory_intensity * noise_level) + (
+                2 * auditory_intensity * noise_level
+            ) * self.random.random(self.neurons)
+            visual_noise = -(visual_intensity * noise_level) + (
+                2 * visual_intensity * noise_level
+            ) * self.random.random(self.neurons)
 
             # Compute cross-modal input
             auditory_cm_input = np.sum(
-                visual_to_auditory_synapses * visual_y, axis=1
+                visual_to_auditory_synapses.T * visual_y, axis=1
             )
             visual_cm_input = np.sum(
-                auditory_to_visual_synapses * auditory_y, axis=1
+                auditory_to_visual_synapses.T * auditory_y, axis=1
             )
+
+            # Compute feedforward input
+            multi_input = np.sum(
+                auditory_to_multi_synapses.T * auditory_y, axis=1
+            ) + np.sum(visual_to_multi_synapses.T * visual_y, axis=1)
 
             # Compute external input
             auditory_input = auditory_stimuli[i] + auditory_cm_input
             visual_input = visual_stimuli[i] + visual_cm_input
-            multi_input = np.sum(
-                auditory_to_multi_synapses * auditory_y, axis=1
-            ) + np.sum(visual_to_multi_synapses * visual_y, axis=1)
 
             if noise:
                 auditory_input += auditory_noise
                 visual_input += visual_noise
 
-            # Compute lateral inpunt
-            la = np.sum(auditory_latsynapses * auditory_y, axis=1)
-            lv = np.sum(visual_latsynapses * visual_y, axis=1)
-            lm = np.sum(multi_latsynapses * multi_y, axis=1)
+            # Compute lateral input
+            la = np.sum(auditory_latsynapses.T * auditory_y, axis=1)
+            lv = np.sum(visual_latsynapses.T * visual_y, axis=1)
+            lm = np.sum(multi_latsynapses.T * multi_y, axis=1)
 
             # Compute unisensory total input
             auditory_u = la + auditory_input
@@ -806,14 +797,20 @@ class Cuppini2017(SKNMSIMethodABC):
         extra = {
             "causes_kind": causes_kind,
             "causes_dim": causes_dim,
+            "causes_peak_threshold": causes_peak_threshold,
             "stim_position": [auditory_position, visual_position],
-            "synapses": visual_to_multi_synapses,
         }
 
         return response, extra
 
     def calculate_causes(
-        self, multi, causes_kind, causes_dim, stim_position, **kwargs
+        self,
+        multi,
+        causes_kind,
+        causes_dim,
+        causes_peak_threshold,
+        stim_position,
+        **kwargs,
     ):
         """
         Calculate the causes based on spatiotemporal activity peaks.
@@ -837,6 +834,8 @@ class Cuppini2017(SKNMSIMethodABC):
         causes_dim : str
             The dimension in which to calculate causes. This specifies whether
             the causes should be determined based on spatial or temporal peaks.
+        causes_peak_threshold : float
+            Peak threshold for causes calculation.
         stim_position : list of int
             A list containing the positions of the auditory and
             visual stimuli used in the simulation. These positions help in
@@ -863,7 +862,7 @@ class Cuppini2017(SKNMSIMethodABC):
             mode_spatiotemporal_activity_data=multi,
             causes_kind=causes_kind,
             causes_dim=causes_dim,
-            peak_threshold=0.15,
+            peak_threshold=causes_peak_threshold,
             time_point=-1,
             spatial_point=position,
         )

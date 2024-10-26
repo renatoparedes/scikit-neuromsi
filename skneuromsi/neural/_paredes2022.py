@@ -968,22 +968,6 @@ class Paredes2022(SKNMSIMethodABC):
         )
 
         (
-            auditory_outside_inputs,
-            visual_outside_inputs,
-            multisensory_outside_inputs,
-        ) = (copy.deepcopy(z_2d), copy.deepcopy(z_2d), copy.deepcopy(z_2d))
-        (
-            auditoryfilter_inputs,
-            visualfilter_inputs,
-            multisensoryfilter_inputs,
-        ) = (copy.deepcopy(z_2d), copy.deepcopy(z_2d), copy.deepcopy(z_2d))
-
-        (
-            auditory_lateral_inputs,
-            visual_lateral_inputs,
-            multisensory_lateral_inputs,
-        ) = (copy.deepcopy(z_2d), copy.deepcopy(z_2d), copy.deepcopy(z_2d))
-        (
             auditory_total_inputs,
             visual_total_inputs,
             multisensory_total_inputs,
@@ -1095,36 +1079,10 @@ class Paredes2022(SKNMSIMethodABC):
                 m_temporal_noise=rand_m_tau,
             )
 
-            (
-                auditory_outside_inputs[i, :],
-                visual_outside_inputs[i, :],
-                multisensory_outside_inputs[i, :],
-            ) = (
-                auditory_outside_input,
-                visual_outside_input,
-                multisensory_outside_input,
-            )
-
-            (
-                auditoryfilter_inputs[i, :],
-                visualfilter_inputs[i, :],
-                multisensoryfilter_inputs[i, :],
-            ) = (
-                auditoryfilter_input,
-                visualfilter_input,
-                multisensoryfilter_input,
-            )
-
             # Compute lateral inpunt
             la = np.sum(auditory_latsynapses.T * auditory_y, axis=1)
             lv = np.sum(visual_latsynapses.T * visual_y, axis=1)
             lm = np.sum(multi_latsynapses.T * multi_y, axis=1)
-
-            (
-                auditory_lateral_inputs[i, :],
-                visual_lateral_inputs[i, :],
-                multisensory_lateral_inputs[i, :],
-            ) = (la, lv, lm)
 
             # Compute unisensory total input
             auditory_u = la + auditory_outside_input
