@@ -20,9 +20,9 @@
 
 import itertools
 
-from findpeaks import findpeaks
-
 import numpy as np
+
+from scipy.signal import find_peaks
 
 # =============================================================================
 # TOOLS
@@ -112,8 +112,6 @@ def calculate_causes_from_peaks(
     mode_activity_data,
     causes_kind="count",
     peak_threshold=0.15,
-    lookahead=10,
-    interpolate=5,
 ):
     """
     Computes the number of causes from peaks found in modal activity.
@@ -133,8 +131,6 @@ def calculate_causes_from_peaks(
         - 'prob' : takes the height of the peaks as probability values.
     peak_threshold : float
         The minimum peak height to detect peaks.
-    lookahead: int
-        The distance to look ahead from a peak candidate.
 
     Returns
     -------
@@ -142,31 +138,18 @@ def calculate_causes_from_peaks(
         Causes identified from modal activity.
 
     """
-    # Define the topology method to identify the peaks
-    fp = findpeaks(
-        method="peakdetect",
-        verbose=0,
-        lookahead=lookahead,
-        interpolate=interpolate,
-    )
-
-    # Find the peaks in the data and get a DataFrame with the results
-    fp_results = fp.fit(mode_activity_data)
-    mode_peaks_df = fp_results["df"].query("peak==True & valley==False")
-    mode_peaks_above_threshold_df = mode_peaks_df[
-        mode_peaks_df["y"] > peak_threshold
-    ]
+    # Find the peaks in the data
+    peaks, peak_props = find_peaks(mode_activity_data, height=peak_threshold)
 
     # Determine the type of cause to calculate
     if causes_kind == "count":
         # If counting the number of causes, assign the number of peaks found
-        causes = mode_peaks_above_threshold_df.y.size
+        causes = len(peaks)
     elif causes_kind == "prob":
         # If calculating the probability of a unique cause,
         # calculate the probability of detecting a single peak
-        causes = calculate_single_peak_probability(
-            mode_peaks_above_threshold_df["y"].values
-        )
+        peaks_values = peak_props["peak_heights"]
+        causes = calculate_single_peak_probability(peaks_values)
     else:
         # If no valid cause type is specified, assign None
         causes = None
@@ -181,7 +164,6 @@ def calculate_spatiotemporal_causes_from_peaks(
     time_point=-1,
     spatial_point=0,
     peak_threshold=0.15,
-    lookahead=10,
 ):
     """
     Computes the number of causes from peaks found in modal activity.
@@ -239,7 +221,6 @@ def calculate_spatiotemporal_causes_from_peaks(
         mode_activity_data=mode_activity_data,
         causes_kind=causes_kind,
         peak_threshold=peak_threshold,
-        lookahead=lookahead,
     )
 
     # Return the calculated causes

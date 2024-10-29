@@ -40,7 +40,6 @@ REQUIREMENTS = [
     "xarray",
     "tqdm",
     "methodtools",
-    "findpeaks",
     "netcdf4",
     "custom_inherit",
     "jinja2",

@@ -138,7 +138,6 @@ def test_calculate_spatiotemporal_causes_from_peaks(causes_dim):
                 time_point=3000,
                 spatial_point=90,
                 peak_threshold=0.15,
-                lookahead=10,
             )
         )
         np.testing.assert_almost_equal(
@@ -154,7 +153,6 @@ def test_calculate_spatiotemporal_causes_from_peaks(causes_dim):
                 time_point=3000,
                 spatial_point=90,
                 peak_threshold=0.15,
-                lookahead=10,
             )
         )
         np.testing.assert_almost_equal(

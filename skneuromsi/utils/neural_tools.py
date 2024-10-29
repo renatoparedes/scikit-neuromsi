@@ -49,9 +49,10 @@ def calculate_neural_distance(neurons, position_j, position_k):
 
     """
     # Evaulates if the distance is higher than the midpoint
-    if np.abs(position_j - position_k) <= neurons / 2:
-        return np.abs(position_j - position_k)
-    return neurons - np.abs(position_j - position_k)
+    distance = np.abs(position_j - position_k)
+    if distance <= neurons / 2:
+        return distance
+    return neurons - distance
 
 
 def calculate_lateral_synapses(

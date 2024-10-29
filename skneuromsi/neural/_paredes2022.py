@@ -12,7 +12,7 @@
 import copy
 from dataclasses import dataclass
 
-import brainpy as bp
+from brainpy import odeint
 
 import numpy as np
 
@@ -489,10 +489,10 @@ class Paredes2022(SKNMSIMethodABC):
         integrator_model = Paredes2022Integrator(
             tau=tau_neurons, s=s, theta=theta
         )
-        self._integrator = bp.odeint(f=integrator_model, **integrator_kws)
+        self._integrator = odeint(f=integrator_model, **integrator_kws)
 
         temporal_filter_model = Paredes2022TemporalFilter(tau=tau)
-        self._temporal_filter = bp.odeint(
+        self._temporal_filter = odeint(
             f=temporal_filter_model, **integrator_kws
         )
 
