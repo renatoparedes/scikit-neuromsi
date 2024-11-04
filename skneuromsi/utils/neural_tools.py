@@ -349,3 +349,35 @@ def create_unimodal_stimuli_matrix(
         stimuli_matrix = np.repeat(complete_stim, 1 / dt, axis=0)
 
     return stimuli_matrix
+
+
+def compute_latency(time, latency):
+    """
+    Computes the latency-adjusted time in the simulation.
+
+    Latency is computed by subtracting the given latency from the
+    current time, ensuring that the result is not negative.
+
+    Parameters
+    ----------
+    time : float
+        The current time in the simulation.
+    latency : float
+        The latency to subtract from the current time.
+
+    Returns
+    -------
+    float
+        The latency-adjusted time. If the result of the subtraction
+        is negative, returns 0 instead.
+
+    Notes
+    -----
+    This method is used to adjust the time for processing delays
+    in the simulation. It ensures that the computed latency does not
+    result in a negative time value, which could be invalid for
+    certain operations.
+    """
+    if time - latency >= 0:
+        return time - latency
+    return 0

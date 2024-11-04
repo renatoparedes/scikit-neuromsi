@@ -8,9 +8,11 @@
 # Full Text:
 #     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
 
+
+import copy
 from dataclasses import dataclass
 
-from brainpy import odeint
+import brainpy as bp
 
 import numpy as np
 
@@ -242,7 +244,7 @@ class Cuppini2017(SKNMSIMethodABC):
         neurons=180,
         tau=(3, 15, 1),
         s=0.3,
-        theta=20.0,
+        theta=20,
         seed=None,
         mode0="auditory",
         mode1="visual",
@@ -337,7 +339,7 @@ class Cuppini2017(SKNMSIMethodABC):
         integrator_kws.setdefault("dt", self._time_res)
 
         integrator_model = Cuppini2017Integrator(tau=tau, s=s, theta=theta)
-        self._integrator = odeint(f=integrator_model, **integrator_kws)
+        self._integrator = bp.odeint(f=integrator_model, **integrator_kws)
 
         self.set_random(np.random.default_rng(seed=seed))
 
@@ -703,134 +705,70 @@ class Cuppini2017(SKNMSIMethodABC):
         )
 
         # Data holders
+        z_1d = np.zeros(self.neurons)
         auditory_y, visual_y, multi_y = (
-            np.zeros(self.neurons),
-            np.zeros(self.neurons),
-            np.zeros(self.neurons),
+            copy.deepcopy(z_1d),
+            copy.deepcopy(z_1d),
+            copy.deepcopy(z_1d),
         )
 
         auditory_input, visual_input, multi_input = (
-            np.zeros(self.neurons),
-            np.zeros(self.neurons),
-            np.zeros(self.neurons),
+            copy.deepcopy(z_1d),
+            copy.deepcopy(z_1d),
+            copy.deepcopy(z_1d),
         )
 
-        auditory_cm_input, visual_cm_input = (
-            np.zeros(self.neurons),
-            np.zeros(self.neurons),
-        )
-
-        visual_cm_neural_input, auditory_cm_neural_input = (
-            np.zeros((self.neurons, self.neurons)),
-            np.zeros((self.neurons, self.neurons)),
-        )
-
-        auditory_ff_neural_input, visual_ff_neural_input = (
-            np.zeros((self.neurons, self.neurons)),
-            np.zeros((self.neurons, self.neurons)),
-        )
-
-        (
-            auditory_lat_neural_input,
-            visual_lat_neural_input,
-            multi_lat_neural_input,
-        ) = (
-            np.zeros((self.neurons, self.neurons)),
-            np.zeros((self.neurons, self.neurons)),
-            np.zeros((self.neurons, self.neurons)),
-        )
-
-        auditory_u, visual_u, multi_u = (
-            np.zeros(self.neurons),
-            np.zeros(self.neurons),
-            np.zeros(self.neurons),
-        )
-
-        la, lv, lm = (
-            np.zeros(self.neurons),
-            np.zeros(self.neurons),
-            np.zeros(self.neurons),
-        )
-
+        z_2d = np.zeros((n_time_steps, self.neurons))
         auditory_res, visual_res, multi_res = (
-            np.zeros((n_time_steps, self.neurons)),
-            np.zeros((n_time_steps, self.neurons)),
-            np.zeros((n_time_steps, self.neurons)),
+            copy.deepcopy(z_2d),
+            copy.deepcopy(z_2d),
+            copy.deepcopy(z_2d),
         )
+
+        del z_1d, z_2d
 
         for i in range(n_time_steps):
             time = int(hist_times[i] / self._integrator.dt)
 
             # Compute cross-modal input
-            np.multiply(
-                visual_to_auditory_synapses.T,
-                visual_y,
-                out=visual_cm_neural_input,
+            auditory_cm_input = np.sum(
+                visual_to_auditory_synapses * visual_y, axis=1
             )
-            np.sum(visual_cm_neural_input, axis=1, out=auditory_cm_input)
-
-            np.multiply(
-                auditory_to_visual_synapses.T,
-                auditory_y,
-                out=auditory_cm_neural_input,
+            visual_cm_input = np.sum(
+                auditory_to_visual_synapses * auditory_y, axis=1
             )
-            np.sum(auditory_cm_neural_input, axis=1, out=visual_cm_input)
 
             # Compute feedforward input
-            np.multiply(
-                auditory_to_multi_synapses.T,
-                auditory_y,
-                out=auditory_ff_neural_input,
-            )
-            np.multiply(
-                visual_to_multi_synapses.T,
-                visual_y,
-                out=visual_ff_neural_input,
-            )
-            np.add(
-                np.sum(auditory_ff_neural_input, axis=1),
-                np.sum(auditory_ff_neural_input, axis=1),
-                out=multi_input,
-            )
+            multi_input = np.sum(
+                auditory_to_multi_synapses * auditory_y, axis=1
+            ) + np.sum(visual_to_multi_synapses * visual_y, axis=1)
 
             # Compute external input
-            np.add(auditory_stimuli[i], auditory_cm_input, out=auditory_input)
-            np.add(visual_stimuli[i], visual_cm_input, out=visual_input)
+            auditory_input = auditory_stimuli[i] + auditory_cm_input
+            visual_input = visual_stimuli[i] + visual_cm_input
 
+            # Input noise
             if noise:
-                # Input noise
                 auditory_noise = -(auditory_intensity * noise_level) + (
                     2 * auditory_intensity * noise_level
                 ) * self.random.random(self.neurons)
                 visual_noise = -(visual_intensity * noise_level) + (
                     2 * visual_intensity * noise_level
                 ) * self.random.random(self.neurons)
-
                 auditory_input += auditory_noise
                 visual_input += visual_noise
 
             # Compute lateral input
-            np.multiply(
-                auditory_latsynapses.T,
-                auditory_y,
-                out=auditory_lat_neural_input,
-            )
-            np.multiply(
-                visual_latsynapses.T, visual_y, out=visual_lat_neural_input
-            )
-            np.multiply(
-                multi_latsynapses.T, multi_y, out=multi_lat_neural_input
-            )
-            np.sum(auditory_lat_neural_input, axis=1, out=la)
-            np.sum(visual_lat_neural_input, axis=1, out=lv)
-            np.sum(multi_lat_neural_input, axis=1, out=lm)
+            la = np.sum(auditory_latsynapses * auditory_y, axis=1)
+            lv = np.sum(visual_latsynapses * visual_y, axis=1)
+            lm = np.sum(multi_latsynapses * multi_y, axis=1)
 
             # Compute unisensory total input
-            np.add(la, auditory_input, out=auditory_u)
-            np.add(lv, visual_input, out=visual_u)
+            auditory_u = la + auditory_input
+            visual_u = lv + visual_input
 
             # Compute multisensory total input
-            np.add(lm, multi_input, out=multi_u)
+            u_m = lm + multi_input
 
             # Compute neurons activity
             auditory_y, visual_y, multi_y = self._integrator(
@@ -840,7 +778,7 @@ class Cuppini2017(SKNMSIMethodABC):
                 t=time,
                 u_a=auditory_u,
                 u_v=visual_u,
-                u_m=multi_u,
+                u_m=u_m,
             )
 
             auditory_res[i, :], visual_res[i, :], multi_res[i, :] = (

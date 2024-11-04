@@ -20,6 +20,7 @@ from ..core import SKNMSIMethodABC
 from ..utils.neural_tools import (
     calculate_lateral_synapses,
     calculate_stimuli_input,
+    compute_latency,
     create_unimodal_stimuli_matrix,
 )
 
@@ -491,37 +492,6 @@ class Cuppini2014(SKNMSIMethodABC):
         """
         self._random = rng
 
-    def compute_latency(self, time, latency):
-        """
-        Computes the latency-adjusted time in the simulation.
-
-        Latency is computed by subtracting the given latency from the
-        current time, ensuring that the result is not negative.
-
-        Parameters
-        ----------
-        time : float
-            The current time in the simulation.
-        latency : float
-            The latency to subtract from the current time.
-
-        Returns
-        -------
-        float
-            The latency-adjusted time. If the result of the subtraction
-            is negative, returns 0 instead.
-
-        Notes
-        -----
-        This method is used to adjust the time for processing delays
-        in the simulation. It ensures that the computed latency does not
-        result in a negative time value, which could be invalid for
-        certain operations.
-        """
-        if time - latency >= 0:
-            return time - latency
-        return 0
-
     def run(
         self,
         *,
@@ -706,7 +676,7 @@ class Cuppini2014(SKNMSIMethodABC):
             time = int(hist_times[i] / self._integrator.dt)
 
             # Compute cross-modal input
-            computed_cross_latency = self.compute_latency(
+            computed_cross_latency = compute_latency(
                 time, sim_cross_modal_latency
             )
 
