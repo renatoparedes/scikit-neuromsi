@@ -702,6 +702,7 @@ class Paredes2022(SKNMSIMethodABC):
         causes_kind="count",
         causes_dim="space",
         causes_peak_threshold=0.80,
+        causes_peak_distance=None,
     ):
         """
         Runs the model simulation with specified parameters.
@@ -1099,6 +1100,7 @@ class Paredes2022(SKNMSIMethodABC):
             "causes_kind": causes_kind,
             "causes_dim": causes_dim,
             "causes_peak_threshold": causes_peak_threshold,
+            "causes_peak_distance": causes_peak_distance,
             "stim_position": [auditory_position, visual_position],
         }
 
@@ -1110,6 +1112,7 @@ class Paredes2022(SKNMSIMethodABC):
         causes_kind,
         causes_dim,
         causes_peak_threshold,
+        causes_peak_distance,
         stim_position,
         **kwargs,
     ):
@@ -1151,6 +1154,7 @@ class Paredes2022(SKNMSIMethodABC):
             causes_kind=causes_kind,
             causes_dim=causes_dim,
             peak_threshold=causes_peak_threshold,
+            peak_distance=causes_peak_distance,
             time_point=-1,
             spatial_point=position,
         )

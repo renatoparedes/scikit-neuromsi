@@ -112,6 +112,7 @@ def calculate_causes_from_peaks(
     mode_activity_data,
     causes_kind="count",
     peak_threshold=0.15,
+    peak_distance=None,
 ):
     """
     Computes the number of causes from peaks found in modal activity.
@@ -139,7 +140,12 @@ def calculate_causes_from_peaks(
 
     """
     # Find the peaks in the data
-    peaks, peak_props = find_peaks(mode_activity_data, height=peak_threshold)
+    peaks, peaks_props = find_peaks(
+        mode_activity_data,
+        height=peak_threshold,
+        prominence=peak_threshold,
+        distance=peak_distance,
+    )
 
     # Determine the type of cause to calculate
     if causes_kind == "count":
@@ -148,7 +154,7 @@ def calculate_causes_from_peaks(
     elif causes_kind == "prob":
         # If calculating the probability of a unique cause,
         # calculate the probability of detecting a single peak
-        peaks_values = peak_props["peak_heights"]
+        peaks_values = peaks_props["peak_heights"]
         causes = calculate_single_peak_probability(peaks_values)
     else:
         # If no valid cause type is specified, assign None
@@ -164,6 +170,7 @@ def calculate_spatiotemporal_causes_from_peaks(
     time_point=-1,
     spatial_point=0,
     peak_threshold=0.15,
+    peak_distance=None,
 ):
     """
     Computes the number of causes from peaks found in modal activity.
@@ -221,6 +228,7 @@ def calculate_spatiotemporal_causes_from_peaks(
         mode_activity_data=mode_activity_data,
         causes_kind=causes_kind,
         peak_threshold=peak_threshold,
+        peak_distance=peak_distance,
     )
 
     # Return the calculated causes

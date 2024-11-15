@@ -523,6 +523,7 @@ class Cuppini2017(SKNMSIMethodABC):
         causes_kind="count",
         causes_dim="space",
         causes_peak_threshold=0.15,
+        causes_peak_distance=None,
     ):
         """
         Run the simulation of the Cuppini2017 model.
@@ -797,6 +798,7 @@ class Cuppini2017(SKNMSIMethodABC):
             "causes_kind": causes_kind,
             "causes_dim": causes_dim,
             "causes_peak_threshold": causes_peak_threshold,
+            "causes_peak_distance": causes_peak_distance,
             "stim_position": [auditory_position, visual_position],
         }
 
@@ -808,6 +810,7 @@ class Cuppini2017(SKNMSIMethodABC):
         causes_kind,
         causes_dim,
         causes_peak_threshold,
+        causes_peak_distance,
         stim_position,
         **kwargs,
     ):
@@ -862,6 +865,7 @@ class Cuppini2017(SKNMSIMethodABC):
             causes_kind=causes_kind,
             causes_dim=causes_dim,
             peak_threshold=causes_peak_threshold,
+            peak_distance=causes_peak_distance,
             time_point=-1,
             spatial_point=position,
         )
