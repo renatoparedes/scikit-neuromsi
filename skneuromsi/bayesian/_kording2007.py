@@ -13,6 +13,8 @@
 # =============================================================================
 # IMPORTS
 # =============================================================================
+import copy
+
 import numpy as np
 
 from ..core import SKNMSIMethodABC
@@ -101,7 +103,7 @@ class Kording2007(SKNMSIMethodABC):
         mode1="visual",
         position_range=(-42, 42),
         position_res=1.7142857142857142,
-        time_range=(1, 1),
+        time_range=(0, 1),
         time_res=1,
         seed=None,
     ):
@@ -471,6 +473,7 @@ class Kording2007(SKNMSIMethodABC):
         strategy="averaging",
         noise=True,
         causes_kind="count",
+        dimension="space",
     ):
         """Runs the Bayesian causal inference model.
 
@@ -497,6 +500,8 @@ class Kording2007(SKNMSIMethodABC):
             Whether to include noise in the computation.
         causes_kind : str
             The type of cause to calculate ("count" or "prob").
+        dimension : str
+            The dimension to run the model ("space" or "time").
 
         Returns
         -------
@@ -507,11 +512,30 @@ class Kording2007(SKNMSIMethodABC):
             - dict: Extra information with "mean_p_common_cause",
             "p_common_cause", and "causes_kind".
         """
-        possible_locations = np.arange(
-            self._position_range[0],
-            self._position_range[1],
-            self._position_res,
+        # Data holder
+        pos_range = np.arange(
+            self.position_range[0], self.position_range[1], self.position_res
         )
+        t_range = np.arange(
+            self.time_range[0], self.time_range[1], self.time_res
+        )
+
+        z_2d = np.zeros((t_range.size, pos_range.size))
+        auditory_res, visual_res, multi_res = (
+            copy.deepcopy(z_2d),
+            copy.deepcopy(z_2d),
+            copy.deepcopy(z_2d),
+        )
+
+        del z_2d
+
+        # Dimension setup
+        if dimension == "space":
+            possible_locations = pos_range
+        elif dimension == "time":
+            possible_locations = t_range
+        else:
+            possible_locations = None
 
         visual_var = np.square(visual_sigma)
         auditory_var = np.square(auditory_sigma)
@@ -576,10 +600,20 @@ class Kording2007(SKNMSIMethodABC):
             visual_input,
         )
 
+        if dimension == "space":
+            auditory_res[0, :] = multisensory_estimate["auditory"]
+            visual_res[0, :] = multisensory_estimate["visual"]
+            multi_res[0, :] = multisensory_estimate["multi"]
+
+        elif dimension == "time":
+            auditory_res[:, 0] = multisensory_estimate["auditory"]
+            visual_res[:, 0] = multisensory_estimate["visual"]
+            multi_res[:, 0] = multisensory_estimate["multi"]
+
         response = {
-            "auditory": multisensory_estimate["auditory"],
-            "visual": multisensory_estimate["visual"],
-            "multi": multisensory_estimate["multi"],
+            "auditory": auditory_res,
+            "visual": visual_res,
+            "multi": multi_res,
         }
 
         extra = {
