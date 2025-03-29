@@ -122,26 +122,17 @@ class _MemoryImpact:
 
     @property
     def hexpected_size(self):
-        """ Get the human-readable string representation of the expected \
-        size.
-
-        """
+        """Get the human-readable representation of the expected size."""
         return humanize.naturalsize(self.expected_size)
 
     @property
     def havailable_memory(self):
-        """Get the human-readable string representation of the \
-        available memory.
-
-        """
+        """Get the human-readable representation of the available memory."""
         return humanize.naturalsize(self.vmem.available)
 
     @property
     def htotal_memory(self):
-        """Get the human-readable string representation of the \
-        total memory.
-
-        """
+        """Get the human-readable string representation of the total memory."""
         return humanize.naturalsize(self.vmem.total)
 
     def __repr__(self):
@@ -154,7 +145,7 @@ class _MemoryImpact:
 
 
 def memory_impact(obj, *, size_factor=1, num_objects=1):
-    """Calculate the memory impact of an object
+    """Calculate the memory impact of an object.
 
     Parameters
     ----------
