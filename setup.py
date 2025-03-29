@@ -8,92 +8,20 @@
 # Full Text:
 #     https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt
 
-# =====================================================================
+# =============================================================================
 # DOCS
-# =====================================================================
-
-"""This file is for distributing and installing Scikit-neuromsi"""
-
-# ======================================================================
-# IMPORTS
-# ======================================================================
-
-import os
-import pathlib
-
-from setuptools import setup
-
-# =============================================================================
-# CONSTANTS
 # =============================================================================
 
-PATH = pathlib.Path(os.path.abspath(os.path.dirname(__file__)))
+"""Setup script for the scikit-neuromsi project.
 
-REQUIREMENTS = [
-    "numpy",
-    "brainpy",
-    "brainpylib",
-    "jaxlib",
-    "jax",
-    "bidict",
-    "seaborn",
-    "xarray",
-    "tqdm",
-    "methodtools",
-    "netcdf4",
-    "custom_inherit",
-    "jinja2",
-    "humanize",
-    "pympler",
-    "lz4",
-]
+empty for backward compatibility
 
-with open(PATH / "skneuromsi" / "__init__.py") as fp:
-    for line in fp.readlines():
-        if line.startswith("__version__ = "):
-            VERSION = line.split("=", 1)[-1].replace('"', "").strip()
-            break
-
-
-with open("README.md") as fp:
-    LONG_DESCRIPTION = fp.read()
-
+"""
 
 # =============================================================================
-# FUNCTIONS
+# IMPORTS and RUN
 # =============================================================================
 
-setup(
-    name="scikit-neuromsi",
-    version=VERSION,
-    description="Implementation of multisensory integration models in Python",
-    long_description=LONG_DESCRIPTION,
-    long_description_content_type="text/markdown",
-    author="Renato Paredes",
-    author_email="paredesrenato92@gmail.com",
-    url="https://github.com/renatoparedes/scikit-neuromsi",
-    packages=[
-        "skneuromsi",
-    ],
-    license="3 Clause BSD",
-    install_requires=REQUIREMENTS,
-    keywords=[
-        "multisensory integration",
-        "computational neuroscience",
-        "cognitive modelling",
-        "behaviour simulation",
-        "perception",
-    ],
-    classifiers=[
-        "Development Status :: 4 - Beta",
-        "Intended Audience :: Education",
-        "Intended Audience :: Science/Research",
-        "License :: OSI Approved :: BSD License",
-        "Operating System :: OS Independent",
-        "Programming Language :: Python",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: Implementation :: CPython",
-        "Topic :: Scientific/Engineering",
-    ],
-    include_package_data=True,
-)
+import setuptools
+
+setuptools.setup()

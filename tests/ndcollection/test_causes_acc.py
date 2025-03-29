@@ -12,9 +12,7 @@
 # DOCS
 # =============================================================================
 
-"""test for skneuromsi.ndcollection.causes_acc
-
-"""
+"""test for skneuromsi.ndcollection.causes_acc"""
 
 # =============================================================================
 # IMPORTS

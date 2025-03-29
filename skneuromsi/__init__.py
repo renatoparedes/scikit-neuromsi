@@ -21,6 +21,7 @@
 from . import testing
 from .core import (
     CompressedNDResult,
+    NAME,
     NDResult,
     VERSION,
     compress_ndresult,
@@ -46,14 +47,11 @@ from .ndcollection import NDResultCollection
 __version__ = ".".join(map(str, VERSION))
 
 
-# =============================================================================
-# EXPORTS
-# =============================================================================
-
 __all__ = [
     "compress_ndresult",
     "decompress_ndresult",
     "CompressedNDResult",
+    "NAME",
     "NDResult",
     "NDResultCollection",
     "read_ndr",

@@ -18,6 +18,7 @@
 # IMPORTS
 # =============================================================================
 
+from .constants import NAME, VERSION
 from .modelabc import ParameterAliasTemplate, SKNMSIMethodABC, SKNMSIRunConfig
 from .ndresult import (
     CompressedNDResult,
@@ -28,11 +29,6 @@ from .ndresult import (
     validate_compression_params,
 )
 
-# =============================================================================
-# CONSTANTS
-# =============================================================================
-
-VERSION = (0, 2, 0)
 
 # =============================================================================
 # ALL
@@ -41,12 +37,13 @@ VERSION = (0, 2, 0)
 
 __all__ = [
     "DEFAULT_COMPRESSION_PARAMS",
-    "VERSION",
     "CompressedNDResult",
+    "NAME",
     "NDResult",
     "ParameterAliasTemplate",
     "SKNMSIMethodABC",
     "SKNMSIRunConfig",
+    "VERSION",
     "compress_ndresult",
     "decompress_ndresult",
     "validate_compression_params",

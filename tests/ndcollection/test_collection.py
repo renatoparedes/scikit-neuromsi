@@ -12,9 +12,7 @@
 # DOCS
 # =============================================================================
 
-"""test for skneuromsi.ndcollection.collection
-
-"""
+"""test for skneuromsi.ndcollection.collection"""
 
 # =============================================================================
 # IMPORTS

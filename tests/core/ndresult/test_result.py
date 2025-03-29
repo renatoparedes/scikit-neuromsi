@@ -13,9 +13,7 @@
 # DOCS
 # =============================================================================
 
-"""Tests for the `skneuromsi.core.ndresult.compress` module.
-
-"""
+"""Tests for the `skneuromsi.core.ndresult.compress` module."""
 
 # =============================================================================
 # IMPORTS

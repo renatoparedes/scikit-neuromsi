@@ -12,9 +12,7 @@
 # DOCS
 # =============================================================================
 
-"""test for skneuromsi.ndcollection.cplot_acc
-
-"""
+"""test for skneuromsi.ndcollection.cplot_acc"""
 
 # =============================================================================
 # IMPORTS
