@@ -13,6 +13,23 @@
 
    core/index
 
+.. toctree::
+   :maxdepth: 2
+
+   utils/io
+
+
+.. toctree::
+   :maxdepth: 2
+
+   utils/sweep
+
+
+.. toctree::
+   :maxdepth: 2
+
+   utils/testing
+
 
 .. toctree::
    :maxdepth: 2
