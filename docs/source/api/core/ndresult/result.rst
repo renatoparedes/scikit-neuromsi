@@ -1,8 +1,8 @@
 
-``skneuromsi.ndresult.result`` module
-=====================================
+``skneuromsi.core.dresult.result`` module
+=========================================
 
-.. automodule:: skneuromsi.ndresult.result
+.. automodule:: skneuromsi.core.ndresult.result
    :members:
    :undoc-members:
    :show-inheritance:

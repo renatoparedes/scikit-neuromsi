@@ -54,24 +54,21 @@ _COMPRESS_TYPES = (np.ndarray, xa.DataArray, pd.DataFrame, pd.Series)
 
 @dclss.dataclass(slots=True, frozen=True, repr=False)
 class CompressedNDResult:
-    """
-    A dataclass for storing compressed NDResults.
+    """A dataclass for storing compressed NDResults.
 
-    Attributes
-    ----------
-    data : dict
-        The compressed data.
-    original_memory_usage :
-        Memory usage of the original NDResult.
-    compressed_memory_usage :
-        Memory usage of the compressed NDResult.
-    compressed_extra_keys : frozenset
-        Keys of compressed extra data.
+
     """
 
+    #: The compressed data
     data: dict
+
+    #: Keys of compressed extra data
     compressed_extra_keys: frozenset
+
+    #: Memory usage of the original NDResult
     original_memory_usage: object
+
+    #: Memory usage of the compressed NDResult
     compressed_memory_usage: object
 
     @property

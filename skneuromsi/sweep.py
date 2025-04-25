@@ -218,29 +218,6 @@ class ParameterSweep:
     tqdm_cls : class, optional
         Class to use for progress bars. Default is `tqdm`.
 
-    Attributes
-    ----------
-    model : object
-        The model object.
-    range : ndarray
-        The range of values to sweep over.
-    repeat : int
-        The number of times to repeat each run.
-    n_jobs : int
-        The number of jobs to run in parallel.
-    target : str
-        The name of the parameter to sweep over.
-    random_ : numpy.random.Generator
-        The random number generator.
-    processing_strategy : ProcessingStrategy
-        The processing strategy to use.
-    mem_warning_ratio : float
-        The ratio of available memory to warn about.
-    mem_error_ratio : float
-        The ratio of available memory to raise an error.
-    tqdm_cls : class
-        The class to use for progress bars.
-
     Raises
     ------
     TypeError

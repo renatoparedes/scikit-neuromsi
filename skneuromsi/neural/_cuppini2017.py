@@ -36,35 +36,18 @@ class Cuppini2017Integrator:
     It handles the update rules for the neurons' activities based on
     their net inputs.
 
-    Parameters
-    ----------
-    tau : tuple of 3 float
-        Time constants for the auditory, visual,
-        and multisensory neurons, respectively.
-    s : float
-        Slope of the sigmoid activation function.
-    theta : float
-        Central position of the sigmoid activation function.
-
-    Attributes
-    ----------
-    tau : tuple of 3 float
-        Time constants for the auditory, visual, and multisensory neurons.
-    s : float
-        Slope of the sigmoid activation function.
-    theta : float
-        Central position of the sigmoid activation function.
-
-    Methods
-    -------
-    __call__(y_a, y_v, y_m, t, u_a, u_v, u_m)
-        Computes the updated activities of auditory, visual,
-        and multisensory neurons.
     """
 
+    #: Time constants for the auditory, visual, and multisensory neurons.
     tau: tuple
+
+    #: Slope of the sigmoid activation function.
     s: float
+
+    #: Central position of the sigmoid activation function.
     theta: float
+
+    #: Name of the integrator
     name: str = "Cuppini2017Integrator"
 
     @property
@@ -139,6 +122,7 @@ class Cuppini2017(SKNMSIMethodABC):
     defined by:
 
     .. math::
+
         L_{jk}^{s} = \\left\\{
         \\begin{matrix}
         L_{ex}^{c} \\cdot \\exp\\left(- \\frac{(D_{jk})^{2}}
@@ -150,12 +134,14 @@ class Cuppini2017(SKNMSIMethodABC):
         \\right.
 
     where:
+
     - \( L_{jk}^{c} \) is the synaptic weight from the pre-synaptic neuron
     at position \( k \) to the post-synaptic neuron at position \( j \).
     - \( D_{jk} \) is the distance between pre-synaptic and
     post-synaptic neurons:
 
     .. math::
+
         D_{jk} = \\left\\{
         \\begin{matrix}
         | j-k |, & | j-k | \\leqslant N/2 \\
@@ -173,6 +159,7 @@ class Cuppini2017(SKNMSIMethodABC):
         && cd = av\\text{ or } va
 
     where:
+
     - \( W_{0}^{cd} \) is the maximum synaptic efficacy.
     - \( D_{jk} \) is the distance between neurons
     in different sensory regions.
@@ -187,6 +174,7 @@ class Cuppini2017(SKNMSIMethodABC):
         && c = a,v
 
     where:
+
     - \( W^{mc}_{0} \) is the highest value of synaptic efficacy.
     - \( D_{jk} \) is the distance between neurons in multisensory and
     unisensory areas.
@@ -211,7 +199,7 @@ class Cuppini2017(SKNMSIMethodABC):
     where:
     - \( l^{c}_{j}(t) \) is the within-region input:
 
-    .. math::
+      .. math::
         l^{c}_{j}(t) = \\sum_{k} L^{c}_{jk} \\cdot y^{c}_{jk}(t)
 
     - \( o^{c}_{j}(t) \) is the extra-area input, including external stimuli,

@@ -155,44 +155,6 @@ class NDResult:
         This only applies to parameters that accept the dtype message
         If None, the data types are inferred.
 
-    Attributes
-    ----------
-    mname : str
-        The name of the model.
-    mtype : str
-        The type of the model.
-    output_mode : str
-        The output mode of the model.
-    dims : list
-        The dimensions of the result data.
-    nmap_ : dict
-        A copy of the nmap dictionary.
-    time_range : tuple
-        The range of time values.
-    position_range : tuple
-        The range of position values.
-    time_res : float
-        The resolution of time values.
-    position_res : float
-        The resolution of position values.
-    run_parameters : Bunch
-        The parameters used for running the model.
-    dtypes : numpy.dtype
-        The data type of the result data.
-    extra_ : Bunch
-        Extra information associated with the result.
-    causes_ : int
-        The number of causes in the result.
-    modes_ : numpy.ndarray
-        The modes of the result data.
-    times_ : numpy.ndarray
-        The time values of the result data.
-    positions_ : numpy.ndarray
-        The position values of the result data.
-    positions_coordinates_ : numpy.ndarray
-        The position coordinates of the result data.
-
-
     """
 
     def __init__(

@@ -11,36 +11,52 @@
 .. toctree::
    :maxdepth: 2
 
+   bayesian/index
+
+
+.. toctree::
+   :maxdepth: 2
+
    core/index
 
-.. toctree::
-   :maxdepth: 2
-
-   utils/io
-
 
 .. toctree::
    :maxdepth: 2
 
-   utils/sweep
+   io
 
 
 .. toctree::
    :maxdepth: 2
 
-   utils/testing
+   mle/index
+
+
+.. toctree::
+   :maxdepth: 2
+
+   ndcollection/index
+
+
+.. toctree::
+   :maxdepth: 2
+
+   neural/index
+
+
+.. toctree::
+   :maxdepth: 2
+
+   sweep
+
+
+.. toctree::
+   :maxdepth: 2
+
+   testing
 
 
 .. toctree::
    :maxdepth: 2
 
    utils/index
-
-
-.. toctree::
-   :maxdepth: 2
-   :glob:
-
-   alais_burr2004
-   kording2007
-   cuppini2017

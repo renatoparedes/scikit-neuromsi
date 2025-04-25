@@ -43,22 +43,11 @@ class CustomJSONEncoder(json.JSONEncoder):
     types that are not supported by the default JSONEncoder, such as tuples,
     sets, frozensets, datetime objects, NumPy types, and NumPy arrays.
 
-    Attributes
-    ----------
-    CONVERTERS : dict
-        A dictionary mapping data types to their corresponding converter
-        functions. The converter functions are used to convert the data types
-        to JSON-serializable representations.
-
-    Methods
-    -------
-    default(obj)
-        Overrides the default method of JSONEncoder to handle additional data
-        types. If the object is an instance of any of the data types specified
-        in the CONVERTERS dictionary, the corresponding converter function is
-        applied. Otherwise, the default behavior of the superclass is used.
     """
 
+    #: A dictionary mapping data types to their corresponding converter
+    #: functions. The converter functions are used to convert the data types
+    #: to JSON-serializable representations.
     CONVERTERS = (
         (tuple, list),
         (set, list),

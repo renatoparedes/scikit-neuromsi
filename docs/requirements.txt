@@ -8,6 +8,8 @@ sphinx_copybutton
 ipykernel
 ipython
 
+lxml_html_clean
+
 sphinxcontrib-bibtex
 sphinx-nested-apidoc
 pybtex-apa-style

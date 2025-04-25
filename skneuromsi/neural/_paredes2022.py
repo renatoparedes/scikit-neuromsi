@@ -32,18 +32,6 @@ from ..utils.readout_tools import calculate_spatiotemporal_causes_from_peaks
 class Paredes2022Integrator:
     """
     A class representing the integrator for the Paredes2022 model.
-
-    Attributes
-    ----------
-    tau : tuple
-        A tuple containing the time constants for the auditory, visual,
-        and multisensory layers.
-    s : float
-        The slope parameter for the sigmoid activation function.
-    theta : float
-        The threshold parameter for the sigmoid activation function.
-    name : str, optional
-        The name of the integrator (default is "Paredes2022Integrator").
     """
 
     tau: tuple
@@ -112,19 +100,10 @@ class Paredes2022Integrator:
 
 @dataclass
 class Paredes2022TemporalFilter:
-    """
-    Temporal filter for the Paredes2022 model.
+    """Temporal filter for the Paredes2022 model."""
 
-    Attributes
-    ----------
-    tau : tuple
-        A tuple containing the time constants for the auditory, visual,
-        and multisensory layers.
-    name : str, optional
-        The name of the temporal filter
-        (default is "Paredes2022TemporalFilter").
-    """
-
+    #: A tuple containing the time constants for the auditory, visual,
+    #: and multisensory layers.
     tau: tuple
     name: str = "Paredes2022TemporalFilter"
 

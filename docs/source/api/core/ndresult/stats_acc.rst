@@ -1,8 +1,8 @@
 
-``skneuromsi.ndresult.stats_acc`` module
-========================================
+``skneuromsi.core.ndresult.stats_acc`` module
+=============================================
 
-.. automodule:: skneuromsi.ndresult.stats_acc
+.. automodule:: skneuromsi.core.ndresult.stats_acc
    :members:
    :undoc-members:
    :show-inheritance:

@@ -1,8 +1,8 @@
 
-``skneuromsi.ndresult.compress`` module
-=======================================
+``skneuromsi.core.ndresult.compress`` module
+============================================
 
-.. automodule:: skneuromsi.ndresult.compress
+.. automodule:: skneuromsi.core.ndresult.compress
    :members:
    :undoc-members:
    :show-inheritance:

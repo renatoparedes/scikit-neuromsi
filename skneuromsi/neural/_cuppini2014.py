@@ -45,25 +45,18 @@ class Cuppini2014Integrator:
     theta : float
         Central position of the sigmoid activation function.
 
-    Attributes
-    ----------
-    tau : tuple of 3 float
-        Time constants for the auditory, visual, and multisensory neurons.
-    s : float
-        Slope of the sigmoid activation function.
-    theta : float
-        Central position of the sigmoid activation function.
-
-    Methods
-    -------
-    __call__(y_a, y_v, y_m, t, u_a, u_v, u_m)
-        Computes the updated activities of auditory, visual,
-        and multisensory neurons.
     """
 
+    #: Time constants for the auditory, visual, and multisensory neurons
     tau: tuple
+
+    #: Slope of the sigmoid activation function
     s: float
+
+    #: Central position of the sigmoid activation function
     theta: float
+
+    #: Name of the integrator
     name: str = "Cuppini2014Integrator"
 
     @property

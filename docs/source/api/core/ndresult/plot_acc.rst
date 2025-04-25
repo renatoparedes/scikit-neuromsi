@@ -1,8 +1,8 @@
 
-``skneuromsi.ndresult.plot_acc`` module
-=======================================
+``skneuromsi.core.ndresult.plot_acc`` module
+============================================
 
-.. automodule:: skneuromsi.ndresult.plot_acc
+.. automodule:: skneuromsi.core.ndresult.plot_acc
    :members:
    :undoc-members:
    :show-inheritance:
