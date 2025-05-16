@@ -9,9 +9,9 @@ on:
   - pull_request
 
 env:
-  default-python: 3.9
+  default-python: 3.12
 
 jobs:
   testing:
-    uses: renatoparedes/scikit-neuromsi/.github/workflows/tests.yml@2fc4631cbfa625adb56a4663b50cc7c4d5df16fe
+    uses: renatoparedes/scikit-neuromsi/.github/workflows/tests.yml@00945144e500081b9519cd2a0067905a9b53a6fc
 
