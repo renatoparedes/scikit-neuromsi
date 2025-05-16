@@ -30,9 +30,7 @@ from ..utils.readout_tools import calculate_spatiotemporal_causes_from_peaks
 
 @dataclass
 class Paredes2022Integrator:
-    """
-    A class representing the integrator for the Paredes2022 model.
-    """
+    """A class representing the integrator for the Paredes2022 model."""
 
     tau: tuple
     s: float
