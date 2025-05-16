@@ -54,10 +54,7 @@ _COMPRESS_TYPES = (np.ndarray, xa.DataArray, pd.DataFrame, pd.Series)
 
 @dclss.dataclass(slots=True, frozen=True, repr=False)
 class CompressedNDResult:
-    """A dataclass for storing compressed NDResults.
-
-
-    """
+    """A dataclass for storing compressed NDResults."""
 
     #: The compressed data
     data: dict
