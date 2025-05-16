@@ -104,24 +104,25 @@ class Cuppini2017(SKNMSIMethodABC):
         F(u^{c}_{j}(t)), && c = a, v, m
 
     where:
-    - \( u(t) \) and \( y(t) \) are the net input and output of a neuron
-    at time \( t \).
+
+    - \( u(t) \) and \( y(t) \) are the net input and output of a neuron at
+      time \( t \).
     - \( \\tau^{c} \) is the time constant of neurons in area \( c \).
     - \( F(u) \) is the sigmoid function:
 
-    .. math::
+      .. math::
         F(u_{j}^{c}) = \\frac{1}{1 + \\exp^{-s (u_{j}^{c} - \\theta)}}
 
-    Here, \( s \) and \( \\theta \) denote the slope and the
-    central position of the sigmoid function, respectively.
+      Here, \( s \) and \( \\theta \) denote the slope and the
+      central position of the sigmoid function, respectively.
 
-    Neurons in all regions differ only in their time constants, with faster
-    sensory processing for auditory stimuli compared to visual stimuli.
+      Neurons in all regions differ only in their time constants, with faster
+      sensory processing for auditory stimuli compared to visual stimuli.
 
-    Neurons are connected in a "Mexican hat" pattern within each layer,
-    defined by:
+      Neurons are connected in a "Mexican hat" pattern within each layer,
+      defined by:
 
-    .. math::
+      .. math::
 
         L_{jk}^{s} = \\left\\{
         \\begin{matrix}
@@ -136,11 +137,11 @@ class Cuppini2017(SKNMSIMethodABC):
     where:
 
     - \( L_{jk}^{c} \) is the synaptic weight from the pre-synaptic neuron
-    at position \( k \) to the post-synaptic neuron at position \( j \).
+      at position \( k \) to the post-synaptic neuron at position \( j \).
     - \( D_{jk} \) is the distance between pre-synaptic and
-    post-synaptic neurons:
+      post-synaptic neurons:
 
-    .. math::
+      .. math::
 
         D_{jk} = \\left\\{
         \\begin{matrix}
@@ -162,7 +163,7 @@ class Cuppini2017(SKNMSIMethodABC):
 
     - \( W_{0}^{cd} \) is the maximum synaptic efficacy.
     - \( D_{jk} \) is the distance between neurons
-    in different sensory regions.
+      in different sensory regions.
     - \( \\sigma^{cd} \) is the width of the cross-modal synapses.
 
     Neurons in unisensory layers also have excitatory connections
@@ -177,7 +178,7 @@ class Cuppini2017(SKNMSIMethodABC):
 
     - \( W^{mc}_{0} \) is the highest value of synaptic efficacy.
     - \( D_{jk} \) is the distance between neurons in multisensory and
-    unisensory areas.
+      unisensory areas.
     - \( \\sigma^{mc} \) is the width of the feedforward synapses.
 
     The visual and auditory stimuli are modeled as Gaussian functions:

@@ -341,10 +341,12 @@ class AlaisBurr2004(SKNMSIMethodABC):
         -------
         tuple
             A tuple containing:
+
             - response : dict
                 A dictionary with keys 'auditory', 'visual',
                 and 'multi' containing the auditory,
                 visual, and multisensory estimates respectively.
+
             - extra : dict
                 A dictionary with keys 'auditory_weight' and 'visual_weight'
                 containing the weights for the auditory and visual
