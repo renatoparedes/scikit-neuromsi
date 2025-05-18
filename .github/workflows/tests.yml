@@ -24,6 +24,7 @@ jobs:
           - tox_env: check-testdir
           - tox_env: check-headers
           - tox_env: check-apidocsdir
+          - tox_env: coverage
           - tox_env: mkdocs
             pandoc: true
 
@@ -58,48 +59,3 @@ jobs:
 
       - name: tox -re ${{ matrix.tox_env }}
         run: tox -re ${{ matrix.tox_env }}
-
-      # Save coverage data if this is a Python test environment
-      - name: Save coverage data
-        if: ${{ startsWith( matrix.tox_env, 'py3' ) }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: coverage-data-${{ matrix.tox_env }}
-          path: .tox/.coverage.${{ matrix.tox_env }}
-          retention-days: 1
-
-  # Separate job to combine coverage data
-  coverage:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@master
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ env.default-python }}
-
-      # Create the .tox directory where coverage files will be stored
-      - name: Create .tox directory
-        run: mkdir -p .tox
-
-      # Download all coverage artifacts
-      - name: Download all coverage data
-        uses: actions/download-artifact@v2
-        with:
-          path: .tox-artifacts
-
-      # Move coverage files to the correct location
-      - name: Prepare coverage files
-        run: |
-          find .tox-artifacts -name ".coverage.*" -type f -exec cp {} .tox/ \;
-          ls -la .tox/
-
-      # Install tox and run coverage
-      - name: Install tox
-        run: pip install tox
-
-      # Run coverage analysis
-      - name: Run coverage combine and report
-        run: tox -re coverage
