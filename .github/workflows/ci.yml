@@ -13,5 +13,5 @@ env:
 
 jobs:
   testing:
-    uses: renatoparedes/scikit-neuromsi/.github/workflows/tests.yml@b8c26a55eef0ef92a604a025b1f6dd13b1bd577a
+    uses: renatoparedes/scikit-neuromsi/.github/workflows/tests.yml@e2210e8683cdca8f5ff0852f414816abf657bacb
 
