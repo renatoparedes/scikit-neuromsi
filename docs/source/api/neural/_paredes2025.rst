@@ -1,8 +1,8 @@
 
-``skneuromsi.neural._paredes2022`` module
+``skneuromsi.neural._paredes2025`` module
 =========================================
 
-.. automodule:: skneuromsi.neural._paredes2022
+.. automodule:: skneuromsi.neural._paredes2025
    :members:
    :undoc-members:
    :show-inheritance:

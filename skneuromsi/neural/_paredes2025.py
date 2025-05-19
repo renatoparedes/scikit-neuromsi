@@ -29,7 +29,7 @@ from ..utils.readout_tools import calculate_spatiotemporal_causes_from_peaks
 
 
 @dataclass
-class Paredes2022Integrator:
+class Paredes2025Integrator:
     """A class representing the integrator for the Paredes2022 model."""
 
     tau: tuple
@@ -97,7 +97,7 @@ class Paredes2022Integrator:
 
 
 @dataclass
-class Paredes2022TemporalFilter:
+class Paredes2025TemporalFilter:
     """Temporal filter for the Paredes2022 model."""
 
     #: A tuple containing the time constants for the auditory, visual,
@@ -258,7 +258,7 @@ class Paredes2022TemporalFilter:
         )
 
 
-class Paredes2022(SKNMSIMethodABC):
+class Paredes2025(SKNMSIMethodABC):
     r"""
     Multisensory Spatiotemporal Causal Inference Network Model.
 
@@ -379,7 +379,7 @@ class Paredes2022(SKNMSIMethodABC):
 
     """
 
-    _model_name = "Paredes2022"
+    _model_name = "Paredes2025"
     _model_type = "Neural"
     _run_input = [
         {"target": "auditory_position", "template": "${mode0}_position"},
@@ -415,7 +415,7 @@ class Paredes2022(SKNMSIMethodABC):
         **integrator_kws,
     ):
         """
-        Initialize the Paredes2022 model.
+        Initialize the Paredes2025 model.
 
         Parameters
         ----------
@@ -464,12 +464,12 @@ class Paredes2022(SKNMSIMethodABC):
         integrator_kws.setdefault("method", "euler")
         integrator_kws.setdefault("dt", self._time_res)
 
-        integrator_model = Paredes2022Integrator(
+        integrator_model = Paredes2025Integrator(
             tau=tau_neurons, s=s, theta=theta
         )
         self._integrator = odeint(f=integrator_model, **integrator_kws)
 
-        temporal_filter_model = Paredes2022TemporalFilter(tau=tau)
+        temporal_filter_model = Paredes2025TemporalFilter(tau=tau)
         self._temporal_filter = odeint(
             f=temporal_filter_model, **integrator_kws
         )

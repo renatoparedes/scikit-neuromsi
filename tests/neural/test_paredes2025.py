@@ -18,21 +18,21 @@ import numpy as np
 
 import pytest
 
-from skneuromsi.neural import Paredes2022
+from skneuromsi.neural import Paredes2025
 
 # =============================================================================
-# PAREDES 2022
+# PAREDES 2025
 # =============================================================================
 
 
 @pytest.mark.slow
 @pytest.mark.model
-def test_paredes2022_temporal_filter_auditory_stimuli():
+def test_paredes2025_temporal_filter_auditory_stimuli():
     # In Raij 2010, for a single auditory stimuli
     # Hechsl Gyrus auditory response latency is 23 ms and
     # calcarine cortex visual response latency is 53 ms.
 
-    model = Paredes2022(time_range=(0, 125), theta=16, s=2)
+    model = Paredes2025(time_range=(0, 125), theta=16, s=2)
     res = model.run(
         auditory_intensity=1.5,
         visual_intensity=1.2,
@@ -54,12 +54,12 @@ def test_paredes2022_temporal_filter_auditory_stimuli():
 
 @pytest.mark.slow
 @pytest.mark.model
-def test_paredes2022_temporal_filter_visual_stimuli():
+def test_paredes2025_temporal_filter_visual_stimuli():
     # In Raij 2010, for a single visual stimuli
     # Calcarine cortex visual response latency is 43 ms and
     # Hechsl Gyrus auditory response latency is 82 ms.
 
-    model = Paredes2022(time_range=(0, 125), theta=16, s=2)
+    model = Paredes2025(time_range=(0, 125), theta=16, s=2)
     res = model.run(
         auditory_intensity=1.5,
         visual_intensity=1.2,
@@ -82,12 +82,12 @@ def test_paredes2022_temporal_filter_visual_stimuli():
 
 @pytest.mark.slow
 @pytest.mark.model
-def test_paredes2022_temporal_filter_audiovisual_stimuli():
+def test_paredes2025_temporal_filter_audiovisual_stimuli():
     # In Raij 2010, for an audiovisual stimuli
     # Calcarine cortex visual response latency is 47 ms and
     # Hechsl Gyrus auditory response latency is 23 ms.
 
-    model = Paredes2022(time_range=(0, 125), theta=16, s=2)
+    model = Paredes2025(time_range=(0, 125), theta=16, s=2)
     res = model.run(
         auditory_intensity=1.5,
         visual_intensity=0.85,
@@ -109,8 +109,8 @@ def test_paredes2022_temporal_filter_audiovisual_stimuli():
 
 @pytest.mark.slow
 @pytest.mark.model
-def test_paredes2022_fission_illusion():
-    model = Paredes2022(time_range=(0, 400))
+def test_paredes2025_fission_illusion():
+    model = Paredes2025(time_range=(0, 400))
     res = model.run(
         auditory_intensity=3,
         visual_intensity=1.4,
@@ -135,10 +135,10 @@ def test_paredes2022_fission_illusion():
 
 @pytest.mark.slow
 @pytest.mark.model
-def test_paredes2022_supraddivity_effect():
+def test_paredes2025_supraddivity_effect():
     # Two weak stimuli combined are able to elicit a multisensory response.
 
-    model = Paredes2022(time_range=(0, 250))
+    model = Paredes2025(time_range=(0, 250))
     res = model.run(
         auditory_intensity=2.4,
         visual_intensity=1.4,
