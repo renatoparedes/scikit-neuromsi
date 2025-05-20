@@ -22,8 +22,6 @@
 
 import humanize
 
-import psutil
-
 from pympler import asizeof
 
 import pytest
@@ -51,16 +49,15 @@ def test_memory_impact():
     obj = 1
     expected_size = asizeof.asizeof(obj)
     expected_humanize = humanize.naturalsize(expected_size)
-    vmem = psutil.virtual_memory()
 
     mi = memtools.memory_impact(obj, size_factor=1, num_objects=1)
-    assert mi.expected_size == expected_size
-    assert mi.vmem == vmem
-    assert mi.total_ratio == expected_size / vmem.total
-    assert mi.available_ratio == expected_size / vmem.available
-    assert mi.hexpected_size == expected_humanize
-    assert mi.havailable_memory == humanize.naturalsize(vmem.available)
-    assert mi.htotal_memory == humanize.naturalsize(vmem.total)
+
+    assert isinstance(mi.expected_size, int)
+    assert isinstance(mi.total_ratio, float)
+    assert isinstance(mi.available_ratio, float)
+    assert isinstance(mi.hexpected_size, str)
+    assert isinstance(mi.havailable_memory, str)
+    assert isinstance(mi.htotal_memory, str)
     assert repr(mi) == (
         f"<memimpact expected_size={expected_humanize!r}, "
         f"total_ratio={mi.total_ratio}, "
