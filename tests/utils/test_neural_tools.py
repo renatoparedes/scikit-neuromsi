@@ -19,13 +19,12 @@
 # IMPORTS
 # =============================================================================
 
-from findpeaks import findpeaks
-
 import numpy as np
 
 import pytest
 
 from scipy.optimize import curve_fit
+from scipy.signal import find_peaks
 
 from skneuromsi.utils import neural_tools
 
@@ -188,10 +187,8 @@ def test_create_unimodal_multiple_stimuli_matrix(soa, duration, nstim):
     stim_matrix_duration = stim_at_loc_on_args.size
 
     # Count number of stimuli
-    fp = findpeaks(method="peakdetect", verbose=0)
-    fp_results = fp.fit(stim_at_loc)
-    peaks_df = fp_results["df"].query("peak==True & valley==False")
-    peaks_n = peaks_df.y.size
+    peaks, _ = find_peaks(stim_at_loc, height=15, prominence=15)
+    peaks_n = len(peaks)
 
     # Calculate the duration of the stimulus onset asynchrony
     stims_start_idx = np.where(np.diff(stim_at_loc) > 1)[0] + 1

@@ -12,11 +12,11 @@
 # IMPORTS
 # =============================================================================
 
-from findpeaks import findpeaks
-
 import numpy as np
 
 import pytest
+
+from scipy.signal import find_peaks
 
 from skneuromsi.neural import Cuppini2014
 
@@ -118,12 +118,9 @@ def test_cuppini2014_fission_illusion():
         onset=25,
         soa=56,
     )
-    fp = findpeaks(method="peakdetect", verbose=0, lookahead=10, interpolate=5)
+
     X = res.get_modes(include="visual").query("positions==90").visual.values
-    results = fp.fit(X)
-    visual_peaks_df = results["df"].query("peak==True & valley==False")
-    visual_peaks = visual_peaks_df[visual_peaks_df["y"] > 0.40]
-    visual_peaks_n = visual_peaks.y.size
-    visual_peaks_n
+    visual_peaks, _ = find_peaks(X, height=0.40, prominence=0.40)
+    visual_peaks_n = len(visual_peaks)
 
     np.testing.assert_equal(visual_peaks_n, 2)

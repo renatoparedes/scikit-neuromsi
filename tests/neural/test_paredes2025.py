@@ -12,11 +12,11 @@
 # IMPORTS
 # =============================================================================
 
-from findpeaks import findpeaks
-
 import numpy as np
 
 import pytest
+
+from scipy.signal import find_peaks
 
 from skneuromsi.neural import Paredes2025
 
@@ -122,13 +122,9 @@ def test_paredes2025_fission_illusion():
         visual_onset=25,
         auditory_soa=56,
     )
-    fp = findpeaks(method="peakdetect", verbose=0, lookahead=10, interpolate=5)
     X = res.get_modes(include="visual").query("positions==45").visual.values
-    results = fp.fit(X)
-    visual_peaks_df = results["df"].query("peak==True & valley==False")
-    visual_peaks = visual_peaks_df[visual_peaks_df["y"] > 0.15]
-    visual_peaks_n = visual_peaks.y.size
-    visual_peaks_n
+    visual_peaks, _ = find_peaks(X, height=0.15, prominence=0.15)
+    visual_peaks_n = len(visual_peaks)
 
     np.testing.assert_equal(visual_peaks_n, 2)
 
@@ -149,15 +145,9 @@ def test_paredes2025_supraddivity_effect():
         auditory_onset=0,
         visual_onset=0,
     )
-    fp = findpeaks(method="peakdetect", verbose=0, lookahead=10, interpolate=5)
     X = res.get_modes(include="multi").query("positions==45").multi.values
-    results = fp.fit(X)
-    multisensory_peaks_df = results["df"].query("peak==True & valley==False")
-    multisensory_peaks = multisensory_peaks_df[
-        multisensory_peaks_df["y"] > 0.15
-    ]
-    multisensory_peaks_n = multisensory_peaks.y.size
-    multisensory_peaks_n
+    multisensory_peaks, _ = find_peaks(X, height=0.15, prominence=0.15)
+    multisensory_peaks_n = len(multisensory_peaks)
 
     np.testing.assert_equal(multisensory_peaks_n, 1)
 

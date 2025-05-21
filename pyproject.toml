@@ -31,7 +31,7 @@ authors = [
     {name = "Juan B. Cabral", email = "jbcabral@unc.edu.ar"},
 ]
 license = {file = "LICENSE.txt"}
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Education",
@@ -57,7 +57,7 @@ keywords = [
 dependencies = [
     "numpy",
     "brainpy",
-    "findpeaks",  # This normally needs python headers
+    "scipy",
     "jaxlib",
     "jax",
     "joblib",

@@ -114,3 +114,4 @@ venv.bak/
 .vscode/
 result_images/
 docs/source/_dynamic/*.rst
+draft/
