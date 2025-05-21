@@ -115,3 +115,4 @@ venv.bak/
 result_images/
 docs/source/_dynamic/*.rst
 draft/
+drafts/
