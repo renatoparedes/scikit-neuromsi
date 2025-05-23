@@ -11,7 +11,7 @@ markers = [
 testpaths = [
     "tests",
 ]
-addopts = "-m 'not slow' --disable-warnings -n auto"
+addopts = "-m 'not slow' --disable-warnings"
 
 # =============================================================================
 # PACKAGING

@@ -4,7 +4,6 @@ tox
 
 ipdb
 pytest
-pytest-xdist
 pytest-randomly
 
 black
