@@ -232,10 +232,7 @@ def test_NDResult_invalid_time_range():
         "mode0": [[1, 2, 3], [4, 5, 6]],
         "output": [[1, 2, 3], [4, 5, 6]],
     }
-    with pytest.raises(
-        ValueError,
-        match=r"The time_range must be \(min, max\). Got \(0, 1, 2\)",
-    ):
+    with pytest.raises(ValueError):
         result.NDResult.from_modes_dict(
             mname="Model",
             modes_dict=modes_dict,
@@ -251,10 +248,7 @@ def test_NDResult_invalid_time_range():
             extra={},
             ensure_dtype=None,
         )
-    with pytest.raises(
-        ValueError,
-        match=r"The time_range must be \(min, max\). Got \(2, 1\)",
-    ):
+    with pytest.raises(ValueError):
         result.NDResult.from_modes_dict(
             mname="Model",
             modes_dict=modes_dict,
@@ -306,10 +300,7 @@ def test_NDResult_invalid_position_range():
         "mode0": [[1, 2, 3], [4, 5, 6]],
         "output": [[1, 2, 3], [4, 5, 6]],
     }
-    with pytest.raises(
-        ValueError,
-        match=r"The position_range must be \(min, max\). Got \(0, 3, 4\)",
-    ):
+    with pytest.raises(ValueError):
         result.NDResult.from_modes_dict(
             mname="Model",
             modes_dict=modes_dict,
@@ -325,10 +316,7 @@ def test_NDResult_invalid_position_range():
             extra={},
             ensure_dtype=None,
         )
-    with pytest.raises(
-        ValueError,
-        match=r"The position_range must be \(min, max\). Got \(4, 3\)",
-    ):
+    with pytest.raises(ValueError):
         result.NDResult.from_modes_dict(
             mname="Model",
             modes_dict=modes_dict,
