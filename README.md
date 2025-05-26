@@ -3,7 +3,7 @@
 
 <!-- BODY -->
 
-[![scikit-neuromsi](https://github.com/renatoparedes/scikit-neuromsi/actions/workflows/skneuromsi_ci.yml/badge.svg)](https://github.com/renatoparedes/scikit-neuromsi/actions/workflows/skneuromsi_ci.yml)
+[![scikit-neuromsi](https://github.com/renatoparedes/scikit-neuromsi/actions/workflows/ci.yml/badge.svg)](https://github.com/renatoparedes/scikit-neuromsi/actions/workflows/ci.yml)
 [![Documentation Status](https://readthedocs.org/projects/scikit-neuromsi/badge/?version=latest)](https://scikit-neuromsi.readthedocs.io/en/latest/?badge=latest)
 [![PyPI](https://img.shields.io/pypi/v/scikit-neuromsi)](https://pypi.org/project/scikit-neuromsi/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
