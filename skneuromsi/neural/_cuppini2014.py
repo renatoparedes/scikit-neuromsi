@@ -81,18 +81,7 @@ class Cuppini2014Integrator:
 
 @dataclass
 class Cuppini2014TemporalFilter:
-    """
-    Temporal filter for the Cuppini2014 model.
-
-    Attributes
-    ----------
-    tau : tuple
-        A tuple containing the time constants for the auditory, visual,
-        and multisensory layers.
-    name : str, optional
-        The name of the temporal filter
-        (default is "Cuppini2014TemporalFilter").
-    """
+    """Temporal filter for the Cuppini2014 model."""
 
     tau: tuple
     name: str = "Cuppini2014TemporalFilter"

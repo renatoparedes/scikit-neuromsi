@@ -100,8 +100,6 @@ class Paredes2025Integrator:
 class Paredes2025TemporalFilter:
     """Temporal filter for the Paredes2025 model."""
 
-    #: A tuple containing the time constants for the auditory, visual,
-    #: and multisensory layers.
     tau: tuple
     name: str = "Paredes2025TemporalFilter"
 
