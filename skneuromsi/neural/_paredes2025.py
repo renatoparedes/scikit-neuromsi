@@ -30,12 +30,12 @@ from ..utils.readout_tools import calculate_spatiotemporal_causes_from_peaks
 
 @dataclass
 class Paredes2025Integrator:
-    """A class representing the integrator for the Paredes2022 model."""
+    """A class representing the integrator for the Paredes2025 model."""
 
     tau: tuple
     s: float
     theta: float
-    name: str = "Paredes2022Integrator"
+    name: str = "Paredes2025Integrator"
 
     @property
     def __name__(self):
@@ -98,12 +98,12 @@ class Paredes2025Integrator:
 
 @dataclass
 class Paredes2025TemporalFilter:
-    """Temporal filter for the Paredes2022 model."""
+    """Temporal filter for the Paredes2025 model."""
 
     #: A tuple containing the time constants for the auditory, visual,
     #: and multisensory layers.
     tau: tuple
-    name: str = "Paredes2022TemporalFilter"
+    name: str = "Paredes2025TemporalFilter"
 
     @property
     def __name__(self):
@@ -260,7 +260,7 @@ class Paredes2025TemporalFilter:
 
 class Paredes2025(SKNMSIMethodABC):
     r"""
-    Multisensory Spatiotemporal Causal Inference Network Model.
+    Causal Inference Network Model of Paredes et al. (2025).
 
     This model builds upon previous network models for multisensory integration
     (Cuppini et al., 2014; Cuppini et al., 2017) and consists of three layers:
@@ -276,13 +276,14 @@ class Paredes2025(SKNMSIMethodABC):
 
     References
     ----------
-    :cite:p:`cuppini2017biologically`
     :cite:p:`cuppini2014neurocomputational`
+    :cite:p:`cuppini2017biologically`
+    :cite:p:`paredes2025excitation`
 
 
     Notes
     -----
-    The Paredes2022 model maintains the neural connectivity
+    The Paredes2025 model maintains the neural connectivity
     (lateral, crossmodal, feedforward) and inputs as described in the
     network presented in Cuppini et al. (2017).
 
@@ -292,53 +293,51 @@ class Paredes2025(SKNMSIMethodABC):
     The feedback synaptic weights are calculated using:
 
     .. math::
-
-    B^{cm}_{jk} = B^{cm}_{0} \cdot \exp \left( -
-    \frac{\left(D_{jk}\right)^{2}}{2 \left(\sigma^{cm}\right)^{2}} \right)
+        B^{cm}_{jk} = B^{cm}_{0} \cdot \exp \left( -
+        \frac{\left(D_{jk}\right)^{2}}{2 \left(\sigma^{cm}\right)^{2}} \right)
 
     where:
+
     - :math:`B^{cm}_{0}`: Highest level of synaptic efficacy.
-    - :math:`D_{jk}`: Distance between neuron at position :math:`j` in
-    the post-synaptic unisensory region and neuron at position :math:`k`
-    in the pre-synaptic multisensory region.
+    - :math:`D_{jk}`: Distance between neuron at position :math:`j` in the
+      post-synaptic unisensory region and neuron at position :math:`k`
+      in the pre-synaptic multisensory region.
     - :math:`\sigma^{cm}`: Width of the feedback synapses, which is the same
-    for both auditory-to-multisensory (:math:`am`)
-    and visual-to-multisensory (:math:`vm`) connections.
+      for both auditory-to-multisensory (:math:`am`) and
+      visual-to-multisensory (:math:`vm`) connections.
 
     The overall feedback input to the unisensory neurons is given by:
 
     .. math::
+        b^{c}_{j}\left(t\right) = \sum^{N}_{k=1} B^{cm}_{jk} \cdot
+        y^{c}_{k}\left(t - \Delta t_{feed}\right)
 
-    b^{c}_{j}\left(t\right) = \sum^{N}_{k=1} B^{cm}_{jk} \cdot
-    y^{c}_{k}\left(t - \Delta t_{feed}\right)
-
-    where:
-    - :math:`\Delta t_{feed}`: Latency of feedback inputs between
-    the multisensory and unisensory regions.
+    where :math:`\Delta t_{feed}` represents the latency of
+    feedback inputs between the multisensory and unisensory regions.
 
     The feedback synaptic weights are symmetrically defined:
 
     .. math::
-
-    B_{0}^{am} = B_{0}^{vm} \quad \text{and} \quad \sigma^{am} = \sigma^{vm}
+        B_{0}^{am} = B_{0}^{vm} \quad \text{and}
+                     \quad \sigma^{am} = \sigma^{vm}
 
     The external sources in unisensory regions are filtered using a
     second-order differential equation:
 
     .. math::
-
-    \left\{
-    \begin{matrix}
-    \frac{d}{dt} o^{c}_{j}\left(t\right) = \delta^{c}_{j} \left(t\right) \\
-    \frac{d}{dt} \delta^{c}_{j} \left(t\right) = \frac{G^{c}}{\tau^{c}} \cdot
-    \left[ e^{c}_{j}\left(t\right) + c^{c}_{j}\left(t\right) +
-    b^{c}_{j}\left(t\right) + n^{c}_{j} \right] - \frac{2 \cdot
-    \delta^{c}_{j} \left(t\right)}{\tau^{c}} -
-    \frac{o^{c}_{j}\left(t\right)}{\left( \tau^{c} \right)^{2}}
-    \end{matrix}
-    \right.
+        \left\{
+        \begin{matrix}
+        \frac{d}{dt} o^{c}_{j}\left(t\right) = \delta^{c}_{j} \left(t\right) \\
+        \frac{d}{dt} \delta^{c}_{j} \left(t\right) = \frac{G^{c}}{\tau^{c}}
+        \cdot \left[ e^{c}_{j}\left(t\right) + c^{c}_{j}\left(t\right) +
+        b^{c}_{j}\left(t\right) + n^{c}_{j} \right] - \frac{2 \cdot
+        \delta^{c}_{j} \left(t\right)}{\tau^{c}} -
+        \frac{o^{c}_{j}\left(t\right)}{\left( \tau^{c} \right)^{2}}
+        \end{matrix}
+        \right.
 
     where:
+
     - :math:`G^{c}`: Gain of the unisensory regions.
     - :math:`\tau^{c}`: Time constant of the unisensory regions.
     - :math:`c` : Indicates the unisensory region (auditory or visual).
@@ -347,35 +346,33 @@ class Paredes2025(SKNMSIMethodABC):
     second-order differential equation:
 
     .. math::
-
-    \left\{
-    \begin{matrix}
-    \frac{d}{dt} o^{m}_{j}\left(t\right) = \delta^{m}_{j} \left(t\right) \\
-    \frac{d}{dt} \delta^{m}_{j} \left(t\right) = \frac{G^{m}}{\tau^{m}}
-    \cdot \left[ i^{m}_{j}\left(t\right) \right] -
-    \frac{2 \cdot \delta^{m}_{j} \left(t\right)}{\tau^{m}}
-    - \frac{o^{m}_{j}\left(t\right)}{\left( \tau^{m} \right)^{2}}
-    \end{matrix}
-    \right.
+        \left\{
+        \begin{matrix}
+        \frac{d}{dt} o^{m}_{j}\left(t\right) = \delta^{m}_{j} \left(t\right) \\
+        \frac{d}{dt} \delta^{m}_{j} \left(t\right) = \frac{G^{m}}{\tau^{m}}
+        \cdot \left[ i^{m}_{j}\left(t\right) \right] -
+        \frac{2 \cdot \delta^{m}_{j} \left(t\right)}{\tau^{m}}
+        - \frac{o^{m}_{j}\left(t\right)}{\left( \tau^{m} \right)^{2}}
+        \end{matrix}
+        \right.
 
     where:
+
     - :math:`G^{m}`: Gain of the multisensory regions.
     - :math:`\tau^{m}`: Time constant of the multisensory regions.
 
     The cross-modal input to the unisensory neurons is calculated as:
 
     .. math::
+        \begin{matrix}
+        c^{a}_{j}\left(t\right) = \sum^{N}_{k=1} W^{av}_{jk} \cdot y^{v}_{k}
+        \left(t - \Delta t_{cross} \right) \\
+        c^{v}_{j}\left(t\right) = \sum^{N}_{k=1} W^{va}_{jk} \cdot y^{a}_{k}
+        \left(t - \Delta t_{cross}\right)
+        \end{matrix}
 
-    \begin{matrix}
-    c^{a}_{j}\left(t\right) = \sum^{N}_{k=1} W^{av}_{jk} \cdot y^{v}_{k}
-    \left(t - \Delta t_{cross} \right) \\
-    c^{v}_{j}\left(t\right) = \sum^{N}_{k=1} W^{va}_{jk} \cdot y^{a}_{k}
-    \left(t - \Delta t_{cross}\right)
-    \end{matrix}
-
-    where:
-    - :math:`\Delta t_{cross}`: Latency of cross-modal inputs
-    between the unisensory regions.
+    where :math:`\Delta t_{cross}` represents the latency of
+    cross-modal inputs between the unisensory regions.
 
     """
 

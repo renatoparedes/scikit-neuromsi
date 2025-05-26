@@ -92,119 +92,117 @@ class Cuppini2017(SKNMSIMethodABC):
 
     Notes
     -----
-    Each neuron is indicated with a superscript \( c \) for a specific cortical
-    area (a for auditory, v for visual, m for multisensory). Each neuron
-    also has a subscript \( j \) referring to its spatial position
-    within a given area.
+    Each neuron is indicated with a superscript :math:`c` for a specific
+    cortical area (:math:`a` for auditory, :math:`v` for visual,
+    :math:`m` for multisensory). Each neuron also has a subscript :math:`j`
+    referring to its spatial position within a given area.
 
     The neurons use a sigmoid activation function and first-order dynamics:
 
     .. math::
-        \\tau^{c} \\frac{dy^{c}_{j}(t)}{dt} = - y^{c}_{j}(t) +
-        F(u^{c}_{j}(t)), && c = a, v, m
+      \tau^{c} \frac{dy^{c}_{j}(t)}{dt} = - y^{c}_{j}(t) +
+      F(u^{c}_{j}(t)), \ c = a, v, m
 
     where:
 
-    - \( u(t) \) and \( y(t) \) are the net input and output of a neuron at
-      time \( t \).
-    - \( \\tau^{c} \) is the time constant of neurons in area \( c \).
-    - \( F(u) \) is the sigmoid function:
+    - :math:`u(t)` and :math:`y(t)` are the net input and output of a neuron at
+      time :math:`(t)`.
+    - :math:`\tau^{c}` is the time constant of neurons in area :math:`c`.
+    - :math:`F(u)` is the sigmoid function:
 
-      .. math::
-        F(u_{j}^{c}) = \\frac{1}{1 + \\exp^{-s (u_{j}^{c} - \\theta)}}
+    .. math::
+        F(u_{j}^{c}) = \frac{1}{1 + \exp^{-s (u_{j}^{c} - \theta)}}
 
-      Here, \( s \) and \( \\theta \) denote the slope and the
-      central position of the sigmoid function, respectively.
+    Here, :math:`s` and :math:`\theta` denote the slope and the
+    central position of the sigmoid function, respectively.
 
-      Neurons in all regions differ only in their time constants, with faster
-      sensory processing for auditory stimuli compared to visual stimuli.
+    Neurons in all regions differ only in their time constants, with faster
+    sensory processing for auditory stimuli compared to visual stimuli.
 
-      Neurons are connected in a "Mexican hat" pattern within each layer,
-      defined by:
+    Neurons are connected in a "Mexican hat" pattern within each layer,
+    defined by:
 
-      .. math::
-
-        L_{jk}^{s} = \\left\\{
-        \\begin{matrix}
-        L_{ex}^{c} \\cdot \\exp\\left(- \\frac{(D_{jk})^{2}}
-        {2 \\cdot (\\sigma_{ex}^{c})^{2}}\\right) - L_{in}^{c} \\cdot
-        \\exp\\left(- \\frac{(D_{jk})^{2}}{2 \\cdot
-        (\\sigma_{in}^{c})^{2}}\\right), & D_{jk} \\neq 0 \\
-        0, & D_{jk} = 0
-        \\end{matrix}
-        \\right.
+    .. math::
+        L_{jk}^{s} = \left\{
+        \begin{matrix}
+        L_{ex}^{c} \cdot \exp\left(- \frac{(D_{jk})^{2}}
+        {2 \cdot (\sigma_{ex}^{c})^{2}}\right) - L_{in}^{c} \cdot
+        \exp\left(- \frac{(D_{jk})^{2}}{2 \cdot
+        (\sigma_{in}^{c})^{2}}\right), & D_{jk} \neq 0 \\
+        0, \ D_{jk} = 0
+        \end{matrix}
+        \right.
 
     where:
 
-    - \( L_{jk}^{c} \) is the synaptic weight from the pre-synaptic neuron
-      at position \( k \) to the post-synaptic neuron at position \( j \).
-    - \( D_{jk} \) is the distance between pre-synaptic and
+    - :math:`L_{jk}^{c}` is the synaptic weight from the pre-synaptic neuron
+      at position :math:`k` to the post-synaptic neuron at position :math:`j`.
+    - :math:`D_{jk}` is the distance between pre-synaptic and
       post-synaptic neurons:
 
-      .. math::
-
-        D_{jk} = \\left\\{
-        \\begin{matrix}
-        | j-k |, & | j-k | \\leqslant N/2 \\
+    .. math::
+        D_{jk} = \left\{
+        \begin{matrix}
+        | j-k |, & | j-k | \leqslant N/2 \\
         N - | j-k |, & | j-k | > N/2
-        \\end{matrix}
-        \\right.
+        \end{matrix}
+        \right.
 
     Neurons in the unisensory layers are reciprocally connected with
     neurons in the opposite layer (e.g., auditory to visual).
     These connections are defined by:
 
     .. math::
-        W^{cd}_{jk} = W^{cd}_{0} \\cdot
-        \\exp\\left(- \\frac{(D_{jk})^{2}}{2 (\\sigma^{cd})^{2}}\\right),
-        && cd = av\\text{ or } va
+        W^{cd}_{jk} = W^{cd}_{0} \cdot
+        \exp\left(- \frac{(D_{jk})^{2}}{2 (\sigma^{cd})^{2}}\right),
+        \ cd = av\text{ or } va
 
     where:
 
-    - \( W_{0}^{cd} \) is the maximum synaptic efficacy.
-    - \( D_{jk} \) is the distance between neurons
+    - :math:`W_{0}^{cd}` is the maximum synaptic efficacy.
+    - :math:`D_{jk}` is the distance between neurons
       in different sensory regions.
-    - \( \\sigma^{cd} \) is the width of the cross-modal synapses.
+    - :math:`\sigma^{cd}` is the width of the cross-modal synapses.
 
     Neurons in unisensory layers also have excitatory connections
     to the multisensory layer:
 
     .. math::
-        W^{mc}_{jk} = W^{mc}_{0} \\cdot
-        \\exp\\left(- \\frac{(D_{jk})^{2}}{2 (\\sigma^{mc})^{2}}\\right),
-        && c = a,v
+        W^{mc}_{jk} = W^{mc}_{0} \cdot
+        \exp\left(- \frac{(D_{jk})^{2}}{2 (\sigma^{mc})^{2}}\right),
+        \ c = a,v
 
     where:
 
-    - \( W^{mc}_{0} \) is the highest value of synaptic efficacy.
-    - \( D_{jk} \) is the distance between neurons in multisensory and
+    - :math:`W^{mc}_{0}` is the highest value of synaptic efficacy.
+    - :math:`D_{jk}` is the distance between neurons in multisensory and
       unisensory areas.
-    - \( \\sigma^{mc} \) is the width of the feedforward synapses.
+    - :math:`\sigma^{mc}` is the width of the feedforward synapses.
 
     The visual and auditory stimuli are modeled as Gaussian functions:
 
     .. math::
-        e^{c}_{j}(t) = E^{c}_{0} \\cdot
-        \\exp\\left(- \\frac{(d^{c}_{j})^{2}}{2 (\\sigma^{c})^{2}}\\right)
+        e^{c}_{j}(t) = E^{c}_{0} \cdot
+        \exp\left(- \frac{(d^{c}_{j})^{2}}{2 (\sigma^{c})^{2}}\right)
 
     where:
-    - \( E^{c}_{0} \) is the stimulus strength.
-    - \( d^{c}_{j} \) is the distance between the neuron and the stimulus.
-    - \( \\sigma^{c} \) is the degree of uncertainty in detection.
+
+    - :math:`E^{c}_{0}` is the stimulus strength.
+    - :math:`d^{c}_{j}` is the distance between the neuron and the stimulus.
+    - :math:`\sigma^{c}` is the degree of uncertainty in detection.
 
     The net input to a neuron combines within-region and extra-area components:
 
     .. math::
         u^{c}_{j}(t) = l^{c}_{j}(t) + o^{c}_{j}(t)
 
-    where:
-    - \( l^{c}_{j}(t) \) is the within-region input:
+    where :math:`l^{c}_{j}(t)` is the within-region input:
 
-      .. math::
-        l^{c}_{j}(t) = \\sum_{k} L^{c}_{jk} \\cdot y^{c}_{jk}(t)
+    .. math::
+        l^{c}_{j}(t) = \sum_{k} L^{c}_{jk} \cdot y^{c}_{jk}(t)
 
-    - \( o^{c}_{j}(t) \) is the extra-area input, including external stimuli,
-    cross-modal input, and noise.
+    Here :math:`o^{c}_{j}(t)` is the extra-area input,
+    including external stimuli, cross-modal input, and noise.
 
     """
 

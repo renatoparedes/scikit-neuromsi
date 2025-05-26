@@ -65,7 +65,7 @@ class Kording2007(SKNMSIMethodABC):
     The likelihood is computed as:
 
     .. math::
-        p(x_{1}, x_{2} \mid C = 1) = \int p(x_{1}, x_{2} \mid X), p(X), dX
+        p(x_{1}, x_{2} \mid C = 1) = \int\int p(x_{1}, x_{2} \mid X) p(X) dX
 
     Here, :math:`p(C = 1)` is the prior probability of a common cause
     (default is 0.5). :math:`X` denotes the attributes of the stimuli

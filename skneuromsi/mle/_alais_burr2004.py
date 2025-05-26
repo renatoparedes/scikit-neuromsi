@@ -42,20 +42,20 @@ class AlaisBurr2004(SKNMSIMethodABC):
     can be computed as:
 
     .. math::
-        \\hat{S}_{VA} = w_{V} \\hat{S}_{V} + w_{A} \\hat{S}_{A}
+        \hat{S}_{VA} = w_{V} \hat{S}_{V} + w_{A} \hat{S}_{A}
 
-    where :math:`\\hat{S}_{V}` and :math:`\\hat{S}_{A}` are unimodal auditory
-    and visual estimates, respectively, and :math:`\\hat{S}_{VA}`
+    where :math:`\hat{S}_{V}` and :math:`\hat{S}_{A}` are unimodal auditory
+    and visual estimates, respectively, and :math:`\hat{S}_{VA}`
     is the multimodal estimate.
 
     In addition, :math:`w_{A}` and :math:`w_{V}` are the relative weights
     for each modality, defined as:
 
     .. math::
-        w_{A} = \\frac{\\sigma_{V}^{2}}{\\sigma_{A}^{2} + \\sigma_{V}^{2}} \\
-        w_{V} = \\frac{\\sigma_{A}^{2}}{\\sigma_{V}^{2} + \\sigma_{A}^{2}}
+        w_{A} = \frac{\sigma_{V}^{2}}{\sigma_{A}^{2} + \sigma_{V}^{2}} \\
+        w_{V} = \frac{\sigma_{A}^{2}}{\sigma_{V}^{2} + \sigma_{A}^{2}}
 
-    where :math:`\\sigma_{A}` and :math:`\\sigma_{V}` are the
+    where :math:`\sigma_{A}` and :math:`\sigma_{V}` are the
     standard deviations (or square roots of the variances) of each
     unimodal stimuli, respectively.
 

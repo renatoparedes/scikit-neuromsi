@@ -24,7 +24,7 @@
   > doi: 10.1371/journal.pone.0000943.
   > `skneuromsi.kording2007`
 
-## V 0.2.0
+## V 1.0.0
 
 - Core module redesign.
 - Plotting functionalities incorporated.

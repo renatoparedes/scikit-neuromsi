@@ -42,7 +42,7 @@ its copyright notices and the license’s disclaimers of warranty are maintained
 
 - **Data Processing Pipeline**: Multidimensional data processing across spatial dimensions (1D to 3D spatial coordinates), temporal sequences, and multiple sensory modalities (e.g., visual, auditory, touch).
 
-- **Analysis Tools:**: Integrated tools for parameter sweeping across model configurations, result visualisation and export, and statistical analysis of model outputs.
+- **Analysis Tools**: Integrated tools for parameter sweeping across model configurations, result visualisation and export, and statistical analysis of model outputs.
 
 In addition, there is a **core** module with features to facilitate the implementation of new models of multisensory integration.
 
