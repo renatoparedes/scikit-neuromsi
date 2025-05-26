@@ -83,7 +83,7 @@ Repository = "https://github.com/renatoparedes/scikit-neuromsi"
 include-package-data = true
 
 [tool.setuptools.packages.find]
-include = ["skcneuromsi", "skneuromsi.*"]
+include = ["skneuromsi", "skneuromsi.*"]
 namespaces = false
 
 
