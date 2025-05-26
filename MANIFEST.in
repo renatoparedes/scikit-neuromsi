@@ -1,11 +1,18 @@
 include LICENSE
 include README.md
-recursive-include skneuromsi *.csv
+include CHANGELOG.md
+
 recursive-include skneuromsi *.py
 
 exclude tox.ini
+exclude .flake8
 exclude pyproject.toml
+exclude .header-template
+exclude .readthedocs.yml
+exclude requirements_dev.txt
+
 recursive-exclude tests *
-recursive-exclude drafts *
-recursive-exclude docs * 
+recursive-exclude docs *
 recursive-exclude res *
+recursive-exclude legacy *
+recursive-exclude draft *

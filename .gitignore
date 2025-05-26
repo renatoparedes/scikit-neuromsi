@@ -108,3 +108,11 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# skneuromsi
+.pytest_cache
+.vscode/
+result_images/
+docs/source/_dynamic/*.rst
+draft/
+drafts/

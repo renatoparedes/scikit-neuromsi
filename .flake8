@@ -1,0 +1,4 @@
+[flake8]
+per-file-ignores =
+    # the module is shadowing a Python builtin module "io"
+    skneuromsi/io.py:A005

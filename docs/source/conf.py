@@ -20,7 +20,7 @@ CURRENT_PATH = pathlib.Path(os.path.abspath(os.path.dirname(__file__)))
 SKNEUROMSI_PATH = CURRENT_PATH.parent.parent
 
 sys.path.insert(0, str(SKNEUROMSI_PATH))
-# sys.path.insert(0, os.path.abspath('..'))
+
 
 import skneuromsi
 
@@ -48,8 +48,25 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",
     "sphinx.ext.autosummary",
+    # skneuromsi
     "nbsphinx",
+    "sphinxcontrib.bibtex",
+    "sphinx_copybutton",
 ]
+
+# =============================================================================
+# EXTRA CONF
+# =============================================================================
+
+autodoc_member_order = "bysource"
+
+# =============================================================================
+# BIB TEX
+# =============================================================================
+
+bibtex_default_style = "apa"  # pybtex-apa-style
+
+bibtex_bibfiles = ["refs.bib"]
 
 
 # Add any paths that contain templates here, relative to this directory.
@@ -72,3 +89,30 @@ html_theme = "sphinx_rtd_theme"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+
+suppress_warnings = [
+    "autodoc.duplicate_object_description",
+]
+
+# =============================================================================
+# INJECT README/CHANGELOG INTO THE RESTRUCTURED TEXT
+# =============================================================================
+
+import m2r
+
+DYNAMIC_RST = {
+    "README.md": "README.rst",
+    "CHANGELOG.md": "CHANGELOG.rst",
+}
+
+for md_name, rst_name in DYNAMIC_RST.items():
+    md_path = SKNEUROMSI_PATH / md_name
+    with open(md_path) as fp:
+        readme_md = fp.read().split("<!-- BODY -->")[-1]
+
+    rst_path = CURRENT_PATH / "_dynamic" / rst_name
+
+    with open(rst_path, "w") as fp:
+        fp.write(".. FILE AUTO GENERATED !! \n")
+        fp.write(m2r.convert(readme_md))
+        print(f"{md_path} -> {rst_path} regenerated!")

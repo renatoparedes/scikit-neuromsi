@@ -1,5 +1,7 @@
-# Scikit-neuromsi
+# Scikit-NeuroMSI
 ![logo](https://raw.githubusercontent.com/renatoparedes/scikit-neuromsi/main/res/logo_banner.png)
+
+<!-- BODY -->
 
 [![scikit-neuromsi](https://github.com/renatoparedes/scikit-neuromsi/actions/workflows/skneuromsi_ci.yml/badge.svg)](https://github.com/renatoparedes/scikit-neuromsi/actions/workflows/skneuromsi_ci.yml)
 [![Documentation Status](https://readthedocs.org/projects/scikit-neuromsi/badge/?version=latest)](https://scikit-neuromsi.readthedocs.io/en/latest/?badge=latest)
@@ -9,43 +11,50 @@
 [![https://github.com/leliel12/diseno_sci_sfw](https://img.shields.io/badge/DiSoftCompCi-FAMAF-ffda00)](https://github.com/leliel12/diseno_sci_sfw)
 [![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
-**Scikit-neuromsi** is an open-source Python framework that simplifies the implementation of neurocomputational models of multisensory integration.
+**Scikit-NeuroMSI** is an open-source Python framework that simplifies the implementation of neurocomputational models of multisensory integration.
 
 ## Motivation
 
-Research on the the neural process by which unisensory signals are combined to form a significantly different multisensory response has grown exponentially in the recent years. Nevertheless, there is as yet no unified theoretical approach to multisensory integration. We believe that building a framework for multisensory integration modelling would greatly contribute to originate a unifying theory that narrows the gap between neural and behavioural multisensory responses. 
+Research on the the neural process by which unisensory signals are combined to form a significantly different multisensory response has grown exponentially in the recent years. Nevertheless, there is as yet no unified theoretical approach to multisensory integration. We believe that building a framework for multisensory integration modelling would greatly contribute to originate a unifying theory that narrows the gap between neural and behavioural multisensory responses.
 
 ## Contact
 Renato Paredes (paredesrenato92@gmail.com)
 
+## Repository and Issues
+
+https://github.com/renatoparedes/scikit-neuromsi
+
+
+## License
+
+Scikit-NeuroMSI is under
+[The 3-Clause BSD License](https://github.com/renatoparedes/scikit-neuromsi/blob/main/LICENSE.txt)
+
+This license allows unlimited redistribution for any purpose as long as
+its copyright notices and the license’s disclaimers of warranty are maintained.
+
+
 ## Features
 
-**Scikit-neuromsi** currently has three classes which implement neurocomputational 
-models of multisensory integration.
+**Scikit-NeuroMSI** was designed to meet three fundamental requirements in the computational study of multisensory integration:
 
-The available modules are:
+- **Modeling Standardization**: Standardized interface for implementing and analyzing different types of models. The package currently handles the following model families: Maximum Likelihood Estimation, Bayesian Causal Inference, and Neural Networks.
 
-- **alais_burr2004**: implements the near-optimal bimodal integration
-    employed by Alais and Burr (2004) to reproduce the Ventriloquist Effect.
+- **Data Processing Pipeline**: Multidimensional data processing across spatial dimensions (1D to 3D spatial coordinates), temporal sequences, and multiple sensory modalities (e.g., visual, auditory, touch).
 
-- **ernst_banks2002**: implements the visual-haptic maximum-likelihood
-    integrator employed by Ernst and Banks (2002) to reproduce the visual-haptic task.
-
-- **kording2007**: implements the Bayesian Causal Inference model for
-    Multisensory Perception employed by Kording et al. (2007) to reproduce
-    the Ventriloquist Effect.
+- **Analysis Tools**: Integrated tools for parameter sweeping across model configurations, result visualisation and export, and statistical analysis of model outputs.
 
 In addition, there is a **core** module with features to facilitate the implementation of new models of multisensory integration.
 
 ## Requirements
 
-You need Python 3.9+ to run scikit-neuromsi.
+You need Python 3.10+ to run scikit-neuromsi.
 
 ## Installation
 
 Run the following command:
 
-        $ pip install scikit-neuromsi 
+        $ pip install scikit-neuromsi
 
 or clone this repo and then inside the local directory execute:
 
