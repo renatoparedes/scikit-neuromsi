@@ -658,7 +658,9 @@ class Paredes2025(SKNMSIMethodABC):
         temporal_noise=False,
         temporal_noise_scale=5,
         lateral_excitation=2,
+        lateral_excitation_sigma=3,
         lateral_inhibition=1.8,
+        lateral_inhibition_sigma=24,
         cross_modal_weight=0.075,
         cross_modal_latency=16,
         feed_latency=95,
@@ -714,9 +716,13 @@ class Paredes2025(SKNMSIMethodABC):
         temporal_noise_scale : float, optional
             Scale of temporal noise (default is 5).
         lateral_excitation : float, optional
-            Lateral excitation parameter (default is 2).
+            Lateral excitation weight parameter (default is 2).
+        lateral_excitation_sigma : float, optional
+            Lateral excitation spread parameter (default is 3).
         lateral_inhibition : float, optional
-            Lateral inhibition parameter (default is 1.8).
+            Lateral inhibition weight parameter (default is 1.8).
+        lateral_inhibition_sigma : float, optional
+            Lateral inhibition spread parameter (default is 24).
         cross_modal_weight : float, optional
             Weight for cross-modal connections (default is 0.075).
         cross_modal_latency : float, optional
@@ -795,22 +801,22 @@ class Paredes2025(SKNMSIMethodABC):
             neurons=self.neurons,
             excitation_loc=lateral_excitation,
             inhibition_loc=lateral_inhibition,
-            excitation_scale=3,
-            inhibition_scale=24,
+            excitation_scale=lateral_excitation_sigma,
+            inhibition_scale=lateral_inhibition_sigma,
         )
         visual_latsynapses = calculate_lateral_synapses(
             neurons=self.neurons,
             excitation_loc=lateral_excitation,
             inhibition_loc=lateral_inhibition,
-            excitation_scale=3,
-            inhibition_scale=24,
+            excitation_scale=lateral_excitation_sigma,
+            inhibition_scale=lateral_inhibition_sigma,
         )
         multi_latsynapses = calculate_lateral_synapses(
             neurons=self.neurons,
             excitation_loc=lateral_excitation,
             inhibition_loc=lateral_inhibition,
-            excitation_scale=3,
-            inhibition_scale=24,
+            excitation_scale=lateral_excitation_sigma,
+            inhibition_scale=lateral_inhibition_sigma,
         )
         auditory_to_visual_synapses = calculate_inter_areal_synapses(
             neurons=self.neurons, weight=cross_modal_weight, sigma=5
