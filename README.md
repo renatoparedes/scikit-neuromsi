@@ -97,16 +97,18 @@ res_sp_cuppini2017.plot(kind="unity_report", label="Cuppini 2017")
 ```
 ![unity_report_result](https://raw.githubusercontent.com/renatoparedes/scikit-neuromsi/main/res/causal_inference_output.png)
 
+For more detailed examples and advanced usage, refer to the [Scikit-NeuroMSI Tutorial](https://scikit-neuromsi.readthedocs.io/en/latest/tutorial.html).
+
 ## Documentation
 
 User documentation is available in the [Read the Docs](https://scikit-neuromsi.readthedocs.io/) service.
 
-## Repository and Issues
+## Contributing
 Contributions to **Scikit-NeuroMSI** are highly encouraged. Please contact the maintainer, submit an issue, or propose a pull request via the GitHub repository to contribute ideas, report bugs, or enhance the codebase.
 
-Repository: https://github.com/renatoparedes/scikit-neuromsi
+**Repository**: https://github.com/renatoparedes/scikit-neuromsi
 
-Contact: Renato Paredes (paredesrenato92@gmail.com)
+**Contact**: Renato Paredes (paredesrenato92@gmail.com)
 
 ## License
 
@@ -120,6 +122,6 @@ its copyright notices and the license’s disclaimers of warranty are maintained
 
 If you want to cite Scikit-NeuroMSI, please use the following references:
 
->Paredes, R., Cabral, J. B., & Series, P. (2025). Scikit-NeuroMSI: A Generalized Framework for Modeling Multisensory Integration. bioRxiv, 2025-05. doi: https://doi.org/10.1101/2025.05.26.656124
+> Paredes, R., Cabral, J. B., & Series, P. (2025). Scikit-NeuroMSI: A Generalized Framework for Modeling Multisensory Integration. bioRxiv, 2025-05. doi: https://doi.org/10.1101/2025.05.26.656124
 
 >Paredes, R., Series, P., Cabral, J. (2023). Scikit-NeuroMSI: a Python framework for multisensory integration modelling. IX Congreso de Matematica Aplicada, Computacional e Industrial, 9, 545–548.
