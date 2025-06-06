@@ -2,12 +2,12 @@ Installation
 ============
 
 
-This is the recommended way to install scikit-neuromsi.
+This is the recommended way to install Scikit-NeuroMSI.
 
 Installing  with pip
 ^^^^^^^^^^^^^^^^^^^^
 
-Make sure that the Python interpreter can load scikit-neuromsi code.
+Make sure that the Python interpreter can load Scikit-NeuroMSI code.
 The most convenient way to do this is to use virtualenv, virtualenvwrapper, and pip.
 
 After setting up and activating the virtualenv, run the following command:
@@ -24,13 +24,13 @@ That should be enough.
 Installing the development version
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you’d like to be able to update your scikit-neuromsi code occasionally with the
+If you’d like to be able to update your Scikit-NeuroMSI code occasionally with the
 latest bug fixes and improvements, follow these instructions:
 
 Make sure that you have Git installed and that you can run its commands from a shell.
 (Enter *git help* at a shell prompt to test this.)
 
-Check out scikit-neuromsi main development branch like so:
+Check out Scikit-NeuroMSI main development branch like so:
 
 .. code-block:: console
 
