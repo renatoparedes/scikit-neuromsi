@@ -34,7 +34,7 @@ class Kording2007(SKNMSIMethodABC):
     the probability of a common cause based on the observed signals.
 
     This implementation is inspired on the Matlab version of the BCI Toolbox
-    (Zhu, Beierholm & Shams, 2004).
+    (Zhu, Beierholm & Shams, 2024).
 
 
     References
