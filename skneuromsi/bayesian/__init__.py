@@ -25,9 +25,9 @@ based on Bayesian inference.
 # =============================================================================
 
 from ._kording2007 import Kording2007
-from ._zhu2025 import Zhu2025
+from ._zhu2024 import Zhu2024
 
 __all__ = [
     "Kording2007",
-    "Zhu2025",
+    "Zhu2024",
 ]
