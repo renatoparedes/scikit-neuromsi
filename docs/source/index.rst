@@ -21,14 +21,24 @@ Scikit-NeuroMSI
 
 .. toctree::
    :maxdepth: 1
-   :caption: Contents:
+   :caption: User Guide
 
    installation.rst
-   tutorial.ipynb
+   implement_models.ipynb
+   simulate_experiments.ipynb
+   model_comparison.ipynb
+   create_new_models.ipynb
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Examples
+
+   ventriloquist_effect.ipynb
+   sifi.ipynb
 
 .. toctree::
     :maxdepth: 2
-    :caption: Reference
+    :caption: API Reference
 
     api/index.rst
 
