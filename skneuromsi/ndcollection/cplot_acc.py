@@ -123,7 +123,7 @@ class NDResultCollectionPlotter(AccessorABC):
         causes_acc = self._nd_collection.causes
         the_report = causes_acc.unity_report(parameter=parameter)
         ax = self._line_report(the_report, ax, kws)
-        ax.set_ylabel("Proportion of unit causes")
+        ax.set_ylabel("Proportion of unique causes")
         return ax
 
     def mean_report(self, *, parameter=None, ax=None, **kws):

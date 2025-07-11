@@ -74,7 +74,7 @@ class NDResultCollectionBiasAcc(AccessorABC):
         disp_mtx : pandas.DataFrame
             Disparity matrix containing the changing and influence parameters.
         influence_parameter : str
-            Parameter influencing the biases.
+            Parameter being influenced by the cross-modal bias.
         changing_parameter : str
             Parameter changing across iterations.
         bias_arr : numpy.ndarray
@@ -138,7 +138,7 @@ class NDResultCollectionBiasAcc(AccessorABC):
         Parameters
         ----------
         influence_parameter : str
-            The parameter influencing the biases.
+            The parameter being influenced by the cross-modal bias.
         changing_parameter : str or None, optional
             The parameter changing across iterations. If None,
             automatically selected.
@@ -236,8 +236,7 @@ class NDResultCollectionBiasAcc(AccessorABC):
         Parameters
         ----------
         influence_parameter : str
-            The parameter influencing the mean biases in multisensory
-            integration.
+            The parameter being influenced by the cross-modal biases.
         changing_parameter : str or None, optional
             The parameter that changes across iterations. If None, the function
             automatically selects it.

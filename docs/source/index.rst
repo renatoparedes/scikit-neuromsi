@@ -25,6 +25,7 @@ Scikit-NeuroMSI
 
    installation.rst
    implement_models.ipynb
+   plot.ipynb
    simulate_experiments.ipynb
    model_comparison.ipynb
    create_new_models.ipynb

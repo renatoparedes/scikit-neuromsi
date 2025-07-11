@@ -494,7 +494,7 @@ class Zhu2024(SKNMSIMethodABC):
         pred_vis_time = vis_time_hist / np.sum(vis_time_hist, axis=0)
         pred_multi_time = multi_time_hist / np.sum(multi_time_hist, axis=0)
 
-        # ----- 8. RETURN RESULTS -----
+        # ----- Return results -----
         return {
             "auditory_numerosity_ind": est_aud_num_ind,
             "auditory_time_ind": est_aud_time_ind,

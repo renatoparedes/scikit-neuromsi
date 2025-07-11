@@ -89,7 +89,7 @@ def test_NDResultCollectionPlotter_unity_report(
     y = the_report["p1"]
     sns.lineplot(x=x, y=y, ax=ref_ax, label="p1")
 
-    ref_ax.set_ylabel("Proportion of unit causes")
+    ref_ax.set_ylabel("Proportion of unique causes")
 
 
 @pytest.mark.plot
