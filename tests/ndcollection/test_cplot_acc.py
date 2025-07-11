@@ -38,7 +38,7 @@ from skneuromsi.ndcollection import cplot_acc
 def test_NDResultCollectionPlotter_nreport(
     random_ndcollection, fig_test, fig_ref, n
 ):
-    coll = coll = random_ndcollection(
+    coll = random_ndcollection(
         size=10,
         seed=42,
         run_parameters={"p0": 1},
@@ -56,8 +56,8 @@ def test_NDResultCollectionPlotter_nreport(
     the_report = coll.causes.n_report(n=n, parameter="p1")
 
     x = the_report.index
-    y = the_report["p1"]
-    sns.lineplot(x=x, y=y, ax=ref_ax, label="p1")
+    y = the_report["Causes"]
+    sns.lineplot(x=x, y=y, ax=ref_ax, label="Causes")
 
     ref_ax.set_ylabel(f"Proportion of {n} causes")
 
@@ -68,7 +68,7 @@ def test_NDResultCollectionPlotter_nreport(
 def test_NDResultCollectionPlotter_unity_report(
     random_ndcollection, fig_test, fig_ref
 ):
-    coll = coll = random_ndcollection(
+    coll = random_ndcollection(
         size=10,
         seed=42,
         run_parameters={"p0": 1},
@@ -86,8 +86,8 @@ def test_NDResultCollectionPlotter_unity_report(
     the_report = coll.causes.unity_report(parameter="p1")
 
     x = the_report.index
-    y = the_report["p1"]
-    sns.lineplot(x=x, y=y, ax=ref_ax, label="p1")
+    y = the_report["Causes"]
+    sns.lineplot(x=x, y=y, ax=ref_ax, label="Causes")
 
     ref_ax.set_ylabel("Proportion of unique causes")
 
@@ -98,7 +98,7 @@ def test_NDResultCollectionPlotter_unity_report(
 def test_NDResultCollectionPlotter_mean_report(
     random_ndcollection, fig_test, fig_ref
 ):
-    coll = coll = random_ndcollection(
+    coll = random_ndcollection(
         size=10,
         seed=42,
         run_parameters={"p0": 1},
@@ -116,8 +116,8 @@ def test_NDResultCollectionPlotter_mean_report(
     the_report = coll.causes.mean_report(parameter="p1")
 
     x = the_report.index
-    y = the_report["p1"]
-    sns.lineplot(x=x, y=y, ax=ref_ax, label="p1")
+    y = the_report["Causes"]
+    sns.lineplot(x=x, y=y, ax=ref_ax, label="Causes")
 
     ref_ax.set_ylabel("Mean of causes")
 

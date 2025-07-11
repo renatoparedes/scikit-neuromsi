@@ -13,6 +13,7 @@ The most convenient way to do this is to use virtualenv, virtualenvwrapper, and 
 After setting up and activating the virtualenv, run the following command:
 
 .. code-block:: console
+
    $ pip install scikit-neuromsi
    ...
 
@@ -31,12 +32,17 @@ Make sure that you have Git installed and that you can run its commands from a s
 Check out scikit-neuromsi main development branch like so:
 
 .. code-block:: console
+
    $ git clone https://github.com/renatoparedes/scikit-neuromsi.git
+   ...
 
 This will create a directory `scikit-neuromsi` in your current directory.
 
 Then you can proceed to install with the commands
 
 .. code-block:: console
+
    $ cd scikit-neuromsi
    $ pip install -e .
+   ...
+

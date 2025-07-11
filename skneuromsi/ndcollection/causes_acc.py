@@ -158,7 +158,7 @@ class NDResultCollectionCausesAcc(AccessorABC):
 
         the_report = pd.DataFrame(n_ity, columns=[parameter])
         the_report.index.name = parameter
-        the_report.columns = ["Causes"]
+        the_report.columns = pd.Index(["Causes"], name="")
 
         return the_report
 
@@ -239,9 +239,7 @@ class NDResultCollectionCausesAcc(AccessorABC):
         report = groups.mean()
 
         report.index.name = parameter
-
-        report.columns = [parameter]
-        report.columns.name = ["Causes"]
+        report.columns = pd.Index(["Causes"], name="")
 
         return report
 

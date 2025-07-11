@@ -30,7 +30,7 @@ from skneuromsi.ndcollection import causes_acc
 
 
 def test_NDResultCollectionCausesAcc_causes_by_parameter(random_ndcollection):
-    coll = coll = random_ndcollection(
+    coll = random_ndcollection(
         size=10,
         seed=42,
         run_parameters={"p0": 1},
@@ -64,7 +64,7 @@ def test_NDResultCollectionCausesAcc_causes_by_parameter(random_ndcollection):
 
 
 def test_NDResultCollectionCausesAcc_unique_causes(random_ndcollection):
-    coll = coll = random_ndcollection(
+    coll = random_ndcollection(
         size=10,
         seed=42,
         run_parameters={"p0": 1},
@@ -77,7 +77,7 @@ def test_NDResultCollectionCausesAcc_unique_causes(random_ndcollection):
 
 
 def test_NDResultCollectionCausesAcc_n_report(random_ndcollection):
-    coll = coll = random_ndcollection(
+    coll = random_ndcollection(
         size=10,
         seed=42,
         run_parameters={"p0": 1},
