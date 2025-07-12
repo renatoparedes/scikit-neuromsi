@@ -67,8 +67,11 @@ model_cuppini2017 = Cuppini2017(neurons=90,
 res = model_cuppini2017.run(auditory_position=35, 
                             visual_position=52)
 
-# Model execution results plot
-res.plot()
+# Results plot
+ax1 = plt.subplot()
+res.plot.linep(ax=ax1)
+ax1.set_ylabel("neural activity")
+ax1.set_xlabel("stimulus location (deg)")
 ```
 ![model_result](https://raw.githubusercontent.com/renatoparedes/scikit-neuromsi/main/res/cuppini2017_output.png)
 
@@ -78,37 +81,37 @@ Simulate multisensory integration experiments (e.g. causal inference under spati
 
 ```python
 from skneuromsi.sweep import ParameterSweep
+import numpy as np
 
-# Sweep setup
+# Experiment setup
 spatial_disparities = np.array([-24, -12, -6, -3, 3, 6, 12, 24])
 
-sp_cuppini2017 = ParameterSweep(model=model_cuppini2017
+sp_cuppini2017 = ParameterSweep(model=model_cuppini2017,
                                 target="visual_position",
                                 repeat=1,
                                 range=45 + spatial_disparities)
 
-# Sweep run
+# Experiment run
 res_sp_cuppini2017 = sp_cuppini2017.run(auditory_position=45,
                                         auditory_sigma=4.5,
                                         visual_sigma=3.5)
 
-# Sweep results plot
-res_sp_cuppini2017.plot(kind="unity_report", label="Cuppini 2017")
+# Experiment results plot
+ax1 = plt.subplot()
+res_sp_cuppini2017.plot(kind="unity_report", label="Cuppini 2017", ax=ax1)
+ax1.set_xlabel("visual position (deg)")
 ```
 ![unity_report_result](https://raw.githubusercontent.com/renatoparedes/scikit-neuromsi/main/res/causal_inference_output.png)
 
-For more detailed examples and advanced usage, refer to the [Scikit-NeuroMSI Tutorial](https://scikit-neuromsi.readthedocs.io/en/latest/tutorial.html).
+For more detailed examples and advanced usage, refer to the [Scikit-NeuroMSI Documentation](https://scikit-neuromsi.readthedocs.io/).
 
-## Documentation
+## Contribute to Scikit-NeuroMSI
 
-User documentation is available in the [Read the Docs](https://scikit-neuromsi.readthedocs.io/) service.
+We welcome contributions to Scikit-NeuroMSI! 
 
-## Contributing
-Contributions to **Scikit-NeuroMSI** are highly encouraged. Please contact the maintainer, submit an issue, or propose a pull request via the GitHub repository to contribute ideas, report bugs, or enhance the codebase.
+If you're a multisensory integration researcher, we encourage you to integrate your models directly into our package. If you're a software developer, we'd love your help in enhancing the overall functionality of Scikit-NeuroMSI. 
 
-**Repository**: https://github.com/renatoparedes/scikit-neuromsi
-
-**Contact**: Renato Paredes (paredesrenato92@gmail.com)
+For detailed information on how to contribute ideas, report bugs, or improve the codebase, please refer to our [Contribuiting Guidelines](https://github.com/renatoparedes/scikit-neuromsi/blob/main/CONTRIBUTING.md).
 
 ## License
 

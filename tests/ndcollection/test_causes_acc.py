@@ -30,7 +30,7 @@ from skneuromsi.ndcollection import causes_acc
 
 
 def test_NDResultCollectionCausesAcc_causes_by_parameter(random_ndcollection):
-    coll = coll = random_ndcollection(
+    coll = random_ndcollection(
         size=10,
         seed=42,
         run_parameters={"p0": 1},
@@ -64,7 +64,7 @@ def test_NDResultCollectionCausesAcc_causes_by_parameter(random_ndcollection):
 
 
 def test_NDResultCollectionCausesAcc_unique_causes(random_ndcollection):
-    coll = coll = random_ndcollection(
+    coll = random_ndcollection(
         size=10,
         seed=42,
         run_parameters={"p0": 1},
@@ -77,7 +77,7 @@ def test_NDResultCollectionCausesAcc_unique_causes(random_ndcollection):
 
 
 def test_NDResultCollectionCausesAcc_n_report(random_ndcollection):
-    coll = coll = random_ndcollection(
+    coll = random_ndcollection(
         size=10,
         seed=42,
         run_parameters={"p0": 1},
@@ -88,16 +88,16 @@ def test_NDResultCollectionCausesAcc_n_report(random_ndcollection):
 
     expected = pd.DataFrame(
         [[1.0], [1.0], [0.0], [1.0], [1.0], [1.0], [0.0], [1.0], [0.0], [1.0]],
-        index=pd.Index([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], name="Disparity"),
-        columns=pd.Index(["p1"], name="Causes"),
+        index=pd.Index([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], name="p1"),
+        columns=pd.Index(["Causes"], name=""),
     )
 
     pd.testing.assert_frame_equal(causes.n_report(0, parameter="p1"), expected)
 
     expected = pd.DataFrame(
         [[0.0], [0.0], [1.0], [0.0], [0.0], [0.0], [1.0], [0.0], [1.0], [0.0]],
-        index=pd.Index([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], name="Disparity"),
-        columns=pd.Index(["p1"], name="Causes"),
+        index=pd.Index([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], name="p1"),
+        columns=pd.Index(["Causes"], name=""),
     )
 
     pd.testing.assert_frame_equal(causes.n_report(1, parameter="p1"), expected)
@@ -115,8 +115,8 @@ def test_NDResultCollectionCausesAcc_unity_report(random_ndcollection):
 
     expected = pd.DataFrame(
         [[0.0], [0.0], [1.0], [0.0], [0.0], [0.0], [1.0], [0.0], [1.0], [0.0]],
-        index=pd.Index([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], name="Disparity"),
-        columns=pd.Index(["p1"], name="Causes"),
+        index=pd.Index([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], name="p1"),
+        columns=pd.Index(["Causes"], name=""),
     )
 
     pd.testing.assert_frame_equal(
@@ -136,8 +136,8 @@ def test_NDResultCollectionCausesAcc_mean_report(random_ndcollection):
 
     expected = pd.DataFrame(
         [[0.0], [0.0], [1.0], [0.0], [0.0], [0.0], [1.0], [0.0], [1.0], [0.0]],
-        index=pd.Index([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], name="Disparity"),
-        columns=pd.Index(["p1"], name="Causes"),
+        index=pd.Index([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], name="p1"),
+        columns=pd.Index(["Causes"], name=""),
     )
 
     pd.testing.assert_frame_equal(causes.mean_report(parameter="p1"), expected)
@@ -166,10 +166,10 @@ def test_NDResultCollectionCausesAcc_describe_causes(random_ndcollection):
             [1.0, 1.0, np.nan, 1.0, 1.0, 1.0, 1.0, 1.0],
             [1.0, 0.0, np.nan, 0.0, 0.0, 0.0, 0.0, 0.0],
         ],
-        index=pd.Index([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], name="Disparity"),
+        index=pd.Index([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], name="p1"),
         columns=pd.MultiIndex.from_product(
             [
-                ("p1",),
+                ("",),
                 ("count", "mean", "std", "min", "25%", "50%", "75%", "max"),
             ],
             names=["Causes", None],

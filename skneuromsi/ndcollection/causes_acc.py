@@ -92,7 +92,6 @@ class NDResultCollectionCausesAcc(AccessorABC):
         cdf = pd.DataFrame.from_dict(columns)
 
         cdf.index.name = "Iteration"
-        cdf["Parameters"] -= cdf["Parameters"].min()
 
         # put al the parameters together
         cdf = cdf[np.sort(cdf.columns)[::-1]]
@@ -158,8 +157,8 @@ class NDResultCollectionCausesAcc(AccessorABC):
         n_ity = crosstab.get(n, 0) / crosstab.sum(axis="columns")
 
         the_report = pd.DataFrame(n_ity, columns=[parameter])
-        the_report.index.name = "Disparity"
-        the_report.columns.name = "Causes"
+        the_report.index.name = parameter
+        the_report.columns = pd.Index(["Causes"], name="")
 
         return the_report
 
@@ -239,10 +238,8 @@ class NDResultCollectionCausesAcc(AccessorABC):
         groups = cdf.groupby(("Parameters", parameter))
         report = groups.mean()
 
-        report.index.name = "Disparity"
-
-        report.columns = [parameter]
-        report.columns.name = "Causes"
+        report.index.name = parameter
+        report.columns = pd.Index(["Causes"], name="")
 
         return report
 
@@ -275,11 +272,11 @@ class NDResultCollectionCausesAcc(AccessorABC):
         groups = cdf.groupby(("Parameters", parameter))
         report = groups.describe()
 
-        report.index.name = "Disparity"
+        report.index.name = parameter
 
         columns = report.columns
         report.columns = pd.MultiIndex.from_product(
-            [[parameter], columns.levels[-1]], names=["Causes", None]
+            [[""], columns.levels[-1]], names=["Causes", None]
         )
         report.columns.name = "Causes"
 

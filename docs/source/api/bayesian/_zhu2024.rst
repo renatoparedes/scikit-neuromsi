@@ -1,0 +1,8 @@
+
+``skneuromsi.bayesian._zhu2024`` module
+===========================================
+
+.. automodule:: skneuromsi.bayesian._zhu2024
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -34,7 +34,7 @@ class Kording2007(SKNMSIMethodABC):
     the probability of a common cause based on the observed signals.
 
     This implementation is inspired on the Matlab version of the BCI Toolbox
-    (Zhu, Beierholm & Shams, 2004).
+    (Zhu, Beierholm & Shams, 2024).
 
 
     References
@@ -624,13 +624,13 @@ class Kording2007(SKNMSIMethodABC):
 
         return response, extra
 
-    def calculate_causes(self, p_common_cause, causes_kind, **kwargs):
+    def calculate_causes(self, mean_p_common_cause, causes_kind, **kwargs):
         """Calculates the causes of the stimuli.
 
         Parameters
         ----------
-        p_common_cause : float or np.ndarray
-            The probability of a common cause.
+        mean_p_common_cause : float or np.ndarray
+            The average probability of a common cause across simulations.
         causes_kind : str
             The type of cause to calculate ("count" or "prob").
 
@@ -643,28 +643,17 @@ class Kording2007(SKNMSIMethodABC):
         """
         # Determine the type of cause to calculate
         if causes_kind == "count":
-            # If counting the number of causes,
-            # determine the number of simulations executed
-            if self.n > 1:
-                # If more than one simulation, evaluate the average probability
-                # of perciving a common cause
-                if np.average(p_common_cause) > 0.5:
-                    causes = 1
-                else:
-                    causes = 2
-            # If only one simulation,
             # evaluate the probability of perceiving a common cause
+            if mean_p_common_cause > 0.5:
+                causes = 1
             else:
-                if p_common_cause > 0.5:
-                    causes = 1
-                else:
-                    causes = 2
+                causes = 2
 
         elif causes_kind == "prob":
             # If calculating the probability of a unique cause,
             # assign the probability
             # of perceiving a common cause
-            causes = p_common_cause
+            causes = mean_p_common_cause
         else:
             # If no valid cause type is specified, assign None
             causes = None
