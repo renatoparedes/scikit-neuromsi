@@ -30,3 +30,13 @@
 - Plotting functionalities incorporated.
 - Parameter sweep functionalities incorporated.
 - Neural network models available.
+
+## V 1.0.1
+
+- Public release tag
+
+## V 1.0.2
+
+- Added SIFI Bayesian model.
+- Documentation re-structure: user guidelines and examples.
+- Causal inference reports and plots improvements.
