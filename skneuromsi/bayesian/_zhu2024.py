@@ -578,6 +578,7 @@ class Zhu2024(SKNMSIMethodABC):
               - dict: Response with perceptual distributions for each modality.
               - dict: Extra information including
               mean probability of common cause and numerosity estimates.
+
         """
         # Create discrete grids for binning numerosity and time estimates
         num_possible = np.arange(
