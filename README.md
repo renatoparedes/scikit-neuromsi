@@ -11,7 +11,7 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![https://github.com/leliel12/diseno_sci_sfw](https://img.shields.io/badge/DiSoftCompCi-FAMAF-ffda00)](https://github.com/leliel12/diseno_sci_sfw)
-[![DOI](https://img.shields.io/badge/doi-10.1101/2025.05.26.656124-red)](https://doi.org/10.1101/2025.05.26.656124)
+[![DOI](https://img.shields.io/badge/doi-10.1007/s12021--025--09738--1-red)](https://doi.org/10.1007/s12021-025-09738-1)
 [![PyPI Downloads](https://static.pepy.tech/badge/scikit-neuromsi)](https://pepy.tech/projects/scikit-neuromsi)
 
 **Scikit-NeuroMSI** is an open-source Python framework that simplifies the implementation of neurocomputational models of multisensory integration.
@@ -125,6 +125,6 @@ its copyright notices and the license’s disclaimers of warranty are maintained
 
 If you want to cite Scikit-NeuroMSI, please use the following references:
 
-> Paredes, R., Cabral, J. B., & Series, P. (2025). Scikit-NeuroMSI: A Generalized Framework for Modeling Multisensory Integration. bioRxiv, 2025-05. doi: https://doi.org/10.1101/2025.05.26.656124
+> Paredes, R., Cabral, J. B., & Seriès, P. (2025). Scikit-NeuroMSI: A Generalized Framework for Modeling Multisensory Integration. Neuroinformatics, 23(40), 1-21. https://doi.org/10.1007/s12021-025-09738-1
 
->Paredes, R., Series, P., Cabral, J. (2023). Scikit-NeuroMSI: a Python framework for multisensory integration modelling. IX Congreso de Matematica Aplicada, Computacional e Industrial, 9, 545–548.
+>Paredes, R., Seriès, P., Cabral, J. (2023). Scikit-NeuroMSI: a Python framework for multisensory integration modelling. IX Congreso de Matematica Aplicada, Computacional e Industrial, 9, 545–548.
