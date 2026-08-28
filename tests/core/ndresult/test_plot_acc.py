@@ -28,7 +28,6 @@ import seaborn as sns
 from skneuromsi.core import constants
 from skneuromsi.core.ndresult import plot_acc
 
-
 # =============================================================================
 # TESTS
 # =============================================================================

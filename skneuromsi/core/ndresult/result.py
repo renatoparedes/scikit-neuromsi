@@ -16,7 +16,6 @@
 """Utilities to represents a multisensory integration result as a \
 multidimensional array."""
 
-
 # =============================================================================
 # IMPORTS
 # =============================================================================
@@ -40,7 +39,6 @@ from ..constants import (
     XA_NAME,
 )
 from ...utils import Bunch, ddtype_tools
-
 
 # =============================================================================
 # HELPER FUNCTIONS

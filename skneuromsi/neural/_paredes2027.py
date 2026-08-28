@@ -30,79 +30,46 @@ from ..utils.readout_tools import calculate_spatiotemporal_causes_from_peaks
 
 @dataclass
 class Paredes2027Integrator:
-    """A class representing the integrator for the Paredes2027 model."""
+    """Spatiotemporal dynamic normalization integrator (Denison, Chapman, & Ohshiro style)."""
 
-    tau: tuple
-    s: float
-    theta: float
-    gamma: float
-    alpha: float
+    tau: float
+    sigma: float
+    n: float = 2.0
     name: str = "Paredes2027Integrator"
 
     @property
     def __name__(self):
-        """Return the name of the Integrator."""
         return self.name
 
-    def sigmoid(self, u):
-        """
-        Computes the sigmoid activation function.
-
-        Parameters
-        ----------
-        u : float or np.ndarray
-            The input to the sigmoid function.
-
-        Returns
-        -------
-        float or np.ndarray
-            The result of the sigmoid function applied to `u`.
-        """
-        return 1 / (1 + np.exp(-self.s * (u - self.theta)))
-
     def __call__(self, y_a, y_v, y_m, t, u_a, u_v, u_m):
-        """
-        Computes the activities of neurons.
+        """Computes derivatives using dynamic non-linear normalization."""
 
-        Parameters
-        ----------
-        y_a : np.ndarray
-            The current state of the auditory layer neurons.
-        y_v : np.ndarray
-            The current state of the visual layer neurons.
-        y_m : np.ndarray
-            The current state of the multisensory layer neurons.
-        t : float
-            The current time in the simulation.
-        u_a : np.ndarray
-            The total input to the auditory layer neurons.
-        u_v : np.ndarray
-            The total input to the visual layer neurons.
-        u_m : np.ndarray
-            The total input to the multisensory layer neurons.
+        # Half-wave rectify inputs and states to preserve real values for exponentiation
+        rect_u_a = np.maximum(0, u_a)
+        rect_u_v = np.maximum(0, u_v)
+        rect_u_m = np.maximum(0, u_m)
 
-        Returns
-        -------
-        tuple
-            A tuple containing the activities of neurons.
-        """
+        rect_y_a = np.maximum(0, y_a)
+        rect_y_v = np.maximum(0, y_v)
+        rect_y_m = np.maximum(0, y_m)
 
-        # Calculate population activity for each layer
-        pool_a = np.sum(y_a)
-        pool_v = np.sum(y_v)
-        pool_m = np.sum(y_m)
+        # Precompute semi-saturation parameter
+        sigma_n = self.sigma**self.n
 
-        # Auditory with divisive normalization
-        drive_a = self.sigmoid(u_a) / (self.gamma + self.alpha * pool_a)
-        dy_a = (-y_a + drive_a) * (1 / self.tau)
+        # Mean pooled population activity: (1 / N) * sum(y_j^n)
+        pool_a = np.mean(rect_y_a**self.n)
+        pool_v = np.mean(rect_y_v**self.n)
+        pool_m = np.mean(rect_y_m**self.n)
 
-        # Visual with divisive normalization
-        drive_v = self.sigmoid(u_v) / (self.gamma + self.alpha * pool_v)
-        dy_v = (-y_v + drive_v) * (1 / self.tau)
+        # Drive computation: u_i^n / (sigma^n + pool)
+        drive_a = (rect_u_a**self.n) / (sigma_n + pool_a)
+        drive_v = (rect_u_v**self.n) / (sigma_n + pool_v)
+        drive_m = (rect_u_m**self.n) / (sigma_n + pool_m)
 
-        # Multisensory with divisive normalization
-        drive_m = self.sigmoid(u_m) / (self.gamma + self.alpha * pool_m)
-        dy_m = (-y_m + drive_m) * (1 / self.tau)
+        # ODE update rule: tau * (dy/dt) = -y + drive
+        dy_a = (-y_a + drive_a) / self.tau
+        dy_v = (-y_v + drive_v) / self.tau
+        dy_m = (-y_m + drive_m) / self.tau
 
         return dy_a, dy_v, dy_m
 

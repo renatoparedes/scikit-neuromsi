@@ -24,7 +24,6 @@ sys.path.insert(0, str(SKNEUROMSI_PATH))
 
 import skneuromsi
 
-
 # -- Project information -----------------------------------------------------
 
 project = "scikit-neuromsi"

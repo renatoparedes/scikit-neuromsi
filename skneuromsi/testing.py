@@ -22,7 +22,6 @@ The functionalities are extensions of those present in "xarray.testing" and
 
 """
 
-
 # =============================================================================
 # IMPORTS
 # =============================================================================
@@ -32,7 +31,6 @@ import xarray as xa
 
 from . import core, ndcollection
 from .utils import dict_cmp
-
 
 # =============================================================================
 # ASSERTS

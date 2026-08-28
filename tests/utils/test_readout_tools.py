@@ -14,7 +14,6 @@
 
 """Tests for the `skneuromsi.utils.readout_tools` module."""
 
-
 # =============================================================================
 # IMPORTS
 # =============================================================================
@@ -24,7 +23,6 @@ import numpy as np
 import pytest
 
 from skneuromsi.utils import neural_tools, readout_tools
-
 
 # =============================================================================
 # HELPER FUNCTIONS

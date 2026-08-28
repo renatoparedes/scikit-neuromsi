@@ -15,7 +15,6 @@
 
 """Compress ndresult data and store it in a compressed format."""
 
-
 # =============================================================================
 # IMPORTS
 # =============================================================================
@@ -34,7 +33,6 @@ import xarray as xa
 
 from .result import NDResult
 from ...utils import memtools
-
 
 # =============================================================================
 # CONSTANTS

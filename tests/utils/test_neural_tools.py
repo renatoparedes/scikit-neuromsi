@@ -14,7 +14,6 @@
 
 """Tests for the `skneuromsi.utils.neural_tools` module."""
 
-
 # =============================================================================
 # IMPORTS
 # =============================================================================
@@ -27,7 +26,6 @@ from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 
 from skneuromsi.utils import neural_tools
-
 
 # =============================================================================
 #  TEST ARCHITECTURE TOOLS
