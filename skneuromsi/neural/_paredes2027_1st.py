@@ -563,6 +563,7 @@ class Paredes2027_1st(SKNMSIMethodABC):
         lateral_inhibition=1.8,
         lateral_inhibition_sigma=24,
         cross_modal_weight=0.075,
+        cross_modal_sigma=5,
         cross_modal_latency=16,
         feed_latency=95,
         feedback_weight=0.10,
@@ -720,10 +721,10 @@ class Paredes2027_1st(SKNMSIMethodABC):
             inhibition_scale=lateral_inhibition_sigma,
         )
         auditory_to_visual_synapses = calculate_inter_areal_synapses(
-            neurons=self.neurons, weight=cross_modal_weight, sigma=5
+            neurons=self.neurons, weight=cross_modal_weight, sigma=cross_modal_sigma,
         )
         visual_to_auditory_synapses = calculate_inter_areal_synapses(
-            neurons=self.neurons, weight=cross_modal_weight, sigma=5
+            neurons=self.neurons, weight=cross_modal_weight, sigma=cross_modal_sigma,
         )
         auditory_to_multi_synapses = calculate_inter_areal_synapses(
             neurons=self.neurons, weight=feedforward_weight, sigma=0.5
