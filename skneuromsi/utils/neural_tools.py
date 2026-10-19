@@ -382,26 +382,18 @@ def compute_latency(time, latency):
         return time - latency
     return 0
 
-def convolve_stimulus_to_rf(stimulus, rf_sigma):
-    """
-    Computes the net sensory drive (u_k) to the network via matrix multiplication, 
-    matching the scalar product formulation in Ursino et al. (2017).
-    """
-    neurons = len(stimulus)
 
-    # 1. Compute N x N pairwise circular distance matrix d(k, j)
-    # k: neuron index (rows), j: spatial stimulus location index (cols)
-    k_idx = np.arange(neurons)[:, None]  # Shape: (N, 1)
-    j_idx = np.arange(neurons)[None, :]  # Shape: (1, N)
+def calculate_rf(neurons, rf_sigma, dtype=np.float32):
 
-    diff = np.abs(k_idx - j_idx)
-    distance_matrix = np.minimum(diff, neurons - diff)
+    # Creates array to hold the values of the stimuli
+    the_rf = np.zeros((neurons, neurons), dtype=dtype)
 
-    # 2. Construct N x N Receptive Field Matrix (R)
-    # Entry (k, j) gives the sensitivity r_{kj} of neuron k to input location j
-    rf_matrix = np.exp(-(distance_matrix**2) / (2 * rf_sigma**2))
-
-    # 3. Net Sensory Drive via matrix-vector product: u_k = sum_j (r_{kj} * i_j)
-    u_k = rf_matrix @ stimulus
-    
-    return u_k
+    # For each pair of neurons, calculate the value of the synapse
+    # as a subtraction of Gaussian functions
+    for neuron_i in range(neurons):
+        for neuron_j in range(neurons):
+            distance = calculate_neural_distance(neurons, neuron_i, neuron_j)
+            the_rf[neuron_i, neuron_j] = np.exp(
+                        -(np.square(distance)) / (2 * np.square(rf_sigma))
+                    )
+    return the_rf

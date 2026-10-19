@@ -20,9 +20,9 @@ from ..core import SKNMSIMethodABC
 from ..utils.neural_tools import (
     calculate_inter_areal_synapses,
     calculate_lateral_synapses,
+    calculate_rf,
     calculate_stimuli_input,
     compute_latency,
-    convolve_stimulus_to_rf,
     create_unimodal_stimuli_matrix,
     prune_synapses,
 )
@@ -779,13 +779,16 @@ class Paredes2027(SKNMSIMethodABC):
             loc=visual_position,
         )
 
-        # Convolve with RF
-        point_auditory_stimuli = convolve_stimulus_to_rf(
-            raw_auditory_stimuli, rf_sigma=auditory_rf_sigma
-        )
-        point_visual_stimuli = convolve_stimulus_to_rf(
-            raw_visual_stimuli, rf_sigma=visual_rf_sigma
-        )
+        # Generate RF
+        auditory_rf = calculate_rf(neurons=self.neurons,
+                                   rf_sigma=auditory_rf_sigma)
+
+        visual_rf = calculate_rf(neurons=self.neurons,
+                                           rf_sigma=visual_rf_sigma)
+        
+        # Convolve Stimului with RF
+        point_auditory_stimuli = auditory_rf @ raw_auditory_stimuli
+        point_visual_stimuli = visual_rf @ raw_visual_stimuli
 
         auditory_stimuli = create_unimodal_stimuli_matrix(
             neurons=self.neurons,
