@@ -30,6 +30,7 @@ from ._paredes2025 import Paredes2025
 from ._paredes2027_exp import Paredes2027_exp
 from ._paredes2027_sig import Paredes2027_sig
 from ._paredes2027_1st import Paredes2027_1st
+from ._paredes2027_nosup import Paredes2027_nosup
 from ._paredes2027 import Paredes2027
 
 __all__ = [
@@ -39,5 +40,6 @@ __all__ = [
     "Paredes2027_exp",
     "Paredes2027_sig",
     "Paredes2027_1st",
+    "Paredes2027_nosup",
     "Paredes2027",
 ]

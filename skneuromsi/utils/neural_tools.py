@@ -397,3 +397,13 @@ def calculate_rf(neurons, rf_sigma, dtype=np.float32):
                         -(np.square(distance)) / (2 * np.square(rf_sigma))
                     )
     return the_rf
+
+def calculate_w(neurons, w_sigma, dtype=np.float32):
+    the_w = np.zeros((neurons, neurons), dtype=dtype)
+
+    for neuron_i in range(neurons):
+        for neuron_j in range(neurons):
+            distance = calculate_neural_distance(neurons, neuron_i, neuron_j)
+            the_w[neuron_i, neuron_j] = np.exp(-(distance**2) / (2 * w_sigma**2))
+
+    return the_w

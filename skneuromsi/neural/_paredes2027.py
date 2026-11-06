@@ -21,6 +21,7 @@ from ..utils.neural_tools import (
     calculate_inter_areal_synapses,
     calculate_lateral_synapses,
     calculate_rf,
+    calculate_w,
     calculate_stimuli_input,
     compute_latency,
     create_unimodal_stimuli_matrix,
@@ -36,8 +37,9 @@ class Paredes2027Integrator:
     tau: tuple
     s: float
     theta: float
-    sigma: float
-    gamma: float
+    nu: float
+    c: float
+    w: np.array
     name: str = "Paredes2027Integrator"
 
     @property
@@ -94,20 +96,20 @@ class Paredes2027Integrator:
         e_m = self.sigmoid(u_m)
 
         # Calculate suppresive population pools
-        pool_a = np.sum(e_a)
-        pool_v = np.sum(e_v)
-        pool_m = np.sum(e_m)
+        pool_a = self.w @ e_a
+        pool_v = self.w @ e_v
+        pool_m = self.w @ e_m
 
         # Calculate auditory activity
-        normalized_a = e_a / (self.sigma + self.gamma * pool_a)
+        normalized_a = e_a / (self.nu + self.c * pool_a)
         dy_a = (-y_a + normalized_a) * (1 / self.tau)
 
         # Calculate visual activity
-        normalized_v = e_v / (self.sigma + self.gamma * pool_v)
+        normalized_v = e_v / (self.nu + self.c * pool_v)
         dy_v = (-y_v + normalized_v) * (1 / self.tau)
 
         # Calculate multisensory activity
-        normalized_m = e_m / (self.sigma + self.gamma * pool_m)
+        normalized_m = e_m / (self.nu + self.c * pool_m)
         dy_m = (-y_m + normalized_m) * (1 / self.tau)
 
         return dy_a, dy_v, dy_m
@@ -309,8 +311,9 @@ class Paredes2027(SKNMSIMethodABC):
         tau_neurons=1,
         s=2,
         theta=16,
-        sigma=1,
-        gamma=0.5,
+        nu=1,
+        c=0.5,
+        w_sigma=3.0,
         seed=None,
         mode0="auditory",
         mode1="visual",
@@ -370,8 +373,10 @@ class Paredes2027(SKNMSIMethodABC):
         integrator_kws.setdefault("method", "euler")
         integrator_kws.setdefault("dt", self._time_res)
 
+        w = calculate_w(neurons=self.neurons, w_sigma=w_sigma)
+        
         integrator_model = Paredes2027Integrator(
-            tau=tau_neurons, s=s, theta=theta, gamma=gamma, sigma=sigma
+            tau=tau_neurons, s=s, theta=theta, c=c, nu=nu, w=w,
         )
         self._integrator = odeint(f=integrator_model, **integrator_kws)
 
