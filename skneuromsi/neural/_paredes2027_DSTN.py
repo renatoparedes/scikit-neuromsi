@@ -40,6 +40,7 @@ class Paredes2027Integrator:
     n: tuple
     nu: float
     c: float
+    c_lat: float
     w: np.array
     lat_synapses: tuple
     name: str = "Paredes2027Integrator"
@@ -125,9 +126,9 @@ class Paredes2027Integrator:
         lm = np.sum(m_lat_synapses.T * y_m, axis=1)
 
         # Normalised lateral input
-        norm_la = la / (a_nu ** self.n + self.c * pool_a_suppressive)
-        norm_lv = lv / (v_nu ** self.n + self.c * pool_v_suppressive)
-        norm_lm = lm / (m_nu ** self.n + self.c * pool_m_suppressive)
+        norm_la = la / (a_nu ** self.n + self.c_lat * (self.w @ y_a))
+        norm_lv = lv / (v_nu ** self.n + self.c_lat * (self.w @ y_v))
+        norm_lm = lm / (m_nu ** self.n + self.c_lat * (self.w @ y_m))
 
         # Neural activity (outside response + lateral input)
         dy_a = (-y_a + np.maximum(0, r_a + norm_la)) * (1 / self.tau_lat)
@@ -176,6 +177,7 @@ class Paredes2027_DSTN(SKNMSIMethodABC):
         n=1.5,
         nu=(1, 1, 1),
         c=1/90,
+        c_lat=(1/90)*0.35,
         w_sigma=3.0,
         lateral_excitation=1,
         lateral_excitation_sigma=3,
@@ -273,7 +275,7 @@ class Paredes2027_DSTN(SKNMSIMethodABC):
         
         integrator_model = Paredes2027Integrator(
             tau_r=tau_r, tau_e=tau_e, tau_s=tau_s, tau_lat=tau_lat, 
-            n=n, c=c, nu=nu, w=w, lat_synapses=lat_synapses,
+            n=n, c=c, c_lat=c_lat, nu=nu, w=w, lat_synapses=lat_synapses,
         )
         self._integrator = odeint(f=integrator_model, **integrator_kws)
 
@@ -453,6 +455,7 @@ class Paredes2027_DSTN(SKNMSIMethodABC):
         feed_latency=50,
         feedback_weight=0.10,
         feedforward_weight=1.4,
+        feed_sigma=5,
         auditory_stim_n=2,
         visual_stim_n=1,
         causes_kind="count",
@@ -563,16 +566,16 @@ class Paredes2027_DSTN(SKNMSIMethodABC):
             neurons=self.neurons, weight=cross_modal_weight, sigma=cross_modal_sigma,
         )
         auditory_to_multi_synapses = calculate_inter_areal_synapses(
-            neurons=self.neurons, weight=feedforward_weight, sigma=0.5
+            neurons=self.neurons, weight=feedforward_weight, sigma=feed_sigma,
         )
         visual_to_multi_synapses = calculate_inter_areal_synapses(
-            neurons=self.neurons, weight=feedforward_weight, sigma=0.5
+            neurons=self.neurons, weight=feedforward_weight, sigma=feed_sigma,
         )
         multi_to_auditory_synapses = calculate_inter_areal_synapses(
-            neurons=self.neurons, weight=feedback_weight, sigma=0.5
+            neurons=self.neurons, weight=feedback_weight, sigma=feed_sigma,
         )
         multi_to_visual_synapses = calculate_inter_areal_synapses(
-            neurons=self.neurons, weight=feedback_weight, sigma=0.5
+            neurons=self.neurons, weight=feedback_weight, sigma=feed_sigma,
         )
 
         # Generate Physical Stimuli
