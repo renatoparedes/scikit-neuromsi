@@ -25,24 +25,23 @@ from ..utils.neural_tools import (
     calculate_stimuli_input,
     compute_latency,
     create_unimodal_stimuli_matrix,
-    prune_synapses,
 )
 from ..utils.readout_tools import calculate_spatiotemporal_causes_from_peaks
 
 
 @dataclass
 class Paredes2027Integrator:
-    """A class representing the integrator for the Paredes2027 model."""
+    """A class representing the integrator for the Paredes2027 DSTN model."""
 
-    tau: tuple
+    tau_r: tuple
     tau_e: tuple
     tau_s: tuple
-    s: float
-    theta: float
+    tau_lat: float
+    n: tuple
     nu: float
     c: float
-    c_t: float
     w: np.array
+    lat_synapses: tuple
     name: str = "Paredes2027Integrator"
 
     @property
@@ -50,23 +49,13 @@ class Paredes2027Integrator:
         """Return the name of the Integrator."""
         return self.name
 
-    def sigmoid(self, u):
+    def power_law(self, u):
         """
-        Computes the sigmoid activation function.
-
-        Parameters
-        ----------
-        u : float or np.ndarray
-            The input to the sigmoid function.
-
-        Returns
-        -------
-        float or np.ndarray
-            The result of the sigmoid function applied to `u`.
+        Computes the rectified power-law activation function.
         """
-        return 1 / (1 + np.exp(-self.s * (u - self.theta)))
+        return np.maximum(0, u) ** self.n
 
-    def __call__(self, y_a, y_v, y_m, e_a, e_v, e_m, s_a, s_v, s_m, t, u_a, u_v, u_m):
+    def __call__(self, y_a, y_v, y_m, r_a, r_v, r_m, e_a, e_v, e_m, s_a, s_v, s_m, t, o_a, o_v, o_m):
         """
         Computes the activities of neurons.
 
@@ -92,15 +81,18 @@ class Paredes2027Integrator:
         tuple
             A tuple containing the activities of neurons.
         """
-
-        a_tau, v_tau, m_tau = self.tau[0], self.tau[1], self.tau[2]
+        
+        # Unpack
+        a_tau_r, v_tau_r, m_tau_r = self.tau_r[0], self.tau_r[1], self.tau_r[2]
         a_tau_e, v_tau_e, m_tau_e = self.tau_e[0], self.tau_e[1], self.tau_e[2]
         a_tau_s, v_tau_s, m_tau_s = self.tau_s[0], self.tau_s[1], self.tau_s[2]
+        a_nu, v_nu, m_nu = self.nu[0], self.nu[1], self.nu[2]
+        a_lat_synapses, v_lat_synapses, m_lat_synapses = self.lat_synapses[0], self.lat_synapses[1], self.lat_synapses[2]
 
-        # Apply sigmoid to neural input
-        I_a = self.sigmoid(u_a)
-        I_v = self.sigmoid(u_v)
-        I_m = self.sigmoid(u_m)
+        # Apply power law to outisde input
+        I_a = self.power_law(o_a)
+        I_v = self.power_law(o_v)
+        I_m = self.power_law(o_m)
 
         # Excitatory drive
         de_a = (-e_a + I_a) * (1 / a_tau_e)
@@ -112,24 +104,37 @@ class Paredes2027Integrator:
         ds_v = (-s_v + e_v) * (1 / v_tau_s)
         ds_m = (-s_m + e_m) * (1 / m_tau_s)
 
-        # Calculate suppresive population pools
-        pool_a_suppressive = self.w @ s_a
-        pool_v_suppressive = self.w @ s_v
-        pool_m_suppressive = self.w @ s_m
+        # Calculate suppressive population pools
+        pool_a_suppressive  = self.w @ s_a
+        pool_v_suppressive  = self.w @ s_v
+        pool_m_suppressive  = self.w @ s_m
 
-        # Calculate auditory activity
-        normalized_a = e_a / (self.nu + self.c * pool_a_suppressive)
-        dy_a = (-y_a + normalized_a) * (1 / a_tau)
+        # Normalised drive
+        norm_a = e_a / (a_nu ** self.n + self.c * pool_a_suppressive)
+        norm_v = e_v / (v_nu ** self.n + self.c * pool_v_suppressive)
+        norm_m = e_m / (m_nu ** self.n + self.c * pool_m_suppressive)
 
-        # Calculate visual activity
-        normalized_v = e_v / (self.nu + self.c * pool_v_suppressive)
-        dy_v = (-y_v + normalized_v) * (1 / v_tau)
+        # Response to outside input
+        dr_a = (-r_a + norm_a) * (1 / a_tau_r)
+        dr_v = (-r_v + norm_v) * (1 / v_tau_r)
+        dr_m = (-r_m + norm_m) * (1 / m_tau_r)
 
-        # Calculate multisensory activity
-        normalized_m = e_m / (self.nu + self.c * pool_m_suppressive)
-        dy_m = (-y_m + normalized_m) * (1 / m_tau)
+        # Lateral synapses input
+        la = np.sum(a_lat_synapses.T * y_a, axis=1)
+        lv = np.sum(v_lat_synapses.T * y_v, axis=1)
+        lm = np.sum(m_lat_synapses.T * y_m, axis=1)
 
-        return dy_a, dy_v, dy_m, de_a, de_v, de_m, ds_a, ds_v, ds_m
+        # Normalised lateral input
+        norm_la = la / (a_nu ** self.n + self.c * pool_a_suppressive)
+        norm_lv = lv / (v_nu ** self.n + self.c * pool_v_suppressive)
+        norm_lm = lm / (m_nu ** self.n + self.c * pool_m_suppressive)
+
+        # Neural activity (outside response + lateral input)
+        dy_a = (-y_a + np.maximum(0, r_a + norm_la)) * (1 / self.tau_lat)
+        dy_v = (-y_v + np.maximum(0, r_v + norm_lv)) * (1 / self.tau_lat)
+        dy_m = (-y_m + np.maximum(0 ,r_m + norm_lm)) * (1 / self.tau_lat)
+
+        return dy_a, dy_v, dy_m, dr_a, dr_v, dr_m, de_a, de_v, de_m, ds_a, ds_v, ds_m
 
 
 class Paredes2027_DSTN(SKNMSIMethodABC):
@@ -164,15 +169,18 @@ class Paredes2027_DSTN(SKNMSIMethodABC):
         self,
         *,
         neurons=90,
-        tau=(30, 50, 6),
-        tau_e=(50, 300, 150),
-        tau_s=(30, 50, 50),
-        s=2,
-        theta=16,
-        nu=1,
-        c=0.5,
-        c_t=0.5,
+        tau_r=(30, 50, 6),
+        tau_e=(60, 100, 12),
+        tau_s=(30, 50, 6),
+        tau_lat=1,
+        n=1.5,
+        nu=(1, 1, 1),
+        c=1/90,
         w_sigma=3.0,
+        lateral_excitation=1,
+        lateral_excitation_sigma=3,
+        lateral_inhibition=0.8,
+        lateral_inhibition_sigma=24,
         seed=None,
         mode0="auditory",
         mode1="visual",
@@ -220,7 +228,7 @@ class Paredes2027_DSTN(SKNMSIMethodABC):
         ValueError
             If `tau` does not contain exactly 3 elements.
         """
-        if len(tau) != 3:
+        if len(tau_r) != 3:
             raise ValueError()
 
         self._neurons = neurons
@@ -232,10 +240,40 @@ class Paredes2027_DSTN(SKNMSIMethodABC):
         integrator_kws.setdefault("method", "euler")
         integrator_kws.setdefault("dt", self._time_res)
 
+        # Create RF kernel
         w = calculate_w(neurons=self.neurons, w_sigma=w_sigma)
+
+        # Create lateral synapses
+        auditory_lat_synapses = calculate_lateral_synapses(
+            neurons=self.neurons,
+            excitation_loc=lateral_excitation,
+            inhibition_loc=lateral_inhibition,
+            excitation_scale=lateral_excitation_sigma,
+            inhibition_scale=lateral_inhibition_sigma,
+        )
+        visual_lat_synapses = calculate_lateral_synapses(
+            neurons=self.neurons,
+            excitation_loc=lateral_excitation,
+            inhibition_loc=lateral_inhibition,
+            excitation_scale=lateral_excitation_sigma,
+            inhibition_scale=lateral_inhibition_sigma,
+        )
+
+        multi_lat_synapses = calculate_lateral_synapses(
+            neurons=self.neurons,
+            excitation_loc=lateral_excitation,
+            inhibition_loc=lateral_inhibition,
+            excitation_scale=lateral_excitation_sigma,
+            inhibition_scale=lateral_inhibition_sigma,
+        )
+
+        lat_synapses = (auditory_lat_synapses,
+                        visual_lat_synapses,
+                        multi_lat_synapses)
         
         integrator_model = Paredes2027Integrator(
-            tau=tau, tau_e=tau_e, tau_s=tau_s, s=s, theta=theta, c=c, c_t=c_t, nu=nu, w=w,
+            tau_r=tau_r, tau_e=tau_e, tau_s=tau_s, tau_lat=tau_lat, 
+            n=n, c=c, nu=nu, w=w, lat_synapses=lat_synapses,
         )
         self._integrator = odeint(f=integrator_model, **integrator_kws)
 
@@ -271,41 +309,23 @@ class Paredes2027_DSTN(SKNMSIMethodABC):
         return self._integrator.f.tau
 
     @property
-    def tau(self):
+    def tau_r(self):
         """
-        Returns the time constants for the temporal filters.
+        Returns the time constants for the sensory modalities.
 
         Returns
         -------
         tuple of float
-            The time constants for the temporal filters.
+            The time constants for the sensory modalities.
         """
-        return self._temporal_filter.f.tau
+        return self._temporal_filter.f.tau_r
 
     @property
-    def s(self):
+    def n(self):
         """
-        Slope of the sigmoid activation function.
-
-        Returns
-        -------
-        float
-            The slope parameter of the sigmoid function used in the model.
+        Power-law exponent for the activation function.
         """
-        return self._integrator.f.s
-
-    @property
-    def theta(self):
-        """
-        Central position of the sigmoid activation function.
-
-        Returns
-        -------
-        float
-            The central position parameter of the sigmoid function
-            used in the model.
-        """
-        return self._integrator.f.theta
+        return self._integrator.f.n
 
     @property
     def random(self):
@@ -427,10 +447,6 @@ class Paredes2027_DSTN(SKNMSIMethodABC):
         visual_rf_sigma=4,
         noise=False,
         noise_level=0.40,
-        lateral_excitation=2,
-        lateral_excitation_sigma=3,
-        lateral_inhibition=1.8,
-        lateral_inhibition_sigma=24,
         cross_modal_weight=0.075,
         cross_modal_sigma=5,
         cross_modal_latency=16,
@@ -539,28 +555,7 @@ class Paredes2027_DSTN(SKNMSIMethodABC):
 
         sim_feed_latency = int(feed_latency / self._integrator.dt)
 
-        # Build synapses
-        auditory_latsynapses = calculate_lateral_synapses(
-            neurons=self.neurons,
-            excitation_loc=lateral_excitation,
-            inhibition_loc=lateral_inhibition,
-            excitation_scale=lateral_excitation_sigma,
-            inhibition_scale=lateral_inhibition_sigma,
-        )
-        visual_latsynapses = calculate_lateral_synapses(
-            neurons=self.neurons,
-            excitation_loc=lateral_excitation,
-            inhibition_loc=lateral_inhibition,
-            excitation_scale=lateral_excitation_sigma,
-            inhibition_scale=lateral_inhibition_sigma,
-        )
-        multi_latsynapses = calculate_lateral_synapses(
-            neurons=self.neurons,
-            excitation_loc=lateral_excitation,
-            inhibition_loc=lateral_inhibition,
-            excitation_scale=lateral_excitation_sigma,
-            inhibition_scale=lateral_inhibition_sigma,
-        )
+        # Build inter-areal synapses
         auditory_to_visual_synapses = calculate_inter_areal_synapses(
             neurons=self.neurons, weight=cross_modal_weight, sigma=cross_modal_sigma,
         )
@@ -640,6 +635,10 @@ class Paredes2027_DSTN(SKNMSIMethodABC):
             copy.deepcopy(z_1d), copy.deepcopy(z_1d), copy.deepcopy(z_1d),
         )
         auditory_s, visual_s, multi_s = (
+            copy.deepcopy(z_1d), copy.deepcopy(z_1d), copy.deepcopy(z_1d),
+        )
+
+        auditory_r, visual_r, multi_r = (
             copy.deepcopy(z_1d), copy.deepcopy(z_1d), copy.deepcopy(z_1d),
         )
         
@@ -727,37 +726,27 @@ class Paredes2027_DSTN(SKNMSIMethodABC):
             auditory_outside_input = auditory_stimuli[i] + auditory_cm_input + auditory_feedback_input
             visual_outside_input = visual_stimuli[i] + visual_cm_input + visual_feedback_input
 
-            # Compute lateral inpunt
-            la = np.sum(auditory_latsynapses.T * auditory_y, axis=1)
-            lv = np.sum(visual_latsynapses.T * visual_y, axis=1)
-            lm = np.sum(multi_latsynapses.T * multi_y, axis=1)
-
-            # Compute unisensory total input
-            auditory_u = la + auditory_outside_input
-            visual_u = lv + visual_outside_input
-
-            # Compute multisensory total input
-            multi_u = lm + multi_input
-
             (
                 auditory_total_inputs[i, :],
                 visual_total_inputs[i, :],
                 multisensory_total_inputs[i, :],
             ) = (
-                auditory_u,
-                visual_u,
-                multi_u,
+                auditory_outside_input,
+                visual_outside_input,
+                multi_input,
             )
 
             # Compute neurons activity
-            (auditory_y, visual_y, multi_y, 
+            (auditory_y, visual_y, multi_y,
+             auditory_r, visual_r, multi_r, 
              auditory_e, visual_e, multi_e, 
              auditory_s, visual_s, multi_s) = self._integrator(
                 y_a=auditory_y, y_v=visual_y, y_m=multi_y,
+                r_a=auditory_r, r_v=visual_r, r_m=multi_r,
                 e_a=auditory_e, e_v=visual_e, e_m=multi_e,
                 s_a=auditory_s, s_v=visual_s, s_m=multi_s,
                 t=time,
-                u_a=auditory_u, u_v=visual_u, u_m=multi_u,
+                o_a=auditory_outside_input, o_v=visual_outside_input, o_m=multi_input,
             )
 
             auditory_res[i, :], visual_res[i, :], multi_res[i, :] = (
