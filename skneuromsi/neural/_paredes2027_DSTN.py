@@ -126,6 +126,10 @@ class Paredes2027Integrator:
         lm = np.sum(m_lat_synapses.T * y_m, axis=1)
 
         # Normalised lateral input
+        #norm_la = la / (a_nu ** self.n + self.c * pool_a_suppressive)
+        #norm_lv = lv / (v_nu ** self.n + self.c * pool_a_suppressive)
+        #norm_lm = lm / (m_nu ** self.n + self.c * pool_a_suppressive)
+        
         norm_la = la / (a_nu ** self.n + self.c_lat * (self.w @ y_a))
         norm_lv = lv / (v_nu ** self.n + self.c_lat * (self.w @ y_v))
         norm_lm = lm / (m_nu ** self.n + self.c_lat * (self.w @ y_m))
@@ -179,10 +183,10 @@ class Paredes2027_DSTN(SKNMSIMethodABC):
         c=1/90,
         c_lat=(1/90)*0.35,
         w_sigma=3.0,
-        lateral_excitation=1,
-        lateral_excitation_sigma=3,
-        lateral_inhibition=0.8,
-        lateral_inhibition_sigma=24,
+        lateral_excitation=(1, 1, 1),
+        lateral_excitation_sigma=(3, 3, 4),
+        lateral_inhibition=(0.8, 0.8, 0.8),
+        lateral_inhibition_sigma=(24, 24, 8),
         seed=None,
         mode0="auditory",
         mode1="visual",
@@ -248,25 +252,25 @@ class Paredes2027_DSTN(SKNMSIMethodABC):
         # Create lateral synapses
         auditory_lat_synapses = calculate_lateral_synapses(
             neurons=self.neurons,
-            excitation_loc=lateral_excitation,
-            inhibition_loc=lateral_inhibition,
-            excitation_scale=lateral_excitation_sigma,
-            inhibition_scale=lateral_inhibition_sigma,
+            excitation_loc=lateral_excitation[0],
+            inhibition_loc=lateral_inhibition[0],
+            excitation_scale=lateral_excitation_sigma[0],
+            inhibition_scale=lateral_inhibition_sigma[0],
         )
         visual_lat_synapses = calculate_lateral_synapses(
             neurons=self.neurons,
-            excitation_loc=lateral_excitation,
-            inhibition_loc=lateral_inhibition,
-            excitation_scale=lateral_excitation_sigma,
-            inhibition_scale=lateral_inhibition_sigma,
+            excitation_loc=lateral_excitation[1],
+            inhibition_loc=lateral_inhibition[1],
+            excitation_scale=lateral_excitation_sigma[1],
+            inhibition_scale=lateral_inhibition_sigma[1],
         )
 
         multi_lat_synapses = calculate_lateral_synapses(
             neurons=self.neurons,
-            excitation_loc=lateral_excitation,
-            inhibition_loc=lateral_inhibition,
-            excitation_scale=lateral_excitation_sigma,
-            inhibition_scale=lateral_inhibition_sigma,
+            excitation_loc=lateral_excitation[2],
+            inhibition_loc=lateral_inhibition[2],
+            excitation_scale=lateral_excitation_sigma[2],
+            inhibition_scale=lateral_inhibition_sigma[2],
         )
 
         lat_synapses = (auditory_lat_synapses,
